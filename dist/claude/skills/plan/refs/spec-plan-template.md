@@ -1,3 +1,13 @@
+---
+slug: feature-slug
+title: Feature title
+created: YYYY-MM-DD
+updated: YYYY-MM-DD
+waypoint: spec-plan
+status: draft
+document: pending
+---
+
 # &lt;Feature title&gt; — spec + plan (merged, trivial track)
 
 > For small, localized, low-risk work: one artifact, one checkpoint. No placeholders. If the

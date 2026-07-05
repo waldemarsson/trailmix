@@ -4,7 +4,7 @@ A portable, token-efficient agentic coding framework. One workflow — **Discuss
 Implement → Review → Document** — that runs on both **GitHub Copilot CLI (GHCP)** and
 **Claude Code (CC)** from a single source.
 
-Status: **structure only, no implementation.** This document is the agreed blueprint.
+Status: **implemented.** This document is the design source of truth; §11 tracks build progress.
 
 Locked decisions: single neutral source + generator · soft rigidity (auto-trigger skills,
 human checkpoint per phase, no gate engine) · single adaptive flow · always-on SessionStart
@@ -125,6 +125,26 @@ Artifacts live in the target project at: `.trailmix/trail/<feature-slug>/`.
 
 Fix loop: human selects findings (e.g. `H1, M2`) → `trailmix-implementer` applies exactly those →
 re-review if needed. All handoffs use **GORP** (§6).
+
+**Trail metadata & resume.** Each artifact carries minimal YAML frontmatter; `spec.md` /
+`spec-plan.md` is the **anchor** (trail identity + the Document outcome, which has no artifact of
+its own). The only non-derivable field is `status: draft | approved | superseded` — advancing a
+waypoint stamps the previous artifact `approved`, so an abandoned trail shows its last artifact
+`draft`. Both mechanical operations — reading **frontmatter only** (never bodies) to *resume* or
+*survey status*, and *transitioning* a status — run through a bundled zero-dep Node helper
+(`trailmix-trailhead/refs/trail.mjs`), so the LLM never hand-parses or hand-edits YAML and never
+types a status value it could misspell — it names an intent and the helper owns the vocabulary
+(the correctness + token win). Commands: `new` (scaffold an artifact's frontmatter — dates and
+initial status correct by construction), the named transitions `approve`/`supersede`/
+`document-done`/`document-skipped`, `read`, `check` (lint all frontmatter against the schema;
+also run in CI via `verify.sh`), and `status` (derive the resume line per trail). The helper is a
+**pure data tool** — it owns the closed vocabulary (statuses, waypoints, templates) but no
+workflow rules: no gates, no enforced ordering, no state machine; even `status` only reports. The
+skill decides when to call it. It ships inside the
+plugin and is invoked by plugin-root path (`$CLAUDE_PLUGIN_ROOT` on CC / `$PLUGIN_ROOT` on GHCP),
+**not** installed on PATH — so it's not the rejected `trailmix` CLI. Where neither var resolves
+or `node` is absent, it falls back to an awk read pass / hand-edit. Schema + invocation live in
+`trailmix-trailhead/refs/trail-metadata.md`. No sidecar `trail.json`, no state machine, no CLI.
 
 ---
 
@@ -293,6 +313,12 @@ CC's manifest doesn't need a `hooks` field (auto-discovered from the default `ho
    marketplaces (publishing pending live verification).
 7. ✅ `SessionStart` hook — the always-on core, replacing the root `AGENTS.md`/`CLAUDE.md`
    delivery `install.sh` used to provide.
+8. ✅ Resumable trails — artifact frontmatter (anchor `spec.md`) + `trailhead` resume/status
+   behavior, reading frontmatter only. Read + named status transitions go through a bundled
+   zero-dep helper (`trail.mjs`, plugin-root-invoked, awk/hand-edit fallback) so YAML is never
+   hand-edited and statuses are never typed by hand (can't be misspelled); it's a pure data tool
+   that owns the status vocabulary but no transition rules — not a state machine or a PATH CLI.
+   No `trail.json` (see §4).
 
 ---
 

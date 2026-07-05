@@ -11,6 +11,11 @@ Turn `spec.md` into a plan that's a **guide/contract, not a code dump.** Define 
 and the contracts tasks depend on; leave *how* (the actual code + tests) to `implement`.
 Scale detail to complexity — trivial work needs only a task or two.
 
+**On entry (full track):** the discuss checkpoint just passed — approve `spec.md` with the helper
+(`trail.mjs approve .trailmix/trail/<slug>/spec.md`, which also bumps `updated`; see
+`trailhead/refs/trail-metadata.md`) before planning. On the **trivial track** you're
+*writing* `spec-plan.md` here — it's the first artifact, so there's nothing prior to approve.
+
 ## Do
 1. Restate the goal and architecture in a few sentences.
 2. **Map the files** before tasks — one responsibility each; follow existing patterns.
@@ -23,8 +28,10 @@ Scale detail to complexity — trivial work needs only a task or two.
 No code blocks. No placeholders / TBDs. Commits are not plan steps — end tasks at a green gate.
 
 ## Output — `.trailmix/trail/<slug>/plan.md`
-Use `refs/plan-template.md`. For trivial work merged by `trailhead`, use
-`refs/spec-plan-template.md` (one artifact, one checkpoint).
+Scaffold with `trail.mjs new <slug> plan`, then fill the body from `refs/plan-template.md`. For
+trivial work merged by `trailhead`, scaffold `trail.mjs new <slug> spec-plan "<title>"`
+and use `refs/spec-plan-template.md` instead (one artifact, one checkpoint). See
+`trailhead/refs/trail-metadata.md`.
 
 ## Checkpoint
 Get the human's sign-off on the plan before `implement`.

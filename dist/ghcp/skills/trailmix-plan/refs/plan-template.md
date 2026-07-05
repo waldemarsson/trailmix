@@ -1,3 +1,10 @@
+---
+slug: feature-slug
+waypoint: plan
+status: draft
+updated: YYYY-MM-DD
+---
+
 # Plan: &lt;feature&gt;
 
 > A **guide/contract, not a code dump.** Define *what* to build and the contracts tasks depend

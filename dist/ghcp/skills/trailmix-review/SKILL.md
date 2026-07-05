@@ -18,9 +18,11 @@ tests, and style. Read-only — never edit.
 - Load `refs/review-checklist.md` for the dimensions to assess and severity calibration.
 
 ## Output — `.trailmix/trail/<slug>/review.md`
-GORP findings, each with a stable id: `id · file:line · what → why → fix`. Group HIGH / MEDIUM /
-LOW. Include a spec-compliance checklist and a verdict: **Ready to proceed? Yes | No | With
-fixes.** No preamble, no sign-off — the report *is* the artifact.
+Scaffold the file with `trail.mjs new <slug> review` (correct `waypoint: review`, `status: draft`
+frontmatter; see `trailmix-trailhead/refs/trail-metadata.md`), then write the body per
+`refs/review-checklist.md`: GORP findings, each with a stable id: `id · file:line · what → why →
+fix`. Group HIGH / MEDIUM / LOW. Include a spec-compliance checklist and a verdict: **Ready to
+proceed? Yes | No | With fixes.** No preamble, no sign-off — the report *is* the artifact.
 
 ## Checkpoint
 The human picks which findings to fix (e.g. `H1, M2`). Selected fixes go back through

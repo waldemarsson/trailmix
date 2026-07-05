@@ -28,6 +28,12 @@ didn't read, don't be vague, don't modify any file.
 
 ## Report shape (GORP)
 ```
+---
+slug: feature-slug
+waypoint: review
+status: draft
+updated: YYYY-MM-DD
+---
 Strengths: <specific, file:line>
 HIGH:
 - H1 · file:line · what → why → fix

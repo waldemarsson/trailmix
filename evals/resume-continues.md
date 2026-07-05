@@ -1,0 +1,33 @@
+# eval: a trail resumes from frontmatter
+
+**Checks:** a trail survives a fresh session — the agent reconstructs where it left off from
+artifact **frontmatter** (not by re-reading every body) and continues from the right waypoint.
+
+## Setup
+- trailmix installed; **fresh session**.
+- A project containing a partial trail at `.trailmix/trail/add-password-reset/`:
+  - `spec.md` — frontmatter `waypoint: discuss`, `status: approved`.
+  - `plan.md` — frontmatter `waypoint: plan`, `status: draft` (plan written, not yet signed off).
+  - no `review.md` yet.
+
+## Prompt
+```
+Resume the add-password-reset trail.
+```
+
+## PASS if
+- The agent consults `trailmix-trailhead` and reads **frontmatter only** to orient (e.g. an awk
+  pass over `.trailmix/trail/add-password-reset/*.md`), not full artifact bodies of everything.
+- It correctly identifies the resume point as the **plan checkpoint** (furthest artifact still
+  `draft`) and says so in a short state summary (title, spec approved, plan pending sign-off).
+- It loads the **plan.md body** (the waypoint it's resuming into) and pauses for the human to
+  sign off on the plan — it does **not** start a new trail or re-run discuss.
+
+## FAIL if
+- It starts over from discuss, or asks the human to re-paste the earlier conversation.
+- It loads every artifact body into context to figure out where it is.
+- It misreads position — e.g. jumps into implement while the plan is still `draft`.
+
+## Notes
+- The one non-derivable signal is `status`. If frontmatter looks stale or contradicts a body the
+  agent did read, it should trust the body and re-derive (see `refs/trail-metadata.md`).
