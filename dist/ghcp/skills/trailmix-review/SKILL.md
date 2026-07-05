@@ -2,7 +2,7 @@
 name: trailmix-review
 description: Waypoint 4 — senior read-only review of the uncommitted implementation against spec
   and plan; returns HIGH/MED/LOW findings with a verdict. Dispatches the trailmix-reviewer agent.
-  Use after implement.
+  Use once implementation is complete, not as an entry point for a raw request.
 ---
 
 # review — catch issues before they cascade

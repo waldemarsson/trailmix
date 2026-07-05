@@ -95,7 +95,7 @@ trailmix/                              # framework SOURCE repo (produces install
 │   └── ghcp/{skills/,agents/*.agent.md,hooks/hooks.json,plugin.json}
 ├── .claude-plugin/marketplace.json    # GENERATED, root catalog: source → ./dist/claude
 ├── .github/plugin/marketplace.json    # GENERATED, root catalog: source → ./dist/ghcp
-└── evals/                             # skill-behavior tests (later)
+└── evals/                             # skill-behavior tests — manual scenario checklists
 ```
 
 Install is marketplace-only, no standalone installer: `/plugin marketplace add owner/repo` (CC)
@@ -191,7 +191,7 @@ bootstrap, style, tool conventions, security — kept tiny, detail pushed into s
 copied verbatim into `dist/{claude,ghcp}/AGENTS.md` for humans browsing the installed plugin,
 but **neither CLI auto-loads a file by this name (or `CLAUDE.md`) from inside an installed
 plugin.** There is no standalone installer that would place it at a project/global root either
-(marketplace-only install, decided after weighing it against install.sh — see `STATUS.md`). So
+(marketplace-only install, decided after weighing it against a standalone installer). So
 the bundled `AGENTS.md` file itself never reaches a live session.
 
 The **only** always-on mechanism is the `SessionStart` hook: the *same* `AGENTS.md` content is
@@ -284,8 +284,10 @@ CC's manifest doesn't need a `hooks` field (auto-discovered from the default `ho
    `trailmix-review` → `trailmix-document` with their `refs/`.
 3. ✅ Neutral agent specs + `generate.mjs` + maps → `dist/`.
 4. ✅ `install.sh`/`install.ps1` (detect CLI, copy into target) — **removed**; marketplace-only
-   install now (see decision in `STATUS.md`), no standalone installer maintained.
-5. `evals/` skill-behavior tests.
+   install now, no standalone installer maintained.
+5. ✅ `evals/` skill-behavior tests — manual scenario checklists (no harness); each is a
+   paste-the-prompt / PASS-if / FAIL-if scenario run in a fresh session per CLI. Includes an
+   install round-trip checklist. Grading is human judgment; running them is left to the user.
 6. ✅ Package `dist/*` as plugins (`plugin.json` + `marketplace.json` per platform, plus root
    marketplace stubs so `owner/repo` marketplace-add resolves); publish to CC + GHCP
    marketplaces (publishing pending live verification).

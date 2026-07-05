@@ -78,6 +78,12 @@ function mapTools(neutral, platform) {
   return out;
 }
 
+// Note on read-only agents: neutral specs may carry `readonly: true` (explorer, reviewer). It is
+// deliberately NOT emitted — neither platform has a read-only-shell primitive. The explorer is
+// read-only by construction (its tools are read/search/web, no shell/edit); the reviewer keeps
+// `shell` because it needs `git diff`/`git status`, so its read-only is prompt discipline (spelled
+// out in the agent body), not an enforced flag. Emitting a `readonly` field would look meaningful
+// while doing nothing, and risks tripping a platform's frontmatter parser.
 function renderAgent(data, body, platform) {
   const tier = data.tier || "standard";
   if (!models[tier]) throw new Error(`unknown tier: ${tier}`);
@@ -281,7 +287,21 @@ function writePackaging(base, platform) {
   }
 }
 
+// Skills are copied verbatim (never frontmatter-parsed), so a malformed SKILL.md would ship
+// silently. Assert each one has the portable common-subset keys before we build anything.
+function validateSkills() {
+  const skillsDir = join(SRC, "skills");
+  for (const entry of readdirSync(skillsDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const p = join(skillsDir, entry.name, "SKILL.md");
+    const { data } = parseFrontmatter(readFileSync(p, "utf8"));
+    if (!data.name) throw new Error(`skill missing frontmatter 'name': ${p}`);
+    if (!data.description) throw new Error(`skill missing frontmatter 'description': ${p}`);
+  }
+}
+
 function generate() {
+  validateSkills();
   rmSync(DIST, { recursive: true, force: true });
 
   for (const [, p] of Object.entries(PLATFORMS)) {

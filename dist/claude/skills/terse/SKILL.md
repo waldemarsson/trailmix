@@ -30,3 +30,7 @@ No:
 ## When to expand
 Use full prose for security/safety warnings, irreversible-action confirmations, and multi-step
 instructions where a fragment could be misread. Resume terse after.
+
+Terse governs how you *write*, not whether to *ask*. When a task needs clarifying questions —
+e.g. the `discuss` waypoint — ask them; keep each question tight, but don't skip them to
+save words.
