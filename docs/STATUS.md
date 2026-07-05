@@ -1,0 +1,92 @@
+# trailmix — build status & resume notes
+
+Portable agentic coding framework: **Discuss → Plan → Implement → Review → Document**, runs on
+both **GitHub Copilot CLI (GHCP)** and **Claude Code (CC)**. Token efficiency is first-class.
+Design phase is done; implementation is well underway. Source of truth for design =
+`docs/architecture.md`.
+
+## Where things stand (2026-07-04, end of session)
+
+Repo: `/Users/marwal/code/private/trailmix`, branch `main`, only one commit so far (`6f175dc
+Init`). **Everything below is staged/untracked — NOT committed yet.** `refs/` (user's old
+workflow) is untracked source material, adapted (not copied verbatim).
+
+### Done
+- ✅ Research CC + GHCP capabilities (authoritative, re-verified this session against live docs).
+- ✅ Design blueprint + naming locked → `docs/architecture.md`.
+- ✅ `src/instructions/AGENTS.md` — always-on core (bootstrap, style, tools, security).
+- ✅ Skills: `trailmix-trailhead` router + style (`trailmix-terse`, `trailmix-lean-code`,
+  `trailmix-gorp`) + 5 waypoints (`trailmix-discuss`, `trailmix-plan`, `trailmix-implement`,
+  `trailmix-review`, `trailmix-document`) each with JIT `refs/`.
+- ✅ Neutral agents `src/agents/*.agent.md`
+  (trailmix-explorer/trailmix-implementer/trailmix-reviewer/trailmix-documenter).
+- ✅ Generator `build/generate.mjs` (zero-dep) + maps (`build/maps/{models,tools}.json`) →
+  `dist/{claude,ghcp}/`.
+- ✅ Plugin packaging: generator emits per-platform manifests + marketplace catalogs:
+  - CC: `dist/claude/.claude-plugin/{plugin.json,marketplace.json}`
+  - GHCP: `dist/ghcp/plugin.json` + `dist/ghcp/.github/plugin/marketplace.json`
+- ✅ Installers `install.sh` / `install.ps1`: auto-detect CLIs, `--target`, `--claude`,
+  `--ghcp`, **`--global`**. Item-scoped (non-destructive) copy; idempotent.
+- ✅ README.md (install both paths, portability matrix, layout, dev, token levers).
+- ✅ Removed `.github/copilot-instructions.md` (redundant — AGENTS.md covers it; staged as `D`).
+- ✅ `scripts/verify.sh` (`npm run verify`) — builds + installs into throwaway `mktemp` dirs
+  (never this repo), asserts project + global layout, checks import + managed block +
+  idempotency, cleans up. This repo is NOT self-installed; no generated files at its root.
+
+### CRITICAL correction made this session (affects design)
+**Claude Code reads `CLAUDE.md`, NOT `AGENTS.md`** (verified at code.claude.com/docs/en/memory).
+Earlier assumption "both read AGENTS.md" was WRONG. Fixes applied:
+- Generator emits `dist/claude/CLAUDE.md` = `@AGENTS.md` (import).
+- Installer writes root `CLAUDE.md` (project) / `~/.claude/CLAUDE.md` (global) importing AGENTS.md.
+- GHCP CLI reads root `AGENTS.md` natively; its **global** instruction file is
+  `~/.copilot/copilot-instructions.md` (installer writes a trailmix-managed block there).
+- Global skills/agents dirs: CC `~/.claude/{skills,agents}`; GHCP `~/.copilot/{skills,agents}`
+  (personal skills confirmed at `~/.copilot/skills`; agents mirror).
+- Docs (README + architecture §matrix/§8/§10 install) corrected to match.
+
+### Verified working
+`npm run verify` (build + project & global installs into temp dirs, both CLIs, import +
+managed block + idempotency + non-destructiveness). Also `bash -n` + `pwsh` parse. Verification
+uses `mktemp` dirs only — the repo is never installed into and stays pure source.
+
+## Decisions made (flag if you want to revisit)
+1. **Nothing generated is committed** — `dist/`, installed `.claude|.github/{skills,agents}`,
+   and any root `AGENTS.md`/`CLAUDE.md` are gitignored/absent; canonical source = `src/`.
+   Verification installs into throwaway temp dirs, not the repo. ⚠️ Revisit for marketplace
+   publishing — a published marketplace repo usually needs the built plugin committed. Options:
+   commit `dist/`, or publish from a separate branch/repo.
+2. **This repo has no root instruction file yet.** Open policy question (see chat): hand-author
+   a committed root `AGENTS.md` (+ `CLAUDE.md` → `@AGENTS.md`) as contributor guidance that
+   also dogfoods trailmix, vs. keep source-only and activate via a local (gitignored) install.
+   If self-installing locally, consider a `--no-root` installer flag so it won't clobber an
+   authored root file.
+3. **Model names** in `build/maps/models.json` are indicative — pin exact names for the account.
+4. **All skill/agent names are prefixed `trailmix-`** (`trailmix-discuss`, `trailmix-explorer`,
+   etc.), renamed from bare names this session. Why: `install.sh` copies skills/agents flat into
+   `.claude/skills`, `.claude/agents` — CC's "standalone" path, which does **not** auto-namespace
+   (that only happens for real plugin installs or a nested `<name>@skills-dir` folder, neither of
+   which `install.sh` does today). GHCP has **no** namespacing mechanism at all, ever — even
+   inside a proper plugin, colliding names silently shadow one another (confirmed against GHCP's
+   plugin reference). Bare names like `review`/`plan` would've collided with CC built-ins. Prefix
+   is now the only cross-platform-safe guarantee.
+   ⚠️ Open follow-up: `install.sh`'s CC path could additionally nest `dist/claude/` as a single
+   `.claude/skills/trailmix/` folder (with its `.claude-plugin/plugin.json` intact) to pick up
+   CC's automatic `trailmix:` colon-namespacing UX on top of the prefix — not done yet, purely a
+   nicer invocation UX, not required for correctness since the prefix already prevents collisions.
+
+## Next steps (pick up here)
+- [ ] **Decide commit-vs-gitignore for `dist/`** (blocks real marketplace publishing).
+- [ ] **First real commit** of the trailmix work (nothing committed since `Init`).
+- [ ] `evals/` — skill-behavior tests (architecture §11 step 5, still unbuilt).
+- [ ] Publish plugins to CC + GHCP marketplaces (needs a hosted repo + decision #1).
+- [ ] Optional: pin exact model names; fill `author`/`homepage`/`repository` in
+  `src/meta/plugin.meta.json`.
+- [ ] Optional: nest `install_claude()`'s copy as `.claude/skills/trailmix/` (see decision #4) for
+  the `/trailmix:discuss`-style colon namespacing on Claude Code.
+
+## Constraints (never violate)
+- Every decision must work on BOTH GHCP and CC.
+- Token efficiency baked in (JIT skills, disk-over-chat handoffs, cheap-model routing, GORP).
+- Edit `src/` only — never `dist/` or installed `.claude`/`.github` copies. `npm run build`
+  after any `src/` or `build/maps/` change. Neutral agent `description` must stay single-line
+  (generator's frontmatter parser). Node ≥ 16.7.

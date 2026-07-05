@@ -16,3 +16,10 @@ Icon
 .Trashes
 .VolumeIcon.icns
 .com.apple.timemachine.donotpresent
+### trailmix
+# Generated build output and installed copies (canonical source is src/).
+dist/
+.claude/skills/
+.claude/agents/
+.github/skills/
+.github/agents/

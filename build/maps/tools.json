@@ -1,0 +1,10 @@
+{
+  "_comment": "Neutral tool alias -> platform tool name(s). CC uses capitalized names (comma list); GHCP uses lowercase aliases (array). A neutral alias may expand to several CC tools.",
+  "read":   { "claude": ["Read"],                 "ghcp": ["read"] },
+  "edit":   { "claude": ["Edit", "Write"],        "ghcp": ["edit"] },
+  "search": { "claude": ["Grep", "Glob"],         "ghcp": ["search"] },
+  "shell":  { "claude": ["Bash"],                 "ghcp": ["shell"] },
+  "web":    { "claude": ["WebSearch", "WebFetch"], "ghcp": ["web"] },
+  "task":   { "claude": ["Task"],                 "ghcp": ["agent"] },
+  "todo":   { "claude": ["TodoWrite"],            "ghcp": ["todo"] }
+}
