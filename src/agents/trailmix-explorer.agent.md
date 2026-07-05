@@ -3,7 +3,6 @@ name: trailmix-explorer
 description: Read-only research agent — surveys the codebase and, when useful, the web, and returns a compact GORP summary. Used by trailmix-discuss and trailmix-plan to answer a specific research question without cluttering the orchestrator's context.
 tier: cheap
 tools: [read, search, web]
-readonly: true
 ---
 
 # explorer — read-only research

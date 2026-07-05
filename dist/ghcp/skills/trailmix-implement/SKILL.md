@@ -1,7 +1,8 @@
 ---
 name: trailmix-implement
 description: Waypoint 3 — build the planned feature with tests, TDD-style, and verify every gate
-  before claiming done. Dispatches the trailmix-implementer agent. Use after the plan is signed off.
+  before claiming done. Dispatches the trailmix-implementer agent. Use once the plan checkpoint is
+  signed off, not as an entry point for a raw request.
 ---
 
 # implement — build it and prove it works

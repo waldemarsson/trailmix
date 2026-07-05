@@ -1,8 +1,8 @@
 ---
 name: trailmix-document
 description: Waypoint 5 — update the repo's own docs to reflect what shipped, by weight not
-  volume. Dispatches the trailmix-documenter agent. Zero doc changes is a valid outcome. Use
-  after review.
+  volume. Dispatches the trailmix-documenter agent. Zero doc changes is a valid outcome. Use once
+  review is done, not as an entry point for a raw request.
 ---
 
 # document — update docs that carry weight

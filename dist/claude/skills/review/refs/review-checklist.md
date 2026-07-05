@@ -20,7 +20,9 @@ categorize findings by real severity and give each a stable id (H1 / M2 / L3…)
 - LOW — style, formatting, optimization, doc polish (nice to have).
 
 Acknowledge what was done well before listing issues — accurate praise helps the implementer
-trust the rest. Be specific (file:line), explain WHY each issue matters, give a clear verdict.
+trust the rest. (The leading one-line `Strengths:` entry is part of the report structure; GORP's
+"no preamble" bans greetings and waffle, not this.) Be specific (file:line), explain WHY each
+issue matters, give a clear verdict.
 Don't say "looks good" without checking, don't mark nitpicks HIGH, don't comment on code you
 didn't read, don't be vague, don't modify any file.
 

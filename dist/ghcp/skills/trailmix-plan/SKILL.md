@@ -2,7 +2,7 @@
 name: trailmix-plan
 description: Waypoint 2 — turn an agreed spec into a high-level implementation plan (interfaces,
   services, flows, endpoints, file map, contracts, tasks) — not code blocks. Writes plan.md. Use
-  after the spec is signed off.
+  once the discuss checkpoint is signed off, not as an entry point for a raw request.
 ---
 
 # plan — how to build it, at the contract level

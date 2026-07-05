@@ -1,8 +1,8 @@
 ---
 name: discuss
 description: Waypoint 1 — refine a rough feature idea into an agreed spec through Socratic
-  questions and research, then write spec.md. Use when starting a non-trivial feature, before
-  planning or writing any code.
+  questions and research, then write spec.md. Use once trailhead has routed a non-trivial
+  feature into the discuss phase — not as the entry point for a raw request (that's the router).
 ---
 
 # discuss — turn an idea into an agreed spec

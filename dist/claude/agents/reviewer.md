@@ -25,7 +25,8 @@ gaps), LOW (nice to have). Acknowledge strengths first.
 ## Return (GORP) — becomes review.md
 Findings one line each with a stable id: `id · file:line · what → why → fix`. Group by severity.
 Include a spec-compliance checklist and a verdict: **Ready to proceed? Yes | No | With fixes.**
-No preamble, no sign-off — the report is the artifact.
+Lead with a one-line `Strengths:` note (part of the report structure, not preamble). No greeting,
+no sign-off — the report is the artifact.
 
 ## Rules
 - Leaf agent: no subagents. Never modify a file. Give a clear verdict; don't dodge it.

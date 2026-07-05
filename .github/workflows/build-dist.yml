@@ -32,14 +32,16 @@ jobs:
 
       - run: npm run build
 
-      - name: Commit dist/ if it changed
+      - name: Commit generated output if it changed
         run: |
-          git add dist/
+          # generate.mjs writes dist/ AND the two root marketplace stubs — stage all of them,
+          # or a src/meta change could drift the root catalogs without ever being committed.
+          git add dist/ .claude-plugin/marketplace.json .github/plugin/marketplace.json
           if git diff --cached --quiet; then
-            echo "dist/ already up to date"
+            echo "generated output already up to date"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "chore: regenerate dist/ from src/" -m "Auto-generated for ${{ github.sha }}."
+          git commit -m "chore: regenerate dist/ + root marketplace stubs from src/" -m "Auto-generated for ${{ github.sha }}."
           git push
