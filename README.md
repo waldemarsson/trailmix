@@ -22,6 +22,21 @@ waypoint. No rigid gates.
 Phase outputs (**artifacts**) are written to `.trailmix/trail/<feature-slug>/` — the human
 reads them on disk, they don't get pasted back into the chat context.
 
+## Resume & status
+
+Each artifact carries small YAML frontmatter: the anchor `spec.md` holds the trail's identity and
+a `document:` outcome, and every artifact has a `status:` (`draft` → `approved`, stamped when the
+next waypoint starts). Because that state lives on disk, a fresh session can pick up where you
+left off — just ask:
+
+```
+resume the <feature-slug> trail
+```
+
+trailhead reads the **frontmatter only** (not the full artifacts), reports where the trail stands,
+and continues from the right waypoint. Ask for trail *status* the same way to survey every trail.
+No `trail.json`, no CLI — just the frontmatter on disk.
+
 ## Install
 
 trailmix is installed only as a plugin, through each CLI's own marketplace/plugin system —

@@ -21,7 +21,8 @@ Refine the request into a spec you and the human agree on. Don't design the impl
 4. **Smooth the edge cases.** Name what's out of scope as clearly as what's in.
 
 ## Output — `.trailmix/trail/<slug>/spec.md`
-Use `refs/spec-template.md`. Keep it tight; no placeholders, no TBDs.
+Use `refs/spec-template.md`. Fill the anchor frontmatter (`slug`, `title`, `created`/`updated`
+dates, `status: draft`). Keep it tight; no placeholders, no TBDs.
 
 ## Checkpoint
 Get the human's sign-off on the spec before `plan`. If `trailhead` sized the

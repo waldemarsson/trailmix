@@ -11,6 +11,10 @@ Turn `spec.md` into a plan that's a **guide/contract, not a code dump.** Define 
 and the contracts tasks depend on; leave *how* (the actual code + tests) to `implement`.
 Scale detail to complexity — trivial work needs only a task or two.
 
+**On entry (full track):** the discuss checkpoint just passed — stamp `spec.md` frontmatter
+`status: approved` and bump `updated` before planning. On the **trivial track** you're *writing*
+`spec-plan.md` here — it's the first artifact, so there's nothing prior to stamp.
+
 ## Do
 1. Restate the goal and architecture in a few sentences.
 2. **Map the files** before tasks — one responsibility each; follow existing patterns.

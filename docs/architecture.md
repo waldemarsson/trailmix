@@ -4,7 +4,7 @@ A portable, token-efficient agentic coding framework. One workflow — **Discuss
 Implement → Review → Document** — that runs on both **GitHub Copilot CLI (GHCP)** and
 **Claude Code (CC)** from a single source.
 
-Status: **structure only, no implementation.** This document is the agreed blueprint.
+Status: **implemented.** This document is the design source of truth; §11 tracks build progress.
 
 Locked decisions: single neutral source + generator · soft rigidity (auto-trigger skills,
 human checkpoint per phase, no gate engine) · single adaptive flow · always-on SessionStart
@@ -125,6 +125,14 @@ Artifacts live in the target project at: `.trailmix/trail/<feature-slug>/`.
 
 Fix loop: human selects findings (e.g. `H1, M2`) → `trailmix-implementer` applies exactly those →
 re-review if needed. All handoffs use **GORP** (§6).
+
+**Trail metadata & resume.** Each artifact carries minimal YAML frontmatter; `spec.md` /
+`spec-plan.md` is the **anchor** (trail identity + the Document outcome, which has no artifact of
+its own). The only non-derivable field is `status: draft | approved | superseded` — advancing a
+waypoint stamps the previous artifact `approved`, so an abandoned trail shows its last artifact
+`draft`. `trailmix-trailhead` reads **frontmatter only** (one awk pass, never bodies) to *resume*
+a trail from the right waypoint or *survey status* across trails. Schema + command live in
+`trailmix-trailhead/refs/trail-metadata.md`. No sidecar `trail.json`, no state machine, no CLI.
 
 ---
 
@@ -293,6 +301,8 @@ CC's manifest doesn't need a `hooks` field (auto-discovered from the default `ho
    marketplaces (publishing pending live verification).
 7. ✅ `SessionStart` hook — the always-on core, replacing the root `AGENTS.md`/`CLAUDE.md`
    delivery `install.sh` used to provide.
+8. ✅ Resumable trails — artifact frontmatter (anchor `spec.md`) + `trailhead` resume/status
+   behavior, reading frontmatter only. No `trail.json`, no CLI (see §4).
 
 ---
 

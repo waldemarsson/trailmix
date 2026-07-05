@@ -14,6 +14,8 @@ GitHub Copilot CLI and Claude Code.
   `review.md`). Write to disk; the human reads them there — don't paste them back into chat.
 - The flow is soft and adaptive: scale detail to the work, collapse phases for trivial
   changes, and pause for a human checkpoint at each waypoint. No rigid gates.
+- Trails are resumable: to continue earlier work or survey trail status, consult
+  **trailmix-trailhead** — it reads artifact frontmatter, not full bodies.
 
 ## Always-on style
 On by default. This is the compact core; fuller guidance and examples live in the

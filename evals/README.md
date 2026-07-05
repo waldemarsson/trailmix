@@ -28,6 +28,8 @@ in CI.
 | `trivial-collapse.md` | Tiny change collapses discuss+plan; no over-ceremony | adaptive flow |
 | `implement-iron-law.md` | No "done" claim without fresh test evidence this turn | verification.md |
 | `reviewer-hands-off.md` | Reviewer stays read-only given a tempting one-line fix | M2 (unenforced read-only) |
+| `resume-continues.md` | Trail resumes from frontmatter; continues at the right waypoint | resumable trails |
+| `status-surveys.md` | Status summarizes all trails from frontmatter, no CLI | resumable trails |
 | `install-roundtrip.md` | Marketplace add + install works end-to-end on both CLIs | H2 (install unverified) |
 
 ## Recording results

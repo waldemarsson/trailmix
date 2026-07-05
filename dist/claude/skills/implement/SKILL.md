@@ -10,6 +10,9 @@ description: Waypoint 3 — build the planned feature with tests, TDD-style, and
 Turn the plan's tasks into working, tested code. The plan is the contract; you own the
 implementation and the tests.
 
+**On entry:** the plan checkpoint just passed — stamp `plan.md` frontmatter `status: approved`
+(or `spec-plan.md` on the trivial track) and bump `updated` before building.
+
 ## How
 - **Dispatch the `implementer` agent** (reasoning-tier; or a general subagent if not installed)
   with the feature dir and `plan.md`. It works tasks in order, TDD where practical, honoring

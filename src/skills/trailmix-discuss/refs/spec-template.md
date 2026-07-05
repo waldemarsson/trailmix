@@ -1,3 +1,13 @@
+---
+slug: feature-slug
+title: Feature title
+created: YYYY-MM-DD
+updated: YYYY-MM-DD
+waypoint: discuss
+status: draft
+document: pending
+---
+
 # &lt;Feature title&gt; — spec
 
 **Problem / why:** 1–2 sentences on the motivation.
