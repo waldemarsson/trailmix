@@ -83,14 +83,34 @@ uses `mktemp` dirs only — the repo is never installed into and stays pure sour
    `.claude/skills/trailmix/` folder (with its `.claude-plugin/plugin.json` intact) to pick up
    CC's automatic `trailmix:` colon-namespacing UX on top of the prefix — not done yet, purely a
    nicer invocation UX, not required for correctness since the prefix already prevents collisions.
+5. **Remote GitHub install needed a fix, discovered by actually testing it.** The user tried
+   `copilot plugin marketplace add <blob URL to marketplace.json>` and it failed — a GitHub blob
+   URL isn't git-clonable. Digging in surfaced a deeper issue: both CLIs' `marketplace add
+   owner/repo` require the marketplace manifest at the cloned repo's *root* and neither documents
+   a subdirectory form for that command, so `dist/claude/` and `dist/ghcp/` living side by side
+   under one root were never going to resolve via plain `owner/repo`.
+   First fix attempt (reverted): a CI workflow mirroring `dist/claude/` onto the root of a
+   dedicated `claude` branch. Works, but the user flagged it as unnecessary complexity — right
+   call, because there's a simpler option: `marketplace.json` plugin entries support a relative
+   `source` path, and `owner/repo` marketplace-add clones the *whole* repo (not just one file), so
+   relative sources resolve fine. `build/generate.mjs`'s new `writeRootMarketplaces()` now emits
+   two tiny catalogs straight at the actual repo root — `.claude-plugin/marketplace.json` with
+   `source: "./dist/claude"`, `.github/plugin/marketplace.json` with `source: "./dist/ghcp"` —
+   so plain `/plugin marketplace add waldemarsson/trailmix` and `copilot plugin marketplace add
+   waldemarsson/trailmix` both resolve with no branch, no CI, and no root restructuring. GHCP
+   separately also supports a direct `copilot plugin install owner/repo:dist/ghcp` (no marketplace
+   step at all), documented as an alternative. `scripts/verify.sh`'s staleness check now also
+   covers the two root marketplace files, not just `dist/`. README's "Install as a plugin" has
+   the current commands for both.
 
 ## Next steps (pick up here)
 - [x] **Decide commit-vs-gitignore for `dist/`** — committed to `main` (decision #1).
 - [x] **First real commit** of the trailmix work (`dd28d5f`, includes the `trailmix-` rename).
+- [ ] **Verify the real round-trip**: `/plugin marketplace add waldemarsson/trailmix` +
+  `copilot plugin marketplace add waldemarsson/trailmix` once this is pushed (decision #5) — not
+  yet confirmed end-to-end against the live repo. This is the "publish to CC + GHCP
+  marketplaces" step — repo + generated catalogs are ready, just needs the live test.
 - [ ] `evals/` — skill-behavior tests (architecture §11 step 5, still unbuilt).
-- [ ] Publish plugins to CC + GHCP marketplaces (repo + `dist/` are ready; do the actual
-  `/plugin marketplace add` / `copilot plugin marketplace add` round-trip against
-  `waldemarsson/trailmix` to confirm it resolves before calling this done).
 - [ ] Optional: pin exact model names; fill `author`/`homepage`/`repository` in
   `src/meta/plugin.meta.json`.
 - [ ] Optional: nest `install_claude()`'s copy as `.claude/skills/trailmix/` (see decision #4) for

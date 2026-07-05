@@ -4,9 +4,10 @@ set -euo pipefail
 # trailmix verify — build, then install into throwaway temp dirs (never this repo)
 # and assert the resulting layout. Exercises project + global installs for both CLIs.
 # Leaves no trace outside dist/: install output goes to mktemp dirs, removed on exit.
-# dist/ itself IS this repo's committed build output (marketplace installs read it
-# directly), so this script regenerates it in place and fails if that changes anything
-# uncommitted — a stale dist/ means someone edited src/ without running npm run build.
+# dist/ and the root .claude-plugin//.github/plugin marketplace stubs are this repo's
+# committed build output (marketplace installs read them directly), so this script
+# regenerates them in place and fails if that changes anything uncommitted — stale
+# generated output means someone edited src/ without running npm run build.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PROJ="$(mktemp -d)"
@@ -18,8 +19,9 @@ check() { [ -e "$2" ] || fail "$1: missing $2"; }
 
 node "$SCRIPT_DIR/build/generate.mjs" >/dev/null
 
-if [ -n "$(git -C "$SCRIPT_DIR" status --porcelain -- dist/)" ]; then
-  fail "dist/ is stale vs. src/ — run 'npm run build' and commit the result"
+GENERATED_PATHS="dist/ .claude-plugin/marketplace.json .github/plugin/marketplace.json"
+if [ -n "$(git -C "$SCRIPT_DIR" status --porcelain -- $GENERATED_PATHS)" ]; then
+  fail "generated output is stale vs. src/ — run 'npm run build' and commit the result"
 fi
 
 # --- project install (both CLIs) ---

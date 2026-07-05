@@ -64,25 +64,33 @@ overwritten.
 
 ## Install as a plugin
 
-`npm run build` also emits plugin manifests and marketplace catalogs, so trailmix can be
-installed through each CLI's plugin system.
+`npm run build` emits the real per-platform plugins (`dist/claude/`, `dist/ghcp/`) plus two tiny
+root-level marketplace catalogs (`.claude-plugin/marketplace.json`,
+`.github/plugin/marketplace.json`) that each point at the matching `dist/` subdirectory via a
+relative `source`. `owner/repo`-style marketplace-add clones the whole repo, so those relative
+paths resolve — no branch or subdirectory support needed from either CLI:
 
-**Claude Code** — `dist/claude/` is a plugin (`.claude-plugin/plugin.json` +
-`marketplace.json`):
+**Claude Code**:
 
 ```
-/plugin marketplace add ./dist/claude
+/plugin marketplace add waldemarsson/trailmix
 /plugin install trailmix@trailmix
 ```
 
-**Copilot CLI** — `dist/ghcp/` is a plugin (root `plugin.json` +
-`.github/plugin/marketplace.json`):
+**Copilot CLI**:
 
 ```
-copilot plugin install ./dist/ghcp
-# or via marketplace:
-copilot plugin marketplace add ./dist/ghcp
+copilot plugin marketplace add waldemarsson/trailmix
 copilot plugin install trailmix@trailmix
+# or, skipping the marketplace, install the dist/ghcp subdirectory directly:
+copilot plugin install waldemarsson/trailmix:dist/ghcp
+```
+
+Both also work from a local clone, pointing straight at the platform subdirectory:
+
+```
+/plugin marketplace add ./dist/claude
+copilot plugin marketplace add ./dist/ghcp
 ```
 
 > Note: plugins ship the skills and agents. The always-on `AGENTS.md` core (style + tool
@@ -121,6 +129,8 @@ build/
   generate.mjs                zero-dep generator: src/ → dist/{claude,ghcp}/
   maps/{models,tools}.json    neutral → platform mapping tables
 dist/                         generated AND committed (published plugin; marketplace source)
+.claude-plugin/marketplace.json  generated: root catalog, source → ./dist/claude
+.github/plugin/marketplace.json  generated: root catalog, source → ./dist/ghcp
 docs/architecture.md          the full blueprint / design source of truth
 install.sh / install.ps1      copy assets into a target project
 ```

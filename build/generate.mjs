@@ -85,6 +85,41 @@ function json(obj) {
   return JSON.stringify(obj, null, 2) + "\n";
 }
 
+// Root-level marketplace catalogs, so `/plugin marketplace add owner/repo` (which clones the
+// whole repo, no subdirectory support) resolves: each entry's relative "source" points into the
+// per-platform dist/ dir, which still carries the real plugin.json for that platform.
+function writeRootMarketplaces() {
+  const owner = { name: meta.author?.name || meta.name };
+
+  mkdirSync(join(ROOT, ".claude-plugin"), { recursive: true });
+  writeFileSync(
+    join(ROOT, ".claude-plugin/marketplace.json"),
+    json({
+      name: meta.name,
+      owner,
+      plugins: [{ name: meta.name, source: "./dist/claude", description: meta.description }],
+    })
+  );
+
+  mkdirSync(join(ROOT, ".github/plugin"), { recursive: true });
+  writeFileSync(
+    join(ROOT, ".github/plugin/marketplace.json"),
+    json({
+      name: meta.name,
+      owner,
+      metadata: { description: meta.description, version: meta.version },
+      plugins: [
+        {
+          name: meta.name,
+          description: meta.description,
+          version: meta.version,
+          source: "./dist/ghcp",
+        },
+      ],
+    })
+  );
+}
+
 // Emit plugin manifest + marketplace catalog per platform.
 // CC:   .claude-plugin/plugin.json           + .claude-plugin/marketplace.json
 // GHCP: plugin.json (root)                    + .github/plugin/marketplace.json
@@ -171,7 +206,9 @@ function generate() {
     // plugin manifest + marketplace catalog
     writePackaging(base, p.dir);
   }
-  console.log("generated dist/claude and dist/ghcp");
+
+  writeRootMarketplaces();
+  console.log("generated dist/claude, dist/ghcp, and root marketplace catalogs");
 }
 
 generate();
