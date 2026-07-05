@@ -1,5 +1,5 @@
 ---
-name: trailmix-lean-code
+name: lean-code
 description: Minimal-code / YAGNI discipline — write the least code that fully works, with hard
   safety carve-outs. Always on by default (see AGENTS.md); pull this skill for the fuller
   guidance on the ladder and the carve-outs.

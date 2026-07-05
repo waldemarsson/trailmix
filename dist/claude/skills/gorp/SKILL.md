@@ -1,5 +1,5 @@
 ---
-name: trailmix-gorp
+name: gorp
 description: Compact, lossless agent-to-agent handoff format for subagent returns and
   agent-consumed handoffs. Pull when returning results from a subagent to an orchestrator or
   writing a handoff another agent will read. Never use for user-facing answers.

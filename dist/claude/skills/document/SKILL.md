@@ -1,7 +1,7 @@
 ---
-name: trailmix-document
+name: document
 description: Waypoint 5 — update the repo's own docs to reflect what shipped, by weight not
-  volume. Dispatches the trailmix-documenter agent. Zero doc changes is a valid outcome. Use
+  volume. Dispatches the documenter agent. Zero doc changes is a valid outcome. Use
   after review.
 ---
 
@@ -11,7 +11,7 @@ Update the repo's documentation so it matches what actually shipped — add what
 the change made stale. **Most changes touch little or no documentation.**
 
 ## How
-- **Dispatch the `trailmix-documenter` agent** (standard-tier; or a general subagent if not installed)
+- **Dispatch the `documenter` agent** (standard-tier; or a general subagent if not installed)
   with the feature dir and the implementation diff.
 - The test for any doc edit: *would a developer joining this project in six months be worse off
   not knowing this?* If no → skip. Load `refs/weight-heuristics.md` when unsure whether a change
@@ -22,7 +22,7 @@ the change made stale. **Most changes touch little or no documentation.**
 
 ## Output
 Edits to the repo's **own** docs (README, `docs/`, ADRs, per-module READMEs — whatever the repo
-uses). Not a per-feature doc. Report files changed + one-line reasons (per `trailmix-gorp`); flag
+uses). Not a per-feature doc. Report files changed + one-line reasons (per `gorp`); flag
 any `TBD — author to fill in` and any claim you couldn't fully verify.
 
 ## Checkpoint

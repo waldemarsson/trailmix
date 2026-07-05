@@ -12,11 +12,16 @@ set -euo pipefail
 # if neither is found, installs both.
 #
 # Placement:
-#   Claude Code  project: .claude/{skills,agents} + root AGENTS.md + root CLAUDE.md (imports AGENTS.md)
-#                global:  ~/.claude/{skills,agents} + ~/.claude/AGENTS.md + ~/.claude/CLAUDE.md (import)
+#   Claude Code  project: .claude/skills/trailmix/ (skills-dir plugin, auto-namespaced
+#                         trailmix:<name>) + root AGENTS.md + root CLAUDE.md (imports AGENTS.md)
+#                global:  ~/.claude/skills/trailmix/ + ~/.claude/AGENTS.md + ~/.claude/CLAUDE.md
 #   Copilot CLI  project: .github/{skills,agents} + root AGENTS.md
 #                global:  ~/.copilot/{skills,agents} + ~/.copilot/copilot-instructions.md (managed block)
 # (Claude Code reads CLAUDE.md, not AGENTS.md, so we ship a CLAUDE.md that imports it.)
+# (dist/claude/'s skills/agents ship with bare names — no trailmix- prefix — because CC auto-
+#  namespaces plugins by the plugin's own name; nesting the whole tree as skills/trailmix/ makes
+#  it load as the `trailmix@skills-dir` plugin instead of flat, unnamespaced standalone skills.
+#  GHCP never auto-namespaces, so dist/ghcp/ keeps the manual trailmix- prefix and installs flat.)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TARGET="."
@@ -81,17 +86,18 @@ write_managed_block() { # $1=dest_file $2=content_file
 }
 
 install_claude() {
-  local src="$SCRIPT_DIR/dist/claude" skills agents core
+  local src="$SCRIPT_DIR/dist/claude" skills_dir core
   if [ "$SCOPE" = "global" ]; then
-    skills="$HOME/.claude/skills"; agents="$HOME/.claude/agents"; core="$HOME/.claude"
+    skills_dir="$HOME/.claude/skills"; core="$HOME/.claude"
   else
-    skills="$DEST/.claude/skills"; agents="$DEST/.claude/agents"; core="$DEST"
+    skills_dir="$DEST/.claude/skills"; core="$DEST"
   fi
-  copy_items "$src/skills" "$skills"
-  copy_items "$src/agents" "$agents"
+  mkdir -p "$skills_dir"
+  rm -rf "$skills_dir/trailmix"
+  cp -R "$src" "$skills_dir/trailmix"
   cp "$src/AGENTS.md" "$core/AGENTS.md"
   ensure_claude_import "$core"
-  echo "installed claude -> $skills, $agents, $core/{AGENTS.md,CLAUDE.md}"
+  echo "installed claude -> $skills_dir/trailmix (trailmix@skills-dir plugin), $core/{AGENTS.md,CLAUDE.md}"
 }
 
 install_ghcp() {

@@ -22,6 +22,5 @@ Icon
 # after any src/ or build/maps/ change; `npm run verify` fails if it's stale.
 # Installed copies (from self-testing an install into this repo) stay ignored.
 .claude/skills/
-.claude/agents/
 .github/skills/
 .github/agents/

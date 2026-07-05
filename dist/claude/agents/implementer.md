@@ -1,5 +1,5 @@
 ---
-name: trailmix-implementer
+name: implementer
 description: "Builds the planned feature in code and writes/runs tests TDD-style, honoring the plan's contracts, and verifies every gate before reporting. You own the implementation and the tests; the plan is a guide, not a code dump."
 tools: Read, Edit, Write, Grep, Glob, Bash
 model: sonnet
@@ -26,7 +26,7 @@ red-green for bug fixes. Then return a GORP summary (≤ ~400 words; evidence = 
 commands, never pasted logs or diffs — the orchestrator reads diffs from `git diff`).
 
 ## Rules
-- Leaf agent: no subagents. Don't write docs (that's the trailmix-documenter).
+- Leaf agent: no subagents. Don't write docs (that's the documenter).
 - Improve on the plan's *how* freely, but never silently change a contract — stop and ask.
 - Fix-loop: given selected findings (e.g. `H1, M2`), verify each against the code, apply only
   those, re-run tests after each, report per id; if one is wrong, don't apply it — return why.

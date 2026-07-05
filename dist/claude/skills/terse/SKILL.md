@@ -1,5 +1,5 @@
 ---
-name: trailmix-terse
+name: terse
 description: Answer-first, filler-free prose style that keeps full technical accuracy. Always
   on by default (see AGENTS.md); pull this skill for the fuller guidance and examples on how to
   write terse without losing meaning.

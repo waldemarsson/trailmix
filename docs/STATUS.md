@@ -102,6 +102,24 @@ uses `mktemp` dirs only — the repo is never installed into and stays pure sour
    step at all), documented as an alternative. `scripts/verify.sh`'s staleness check now also
    covers the two root marketplace files, not just `dist/`. README's "Install as a plugin" has
    the current commands for both.
+6. **CC's dist output is unprefixed; GHCP's stays `trailmix-*`.** Static review (structure/schema
+   check, no live install) surfaced that a real CC plugin install would show
+   `/trailmix:trailmix-discuss` — redundant, because CC auto-namespaces every plugin component by
+   the plugin's own name (`trailmix`), so the manual `trailmix-` prefix (added for the *standalone*
+   `install.sh` path, which never auto-namespaces) doubled up once real plugin install also
+   started working (decision #5). Fix: `build/generate.mjs` now strips the `trailmix-` prefix —
+   folder names, frontmatter `name`, descriptions, body cross-references, and `AGENTS.md` — for
+   the `claude` platform only; `dist/ghcp/` is untouched (GHCP never auto-namespaces, plugin or
+   not, so it still needs the manual prefix as its only collision guard). This meant
+   `install.sh`'s CC path could no longer flatten `dist/claude/skills/*` into `.claude/skills/`
+   (bare names like `discuss`/`review` would collide with CC built-ins again, same failure mode as
+   decision #4) — it now copies the whole `dist/claude/` tree as one nested
+   `.claude/skills/trailmix/` folder instead, which CC loads as the `trailmix@skills-dir` plugin
+   and auto-namespaces exactly like a marketplace install. Verified locally: `install.sh --claude`
+   into a scratch dir produces `.claude/skills/trailmix/.claude-plugin/plugin.json` +
+   `skills/discuss/`, `agents/explorer.md`, etc. Declined for now: automated `verify.sh` coverage
+   of the actual `claude plugin marketplace add`/`install` flow (currently only structural/schema
+   checks and the `install.sh` copy path are verified, not a live plugin install).
 
 ## Next steps (pick up here)
 - [x] **Decide commit-vs-gitignore for `dist/`** — committed to `main` (decision #1).

@@ -1,5 +1,5 @@
 ---
-name: trailmix-plan
+name: plan
 description: Waypoint 2 — turn an agreed spec into a high-level implementation plan (interfaces,
   services, flows, endpoints, file map, contracts, tasks) — not code blocks. Writes plan.md. Use
   after the spec is signed off.
@@ -8,7 +8,7 @@ description: Waypoint 2 — turn an agreed spec into a high-level implementation
 # plan — how to build it, at the contract level
 
 Turn `spec.md` into a plan that's a **guide/contract, not a code dump.** Define *what* to build
-and the contracts tasks depend on; leave *how* (the actual code + tests) to `trailmix-implement`.
+and the contracts tasks depend on; leave *how* (the actual code + tests) to `implement`.
 Scale detail to complexity — trivial work needs only a task or two.
 
 ## Do
@@ -23,8 +23,8 @@ Scale detail to complexity — trivial work needs only a task or two.
 No code blocks. No placeholders / TBDs. Commits are not plan steps — end tasks at a green gate.
 
 ## Output — `.trailmix/trail/<slug>/plan.md`
-Use `refs/plan-template.md`. For trivial work merged by `trailmix-trailhead`, use
+Use `refs/plan-template.md`. For trivial work merged by `trailhead`, use
 `refs/spec-plan-template.md` (one artifact, one checkpoint).
 
 ## Checkpoint
-Get the human's sign-off on the plan before `trailmix-implement`.
+Get the human's sign-off on the plan before `implement`.

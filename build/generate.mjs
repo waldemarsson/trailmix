@@ -7,7 +7,15 @@
 //   dist/<p>/agents/<name>.<ext>  frontmatter transformed (tier->model, neutral tools->platform)
 //   dist/<p>/AGENTS.md            copied verbatim (both CLIs read it at the target repo root)
 
-import { readFileSync, writeFileSync, readdirSync, rmSync, mkdirSync, cpSync } from "node:fs";
+import {
+  readFileSync,
+  writeFileSync,
+  readdirSync,
+  rmSync,
+  mkdirSync,
+  cpSync,
+  renameSync,
+} from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -83,6 +91,49 @@ function renderAgent(data, body, platform) {
 
 function json(obj) {
   return JSON.stringify(obj, null, 2) + "\n";
+}
+
+// Every trailmix-prefixed skill/agent name this repo defines, longest first so a name that's a
+// prefix of another (trailmix-implement/trailmix-implementer, trailmix-review/-reviewer,
+// trailmix-document/-documenter) replaces correctly instead of leaving a dangling suffix.
+const NAMESPACED_NAMES = [
+  "trailmix-discuss",
+  "trailmix-document",
+  "trailmix-documenter",
+  "trailmix-explorer",
+  "trailmix-gorp",
+  "trailmix-implement",
+  "trailmix-implementer",
+  "trailmix-lean-code",
+  "trailmix-plan",
+  "trailmix-review",
+  "trailmix-reviewer",
+  "trailmix-terse",
+  "trailmix-trailhead",
+].sort((a, b) => b.length - a.length);
+
+// Claude Code auto-prefixes every skill/agent in a plugin with the plugin's own name
+// (`trailmix:discuss`), so the manual `trailmix-` prefix baked into src/ for GHCP's benefit
+// (GHCP never auto-namespaces) would double up there. Strip it for CC's dist output only.
+function stripNamespace(text) {
+  let out = text;
+  for (const name of NAMESPACED_NAMES) {
+    out = out.split(name).join(name.slice("trailmix-".length));
+  }
+  return out;
+}
+
+function transformTree(dir, transform) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const p = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      transformTree(p, transform);
+    } else if (entry.name.endsWith(".md")) {
+      const content = readFileSync(p, "utf8");
+      const out = transform(content);
+      if (out !== content) writeFileSync(p, out);
+    }
+  }
 }
 
 // Root-level marketplace catalogs, so `/plugin marketplace add owner/repo` (which clones the
@@ -183,11 +234,19 @@ function generate() {
     const base = join(DIST, p.dir);
     mkdirSync(join(base, "agents"), { recursive: true });
 
-    // skills — verbatim copy
+    // skills — copy, then for CC strip the manual trailmix- prefix (plugin auto-namespaces)
     cpSync(join(SRC, "skills"), join(base, "skills"), { recursive: true });
+    if (p.dir === "claude") {
+      for (const entry of readdirSync(join(base, "skills"))) {
+        if (!entry.startsWith("trailmix-")) continue;
+        renameSync(join(base, "skills", entry), join(base, "skills", stripNamespace(entry)));
+      }
+      transformTree(join(base, "skills"), stripNamespace);
+    }
 
-    // AGENTS.md — verbatim copy to platform root (install places it at repo root)
-    cpSync(join(SRC, "instructions/AGENTS.md"), join(base, "AGENTS.md"));
+    // AGENTS.md — verbatim for GHCP; for CC, stripped to match its unprefixed skill/agent names
+    const agentsMd = readFileSync(join(SRC, "instructions/AGENTS.md"), "utf8");
+    writeFileSync(join(base, "AGENTS.md"), p.dir === "claude" ? stripNamespace(agentsMd) : agentsMd);
 
     // Claude Code reads CLAUDE.md, NOT AGENTS.md. Ship a CLAUDE.md that imports it
     // so the always-on core actually loads (import path is relative to this file).
@@ -195,10 +254,14 @@ function generate() {
       writeFileSync(join(base, "CLAUDE.md"), "@AGENTS.md\n");
     }
 
-    // agents — transform frontmatter
+    // agents — transform frontmatter (and for CC, strip the manual namespace prefix)
     for (const file of readdirSync(join(SRC, "agents"))) {
       if (!file.endsWith(".agent.md")) continue;
-      const { data, body } = parseFrontmatter(readFileSync(join(SRC, "agents", file), "utf8"));
+      let { data, body } = parseFrontmatter(readFileSync(join(SRC, "agents", file), "utf8"));
+      if (p.dir === "claude") {
+        data = { ...data, name: stripNamespace(data.name), description: stripNamespace(data.description) };
+        body = stripNamespace(body);
+      }
       const outName = data.name + p.agentExt;
       writeFileSync(join(base, "agents", outName), renderAgent(data, body, p.dir));
     }

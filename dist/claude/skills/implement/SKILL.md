@@ -1,7 +1,7 @@
 ---
-name: trailmix-implement
+name: implement
 description: Waypoint 3 — build the planned feature with tests, TDD-style, and verify every gate
-  before claiming done. Dispatches the trailmix-implementer agent. Use after the plan is signed off.
+  before claiming done. Dispatches the implementer agent. Use after the plan is signed off.
 ---
 
 # implement — build it and prove it works
@@ -10,7 +10,7 @@ Turn the plan's tasks into working, tested code. The plan is the contract; you o
 implementation and the tests.
 
 ## How
-- **Dispatch the `trailmix-implementer` agent** (reasoning-tier; or a general subagent if not installed)
+- **Dispatch the `implementer` agent** (reasoning-tier; or a general subagent if not installed)
   with the feature dir and `plan.md`. It works tasks in order, TDD where practical, honoring
   each task's contract and covering the listed behaviors with tests.
 - Keep the main context clean — the subagent does the work and returns a GORP summary; read
@@ -24,8 +24,8 @@ evidence this turn), the gate order (tests → build/lint → each acceptance cr
 for bug fixes), and the GORP return format.
 
 ## Checkpoint
-Tasks end at a green gate. Report results as counts + exact commands (per `trailmix-gorp`). Then
-`trailmix-review`.
+Tasks end at a green gate. Report results as counts + exact commands (per `gorp`). Then
+`review`.
 
 ## Fix loop
 If dispatched with selected review findings (e.g. `H1, M2`), apply exactly those. Verify each

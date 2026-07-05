@@ -33,8 +33,11 @@ npm run build            # generate dist/{claude,ghcp}
 `install.sh` (and `install.ps1` on Windows) auto-detects which CLIs you have (`claude`,
 `copilot`) and copies the right assets:
 
-- **Claude Code** → `.claude/skills/`, `.claude/agents/`, root `AGENTS.md` **+ root `CLAUDE.md`**
-- **Copilot CLI** → `.github/skills/`, `.github/agents/`, root `AGENTS.md`
+- **Claude Code** → `.claude/skills/trailmix/` (a nested `trailmix@skills-dir` plugin — skills
+  and agents auto-namespace as `trailmix:discuss`, `trailmix:explorer`, etc.), root `AGENTS.md`
+  **+ root `CLAUDE.md`**
+- **Copilot CLI** → `.github/skills/`, `.github/agents/` (flat — GHCP never auto-namespaces, so
+  these keep the manual `trailmix-` prefix), root `AGENTS.md`
 
 Claude Code reads `CLAUDE.md`, **not** `AGENTS.md`, so the installer also writes a one-line
 `CLAUDE.md` that imports `@AGENTS.md` — that's how the always-on core loads on Claude Code.
@@ -53,8 +56,8 @@ overwritten.
 ./install.sh --global
 ```
 
-- **Claude Code** → `~/.claude/skills/`, `~/.claude/agents/`, `~/.claude/AGENTS.md` +
-  `~/.claude/CLAUDE.md` (import)
+- **Claude Code** → `~/.claude/skills/trailmix/` (same nested `trailmix@skills-dir` plugin as the
+  project install), `~/.claude/AGENTS.md` + `~/.claude/CLAUDE.md` (import)
 - **Copilot CLI** → `~/.copilot/skills/`, `~/.copilot/agents/`, and a trailmix-managed block in
   `~/.copilot/copilot-instructions.md`
 
@@ -108,13 +111,18 @@ differences.
 | Asset | Source | Claude Code | Copilot CLI |
 |---|---|---|---|
 | Instructions | `src/instructions/AGENTS.md` | root `CLAUDE.md` → `@AGENTS.md` | root `AGENTS.md` |
-| Skills | `src/skills/**/SKILL.md` | `.claude/skills/` | `.github/skills/` |
-| Agents | `src/agents/*.agent.md` | `.claude/agents/*.md` | `.github/agents/*.agent.md` |
+| Skills | `src/skills/**/SKILL.md` (`trailmix-*`) | `.claude/skills/trailmix/skills/*` (bare name) | `.github/skills/trailmix-*` |
+| Agents | `src/agents/*.agent.md` (`trailmix-*`) | `.claude/skills/trailmix/agents/*.md` (bare name) | `.github/agents/trailmix-*.agent.md` |
 | Plugin manifest | `src/meta/plugin.meta.json` | `.claude-plugin/plugin.json` | root `plugin.json` |
 
 Agent frontmatter is transformed per platform: neutral `tier` → model name
 (`build/maps/models.json`), neutral tool aliases → platform tool names
-(`build/maps/tools.json`), and the tool-list format (comma string vs JSON array).
+(`build/maps/tools.json`), and the tool-list format (comma string vs JSON array). CC's build also
+strips the manual `trailmix-` prefix from every skill/agent name (folder, frontmatter `name`, and
+cross-references in prose): CC auto-namespaces plugin components by the plugin's own name, so
+`discuss` ships as `discuss` and is invoked as `trailmix:discuss`. GHCP never auto-namespaces —
+plugin or standalone, same flat install — so its output keeps the manual `trailmix-` prefix as
+the only collision guard.
 
 ## Repo layout
 

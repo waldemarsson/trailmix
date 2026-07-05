@@ -26,8 +26,9 @@ fi
 
 # --- project install (both CLIs) ---
 "$SCRIPT_DIR/install.sh" --target "$PROJ" --claude --ghcp >/dev/null
-check "project/claude skills"  "$PROJ/.claude/skills/trailmix-trailhead/SKILL.md"
-check "project/claude agents"  "$PROJ/.claude/agents/trailmix-explorer.md"
+check "project/claude plugin"  "$PROJ/.claude/skills/trailmix/.claude-plugin/plugin.json"
+check "project/claude skills"  "$PROJ/.claude/skills/trailmix/skills/trailhead/SKILL.md"
+check "project/claude agents"  "$PROJ/.claude/skills/trailmix/agents/explorer.md"
 check "project/claude AGENTS"  "$PROJ/AGENTS.md"
 check "project/claude CLAUDE"  "$PROJ/CLAUDE.md"
 grep -qF "@AGENTS.md" "$PROJ/CLAUDE.md" || fail "project CLAUDE.md missing @AGENTS.md import"
@@ -37,8 +38,9 @@ check "project/ghcp AGENTS"    "$PROJ/AGENTS.md"
 
 # --- global install (both CLIs) into a fake HOME ---
 HOME="$FAKE_HOME" "$SCRIPT_DIR/install.sh" --global --claude --ghcp >/dev/null
-check "global/claude skills"   "$FAKE_HOME/.claude/skills/trailmix-trailhead/SKILL.md"
-check "global/claude agents"   "$FAKE_HOME/.claude/agents/trailmix-explorer.md"
+check "global/claude plugin"   "$FAKE_HOME/.claude/skills/trailmix/.claude-plugin/plugin.json"
+check "global/claude skills"   "$FAKE_HOME/.claude/skills/trailmix/skills/trailhead/SKILL.md"
+check "global/claude agents"   "$FAKE_HOME/.claude/skills/trailmix/agents/explorer.md"
 check "global/claude CLAUDE"   "$FAKE_HOME/.claude/CLAUDE.md"
 check "global/ghcp skills"     "$FAKE_HOME/.copilot/skills/trailmix-trailhead/SKILL.md"
 check "global/ghcp agents"     "$FAKE_HOME/.copilot/agents/trailmix-explorer.agent.md"

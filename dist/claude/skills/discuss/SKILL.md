@@ -1,5 +1,5 @@
 ---
-name: trailmix-discuss
+name: discuss
 description: Waypoint 1 — refine a rough feature idea into an agreed spec through Socratic
   questions and research, then write spec.md. Use when starting a non-trivial feature, before
   planning or writing any code.
@@ -8,12 +8,12 @@ description: Waypoint 1 — refine a rough feature idea into an agreed spec thro
 # discuss — turn an idea into an agreed spec
 
 Refine the request into a spec you and the human agree on. Don't design the implementation yet
-(that's `trailmix-plan`), and don't write code.
+(that's `plan`), and don't write code.
 
 ## Do
 1. **Ask before assuming.** Surface the real goal, the users, the constraints, the edge cases.
    Ask one focused question at a time when it changes direction; batch related ones.
-2. **Research to ground it.** Dispatch the `trailmix-explorer` agent (cheap, read-only; or a general
+2. **Research to ground it.** Dispatch the `explorer` agent (cheap, read-only; or a general
    read-only subagent if not installed) to survey the current codebase and, when useful, the
    web. It returns a GORP summary — don't fill your own context with raw file dumps.
 3. **Present in digestible chunks.** Show the emerging spec in short sections the human can
@@ -24,6 +24,6 @@ Refine the request into a spec you and the human agree on. Don't design the impl
 Use `refs/spec-template.md`. Keep it tight; no placeholders, no TBDs.
 
 ## Checkpoint
-Get the human's sign-off on the spec before `trailmix-plan`. If `trailmix-trailhead` sized the
-work as trivial and merged discuss + plan, use `trailmix-plan`'s `spec-plan-template.md` instead
+Get the human's sign-off on the spec before `plan`. If `trailhead` sized the
+work as trivial and merged discuss + plan, use `plan`'s `spec-plan-template.md` instead
 — one artifact, one checkpoint.

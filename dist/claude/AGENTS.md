@@ -5,10 +5,10 @@ with a coding agent: **Discuss → Plan → Implement → Review → Document**.
 GitHub Copilot CLI and Claude Code.
 
 ## Bootstrap
-- For any request to build, add, change, fix, or ship something, consult the **trailmix-trailhead**
+- For any request to build, add, change, fix, or ship something, consult the **trailhead**
   skill first — it routes you to the right waypoint.
-- Pull a waypoint's skill (`trailmix-discuss`, `trailmix-plan`, `trailmix-implement`,
-  `trailmix-review`, `trailmix-document`) only when you reach that phase. Don't hold the whole
+- Pull a waypoint's skill (`discuss`, `plan`, `implement`,
+  `review`, `document`) only when you reach that phase. Don't hold the whole
   workflow in context at once.
 - Phase outputs (artifacts) go to `.trailmix/trail/<feature-slug>/` (`spec.md`, `plan.md`,
   `review.md`). Write to disk; the human reads them there — don't paste them back into chat.
@@ -17,7 +17,7 @@ GitHub Copilot CLI and Claude Code.
 
 ## Always-on style
 On by default. This is the compact core; fuller guidance and examples live in the
-`trailmix-terse`, `trailmix-lean-code`, and `trailmix-gorp` skills — pull them when you need
+`terse`, `lean-code`, and `gorp` skills — pull them when you need
 detail.
 
 **Terse prose.** Answer first. Cut filler, hedging, and narration of code that already speaks
@@ -33,7 +33,7 @@ destructive ops, or anything the user explicitly asked for. Lazy ≠ broken.
 
 **GORP handoffs.** When handing off to another agent (not the user), be dense and lossless:
 evidence is counts + the exact command, never pasted logs or diffs; findings are one line
-each; hard word caps; no preamble or sign-off. See the `trailmix-gorp` skill.
+each; hard word caps; no preamble or sign-off. See the `gorp` skill.
 
 ## Tool conventions
 Faster CLI tools may be installed. Treat a tool as present only if `--version` works;

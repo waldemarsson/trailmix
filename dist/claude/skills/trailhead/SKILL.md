@@ -1,5 +1,5 @@
 ---
-name: trailmix-trailhead
+name: trailhead
 description: Entry point for any request to build, add, change, fix, or ship something. Routes
   the work through trailmix's Discuss→Plan→Implement→Review→Document workflow, sizes it, and
   names the feature. Use at the start of a coding task, before diving into code.
@@ -26,11 +26,11 @@ Pull each waypoint skill when you reach it — don't preload them all.
 
 | Waypoint | Skill | Output | Checkpoint |
 |---|---|---|---|
-| Discuss | `trailmix-discuss` | `spec.md` | human signs off on the spec |
-| Plan | `trailmix-plan` | `plan.md` | human signs off on the plan |
-| Implement | `trailmix-implement` | code + tests | tests green |
-| Review | `trailmix-review` | `review.md` | human picks fixes |
-| Document | `trailmix-document` | repo docs | human approves (zero docs is valid) |
+| Discuss | `discuss` | `spec.md` | human signs off on the spec |
+| Plan | `plan` | `plan.md` | human signs off on the plan |
+| Implement | `implement` | code + tests | tests green |
+| Review | `review` | `review.md` | human picks fixes |
+| Document | `document` | repo docs | human approves (zero docs is valid) |
 
 ## Rules
 - Pause at each checkpoint. The human drives; don't skip ahead.
