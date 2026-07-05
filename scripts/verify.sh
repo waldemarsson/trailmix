@@ -18,6 +18,12 @@ if [ -n "$(git -C "$SCRIPT_DIR" status --porcelain -- $GENERATED_PATHS)" ]; then
   fail "generated output is stale vs. src/ — run 'npm run build' and commit the result"
 fi
 
+# --- trail.mjs frontmatter helper: unit tests + lint this repo's own trail artifacts ---
+node --test "$SCRIPT_DIR/build/trail.test.mjs" >/dev/null \
+  || fail "trail.mjs helper tests failed (run: node --test build/trail.test.mjs)"
+( cd "$SCRIPT_DIR" && node src/skills/trailmix-trailhead/refs/trail.mjs check ) >/dev/null \
+  || fail "trail frontmatter lint failed (run: node src/skills/trailmix-trailhead/refs/trail.mjs check)"
+
 # --- dist/claude: plugin structure ---
 C="$SCRIPT_DIR/dist/claude"
 check "claude plugin.json"      "$C/.claude-plugin/plugin.json"

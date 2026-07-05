@@ -10,8 +10,9 @@ description: Waypoint 5 — update the repo's own docs to reflect what shipped, 
 Update the repo's documentation so it matches what actually shipped — add what's new, fix what
 the change made stale. **Most changes touch little or no documentation.**
 
-**On entry:** the review checkpoint just passed — stamp `review.md` frontmatter `status: approved`
-and bump `updated` before documenting.
+**On entry:** the review checkpoint just passed — approve `review.md` with the helper (`trail.mjs
+approve .trailmix/trail/<slug>/review.md`, which also bumps `updated`; see
+`trailmix-trailhead/refs/trail-metadata.md`) before documenting.
 
 ## How
 - **Dispatch the `trailmix-documenter` agent** (standard-tier; or a general subagent if not installed)
@@ -30,5 +31,6 @@ any `TBD — author to fill in` and any claim you couldn't fully verify.
 
 ## Checkpoint
 **Zero docs is a correct outcome** — say so and stop if nothing had weight. Otherwise the human
-approves the doc changes. Record the outcome on the anchor (`spec.md` or `spec-plan.md`): set
-`document: done` if docs changed, `document: skipped` if zero-doc was the right call.
+approves the doc changes. Record the outcome on the anchor (`spec.md` or `spec-plan.md`) with the
+helper: `trail.mjs document-done .trailmix/trail/<slug>/spec.md` (or `trail.mjs document-skipped
+…` if zero-doc was the right call).
