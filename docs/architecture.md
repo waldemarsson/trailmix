@@ -88,7 +88,7 @@ trailmix/                              # framework SOURCE repo (produces install
 │   └── maps/                          # JSON (Node-native, zero-dep generator)
 │       ├── models.json                # tier → platform model name
 │       └── tools.json                 # neutral alias → platform tool name(s)
-├── dist/                              # GENERATED (commit or gitignore — team choice)
+├── dist/                              # GENERATED, committed (published plugin; marketplace source)
 │   ├── claude/{skills/,agents/*.md,.claude-plugin/plugin.json}
 │   └── ghcp/{skills/,agents/*.agent.md,plugin.json}
 ├── install.sh / install.ps1           # detects installed CLI(s), copies dist into target

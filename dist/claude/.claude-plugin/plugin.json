@@ -1,0 +1,16 @@
+{
+  "name": "trailmix",
+  "description": "A portable, token-efficient agentic coding workflow (Discuss -> Plan -> Implement -> Review -> Document) for GitHub Copilot CLI and Claude Code.",
+  "version": "0.1.0",
+  "author": {
+    "name": "trailmix"
+  },
+  "license": "MIT",
+  "keywords": [
+    "agentic",
+    "workflow",
+    "skills",
+    "copilot",
+    "claude-code"
+  ]
+}

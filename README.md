@@ -120,7 +120,7 @@ src/
 build/
   generate.mjs                zero-dep generator: src/ → dist/{claude,ghcp}/
   maps/{models,tools}.json    neutral → platform mapping tables
-dist/                         generated (gitignored)
+dist/                         generated AND committed (published plugin; marketplace source)
 docs/architecture.md          the full blueprint / design source of truth
 install.sh / install.ps1      copy assets into a target project
 ```
@@ -134,11 +134,14 @@ npm run verify    # build + install into throwaway temp dirs and assert layout (
 
 Editing rules:
 
-- Change behavior in `src/` (never in `dist/` or an installed `.claude`/`.github`).
+- Change behavior in `src/` (never hand-edit `dist/` or an installed `.claude`/`.github`) —
+  `dist/` is generated output, committed as the published plugin.
+- Run `npm run build` after any `src/` or `build/maps/` change and commit the resulting `dist/`
+  diff in the same commit; `npm run verify` fails if `dist/` is stale.
 - Neutral agent `description` fields must stay single-line (the generator's frontmatter
   parser expects it).
 - Pin exact model names in `build/maps/models.json` for your account.
-- `npm run verify` installs only into `mktemp` dirs — it never writes into this repo.
+- `npm run verify` installs only into `mktemp` dirs — it never writes anything else into this repo.
 - Requires Node ≥ 16.7 (uses `fs.cpSync`).
 
 ## Token efficiency

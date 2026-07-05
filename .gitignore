@@ -6,7 +6,7 @@
 ._*
 
 # Custom folder icons
-Icon
+Icon
 
 # Volume root files
 .DocumentRevisions-V100
@@ -17,8 +17,10 @@ Icon
 .VolumeIcon.icns
 .com.apple.timemachine.donotpresent
 ### trailmix
-# Generated build output and installed copies (canonical source is src/).
-dist/
+# dist/ is generated from src/ but committed — it's the publishable plugin
+# (marketplace installs read it directly from this repo). Run `npm run build`
+# after any src/ or build/maps/ change; `npm run verify` fails if it's stale.
+# Installed copies (from self-testing an install into this repo) stay ignored.
 .claude/skills/
 .claude/agents/
 .github/skills/

@@ -50,11 +50,14 @@ managed block + idempotency + non-destructiveness). Also `bash -n` + `pwsh` pars
 uses `mktemp` dirs only — the repo is never installed into and stays pure source.
 
 ## Decisions made (flag if you want to revisit)
-1. **Nothing generated is committed** — `dist/`, installed `.claude|.github/{skills,agents}`,
-   and any root `AGENTS.md`/`CLAUDE.md` are gitignored/absent; canonical source = `src/`.
-   Verification installs into throwaway temp dirs, not the repo. ⚠️ Revisit for marketplace
-   publishing — a published marketplace repo usually needs the built plugin committed. Options:
-   commit `dist/`, or publish from a separate branch/repo.
+1. **`dist/` is now committed to `main`** (decided/actioned this session). Canonical *source* is
+   still `src/` — never hand-edit `dist/` — but the generated plugin output is checked in because
+   this repo has a real GitHub remote (`waldemarsson/trailmix`) and marketplace installs need to
+   read `.claude-plugin/marketplace.json` / `.github/plugin/marketplace.json` straight from the
+   repo. Installed copies (`.claude|.github/{skills,agents}` from self-testing an install into
+   this repo) stay gitignored/absent. Guard against drift: `scripts/verify.sh` regenerates `dist/`
+   and fails (`git status --porcelain -- dist/`) if that differs from what's committed — always
+   run `npm run build` and commit the `dist/` diff together with any `src/`/`build/maps/` change.
 2. **This repo has no root instruction file yet.** Open policy question (see chat): hand-author
    a committed root `AGENTS.md` (+ `CLAUDE.md` → `@AGENTS.md`) as contributor guidance that
    also dogfoods trailmix, vs. keep source-only and activate via a local (gitignored) install.
@@ -75,10 +78,12 @@ uses `mktemp` dirs only — the repo is never installed into and stays pure sour
    nicer invocation UX, not required for correctness since the prefix already prevents collisions.
 
 ## Next steps (pick up here)
-- [ ] **Decide commit-vs-gitignore for `dist/`** (blocks real marketplace publishing).
-- [ ] **First real commit** of the trailmix work (nothing committed since `Init`).
+- [x] **Decide commit-vs-gitignore for `dist/`** — committed to `main` (decision #1).
+- [x] **First real commit** of the trailmix work (`dd28d5f`, includes the `trailmix-` rename).
 - [ ] `evals/` — skill-behavior tests (architecture §11 step 5, still unbuilt).
-- [ ] Publish plugins to CC + GHCP marketplaces (needs a hosted repo + decision #1).
+- [ ] Publish plugins to CC + GHCP marketplaces (repo + `dist/` are ready; do the actual
+  `/plugin marketplace add` / `copilot plugin marketplace add` round-trip against
+  `waldemarsson/trailmix` to confirm it resolves before calling this done).
 - [ ] Optional: pin exact model names; fill `author`/`homepage`/`repository` in
   `src/meta/plugin.meta.json`.
 - [ ] Optional: nest `install_claude()`'s copy as `.claude/skills/trailmix/` (see decision #4) for

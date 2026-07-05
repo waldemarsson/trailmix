@@ -1,0 +1,13 @@
+{
+  "name": "trailmix",
+  "owner": {
+    "name": "trailmix"
+  },
+  "plugins": [
+    {
+      "name": "trailmix",
+      "source": ".",
+      "description": "A portable, token-efficient agentic coding workflow (Discuss -> Plan -> Implement -> Review -> Document) for GitHub Copilot CLI and Claude Code."
+    }
+  ]
+}
