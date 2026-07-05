@@ -55,9 +55,16 @@ uses `mktemp` dirs only — the repo is never installed into and stays pure sour
    this repo has a real GitHub remote (`waldemarsson/trailmix`) and marketplace installs need to
    read `.claude-plugin/marketplace.json` / `.github/plugin/marketplace.json` straight from the
    repo. Installed copies (`.claude|.github/{skills,agents}` from self-testing an install into
-   this repo) stay gitignored/absent. Guard against drift: `scripts/verify.sh` regenerates `dist/`
-   and fails (`git status --porcelain -- dist/`) if that differs from what's committed — always
-   run `npm run build` and commit the `dist/` diff together with any `src/`/`build/maps/` change.
+   this repo) stay gitignored/absent. Guard against drift two ways: (a) locally,
+   `scripts/verify.sh` regenerates `dist/` and fails (`git status --porcelain -- dist/`) if that
+   differs from what's committed; (b) in CI, `.github/workflows/build-dist.yml` runs on every
+   push to `main` that touches `src/**`/`build/**`/`package.json`, rebuilds, and auto-commits +
+   pushes `dist/` if it drifted — so you never have to remember to build-then-commit-then-push
+   yourself. Checked against three real published CC plugins (caveman, ponytail, honey-for-devs):
+   all commit generated output directly to their repo the same way; none use GitHub Release
+   assets for plugin install (marketplace `source` only supports git/npm sources, never a
+   downloaded artifact) — the closest real analog any of them uses is publishing to npm
+   separately, which trailmix isn't doing.
 2. **This repo has no root instruction file yet.** Open policy question (see chat): hand-author
    a committed root `AGENTS.md` (+ `CLAUDE.md` → `@AGENTS.md`) as contributor guidance that
    also dogfoods trailmix, vs. keep source-only and activate via a local (gitignored) install.

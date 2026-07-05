@@ -136,8 +136,10 @@ Editing rules:
 
 - Change behavior in `src/` (never hand-edit `dist/` or an installed `.claude`/`.github`) —
   `dist/` is generated output, committed as the published plugin.
-- Run `npm run build` after any `src/` or `build/maps/` change and commit the resulting `dist/`
-  diff in the same commit; `npm run verify` fails if `dist/` is stale.
+- You don't need to run `npm run build` and commit `dist/` yourself before pushing to `main`:
+  `.github/workflows/build-dist.yml` regenerates it and pushes a follow-up commit if it drifted.
+  Running `npm run build` locally is still useful to preview output; `npm run verify` fails if
+  `dist/` is stale, as a local safety net.
 - Neutral agent `description` fields must stay single-line (the generator's frontmatter
   parser expects it).
 - Pin exact model names in `build/maps/models.json` for your account.

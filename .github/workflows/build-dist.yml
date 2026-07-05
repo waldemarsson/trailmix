@@ -1,0 +1,45 @@
+name: Regenerate dist/
+
+# Keeps the committed dist/ in sync with src/ automatically, so nobody has to
+# remember `npm run build` before pushing. Triggers only on changes that can
+# affect generator output; the bot's own commit only touches dist/, which
+# isn't in that path list, so it can't retrigger itself.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "build/**"
+      - "package.json"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - run: npm run build
+
+      - name: Commit dist/ if it changed
+        run: |
+          git add dist/
+          if git diff --cached --quiet; then
+            echo "dist/ already up to date"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: regenerate dist/ from src/" -m "Auto-generated for ${{ github.sha }}."
+          git push
