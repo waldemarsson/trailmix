@@ -8,6 +8,7 @@
   "license": "MIT",
   "agents": "agents/",
   "skills": "skills/",
+  "hooks": "hooks/hooks.json",
   "keywords": [
     "agentic",
     "workflow",

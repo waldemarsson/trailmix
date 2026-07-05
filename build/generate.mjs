@@ -1,11 +1,15 @@
 #!/usr/bin/env node
 // trailmix generator — neutral src/ -> dist/{claude,ghcp}/
 // Zero-dependency. Node >= 16.7 (uses fs.cpSync).
+// dist/{claude,ghcp}/ are real, self-contained plugins — the only supported install path is
+// each CLI's marketplace/plugin system (see the root .claude-plugin/ and .github/plugin/
+// marketplace.json stubs writeRootMarketplaces() emits). No standalone/flat installer.
 //
 // Emits, per platform:
 //   dist/<p>/skills/**            copied verbatim (frontmatter is the portable common subset)
 //   dist/<p>/agents/<name>.<ext>  frontmatter transformed (tier->model, neutral tools->platform)
-//   dist/<p>/AGENTS.md            copied verbatim (both CLIs read it at the target repo root)
+//   dist/<p>/hooks/hooks.json     SessionStart hook — the one thing actually loaded automatically
+//   dist/<p>/AGENTS.md            bundled reference only; not auto-loaded from inside a plugin
 
 import {
   readFileSync,
@@ -171,6 +175,55 @@ function writeRootMarketplaces() {
   );
 }
 
+// SessionStart hook: injects the full AGENTS.md always-on core as context at every session
+// boundary. This is the only always-on delivery mechanism now (no installer writes a root
+// CLAUDE.md/AGENTS.md) — matches how Superpowers' SessionStart hook injects its full
+// using-superpowers meta-skill rather than a short pointer.
+// CC: matcher covers every session-boundary event; plain stdout becomes additionalContext.
+// GHCP: sessionStart only covers new/resumed sessions (no clear/compact equivalent to hook);
+// output must be the {"additionalContext": ...} JSON shape, from both a bash and a powershell
+// script since Copilot CLI runs on Windows too.
+function writeHooks(base, platform, message) {
+  mkdirSync(join(base, "hooks"), { recursive: true });
+
+  if (platform === "claude") {
+    writeFileSync(
+      join(base, "hooks/hooks.json"),
+      json({
+        hooks: {
+          SessionStart: [
+            {
+              matcher: "startup|resume|clear|compact",
+              hooks: [{ type: "command", command: `printf '%s' ${shellQuote(message)}` }],
+            },
+          ],
+        },
+      })
+    );
+  } else {
+    const contextJson = JSON.stringify({ additionalContext: message });
+    writeFileSync(
+      join(base, "hooks/hooks.json"),
+      json({
+        version: 1,
+        hooks: {
+          sessionStart: [
+            {
+              type: "command",
+              bash: `printf '%s' ${shellQuote(contextJson)}`,
+              powershell: `Write-Output '${contextJson.replace(/'/g, "''")}'`,
+            },
+          ],
+        },
+      })
+    );
+  }
+}
+
+function shellQuote(s) {
+  return `'${String(s).replace(/'/g, `'\\''`)}'`;
+}
+
 // Emit plugin manifest + marketplace catalog per platform.
 // CC:   .claude-plugin/plugin.json           + .claude-plugin/marketplace.json
 // GHCP: plugin.json (root)                    + .github/plugin/marketplace.json
@@ -207,6 +260,7 @@ function writePackaging(base, platform) {
       license: meta.license,
       agents: "agents/",
       skills: "skills/",
+      hooks: "hooks/hooks.json",
     };
     if (meta.homepage) manifest.homepage = meta.homepage;
     if (meta.repository) manifest.repository = meta.repository;
@@ -244,15 +298,12 @@ function generate() {
       transformTree(join(base, "skills"), stripNamespace);
     }
 
-    // AGENTS.md — verbatim for GHCP; for CC, stripped to match its unprefixed skill/agent names
+    // AGENTS.md — bundled reference copy AND the source of the SessionStart hook's injected
+    // content below. Neither CLI auto-loads a file named AGENTS.md/CLAUDE.md from inside an
+    // installed plugin, so this file itself never reaches a session; the hook is what's active.
     const agentsMd = readFileSync(join(SRC, "instructions/AGENTS.md"), "utf8");
-    writeFileSync(join(base, "AGENTS.md"), p.dir === "claude" ? stripNamespace(agentsMd) : agentsMd);
-
-    // Claude Code reads CLAUDE.md, NOT AGENTS.md. Ship a CLAUDE.md that imports it
-    // so the always-on core actually loads (import path is relative to this file).
-    if (p.dir === "claude") {
-      writeFileSync(join(base, "CLAUDE.md"), "@AGENTS.md\n");
-    }
+    const platformAgentsMd = p.dir === "claude" ? stripNamespace(agentsMd) : agentsMd;
+    writeFileSync(join(base, "AGENTS.md"), platformAgentsMd);
 
     // agents — transform frontmatter (and for CC, strip the manual namespace prefix)
     for (const file of readdirSync(join(SRC, "agents"))) {
@@ -265,6 +316,11 @@ function generate() {
       const outName = data.name + p.agentExt;
       writeFileSync(join(base, "agents", outName), renderAgent(data, body, p.dir));
     }
+
+    // SessionStart hook — injects the full always-on core (AGENTS.md), since neither CLI
+    // auto-loads it from inside a plugin. Same content already computed above for the
+    // bundled AGENTS.md copy.
+    writeHooks(base, p.dir, platformAgentsMd);
 
     // plugin manifest + marketplace catalog
     writePackaging(base, p.dir);

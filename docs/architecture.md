@@ -7,9 +7,10 @@ Implement → Review → Document** — that runs on both **GitHub Copilot CLI (
 Status: **structure only, no implementation.** This document is the agreed blueprint.
 
 Locked decisions: single neutral source + generator · soft rigidity (auto-trigger skills,
-human checkpoint per phase, no gate engine) · single adaptive flow · always-on terse prose +
-lean code + GORP handoffs · skills-first now, plugin later · light theming (functional agent
-names, themed suite concepts).
+human checkpoint per phase, no gate engine) · single adaptive flow · always-on SessionStart
+hook (injects the full AGENTS.md instruction file — the only always-on delivery mechanism) +
+terse prose + lean code + GORP handoffs · marketplace-only install, no standalone installer ·
+light theming (functional agent names, themed suite concepts).
 
 ---
 
@@ -19,18 +20,18 @@ Both CLIs share enough primitives that the methodology can be authored once:
 
 | Primitive | CC | GHCP | Strategy |
 |---|---|---|---|
-| **Skills** (`SKILL.md`, open standard) | `.claude/skills/` | `.github/skills/` **and reads `.claude/skills/`** | author once, ship to both |
-| **AGENTS.md** | **not read** — reads `CLAUDE.md`; ship `CLAUDE.md`→`@AGENTS.md` | read natively at repo root | one shared instruction file, imported on CC |
-| Custom agents | `.claude/agents/*.md` | `.github/agents/*.agent.md` | generate per platform |
+| **Skills** (`SKILL.md`, open standard) | `skills/` (plugin root, auto-namespaced) | `skills/` (plugin root, flat) | author once, ship to both |
+| Custom agents | `agents/*.md` | `agents/*.agent.md` | generate per platform |
 | Per-agent model | `sonnet/opus/haiku` | full model names, per-subagent settings | map from neutral tier |
 | Tool names | `Read/Edit/Grep/Bash…` | `read/edit/search/shell…` (aliases) | map from neutral alias |
 | JIT skill loading | yes | yes | core of the token strategy |
-| Hooks | `settings.json` | `.github/hooks/*.json` | optional add-on, per platform |
-| Plugins + marketplace | `.claude-plugin/plugin.json` | `plugin.json`, claude-compatible markets | later |
+| **SessionStart hook** | `hooks/hooks.json`, matcher `startup\|resume\|clear\|compact` | `hooks/hooks.json`, `sessionStart` (no clear/compact equivalent) | the **only** always-on mechanism (see §12) |
+| **AGENTS.md** | bundled reference only — **not auto-loaded from inside a plugin** | same — GHCP's native root-`AGENTS.md` read doesn't apply to plugin-bundled files | authored once, informs the hook message; not itself delivered |
+| Plugins + marketplace | `.claude-plugin/plugin.json` + root `.claude-plugin/marketplace.json` (source → `./dist/claude`) | root `plugin.json` + root `.github/plugin/marketplace.json` (source → `./dist/ghcp`) | the only supported install path — no standalone installer |
 
-Portable by construction: **skills** (methodology) and **AGENTS.md** (instructions). Only
-mechanical differences (agent file shape, model/tool vocab, hook schema, manifest) get hidden
-behind the generator.
+Portable by construction: **skills** (methodology) and the **SessionStart hook** (the one
+always-on instruction, kept deliberately short). Only mechanical differences (agent file shape,
+model/tool vocab, hook JSON schema, manifest location) get hidden behind the generator.
 
 ---
 
@@ -80,7 +81,8 @@ trailmix/                              # framework SOURCE repo (produces install
 │   │   ├── reviewer.agent.md
 │   │   └── documenter.agent.md
 │   ├── instructions/
-│   │   └── AGENTS.md                  # always-loaded: bootstrap + style + tool + security
+│   │   └── AGENTS.md                  # source of the SessionStart hook's injected content;
+│   │                                   # bundled as-is too, but NOT auto-loaded from a plugin
 │   └── meta/
 │       └── plugin.meta.json           # name/version/author/component map (for later plugin pkg)
 ├── build/
@@ -89,15 +91,17 @@ trailmix/                              # framework SOURCE repo (produces install
 │       ├── models.json                # tier → platform model name
 │       └── tools.json                 # neutral alias → platform tool name(s)
 ├── dist/                              # GENERATED, committed (published plugin; marketplace source)
-│   ├── claude/{skills/,agents/*.md,.claude-plugin/plugin.json}
-│   └── ghcp/{skills/,agents/*.agent.md,plugin.json}
-├── install.sh / install.ps1           # detects installed CLI(s), copies dist into target
+│   ├── claude/{skills/,agents/*.md,hooks/hooks.json,.claude-plugin/plugin.json}
+│   └── ghcp/{skills/,agents/*.agent.md,hooks/hooks.json,plugin.json}
+├── .claude-plugin/marketplace.json    # GENERATED, root catalog: source → ./dist/claude
+├── .github/plugin/marketplace.json    # GENERATED, root catalog: source → ./dist/ghcp
 └── evals/                             # skill-behavior tests (later)
 ```
 
-Install into a target project (skills-first phase): copy `dist/claude/*` → project `.claude/`,
-`dist/ghcp/*` → project `.github/`, and `AGENTS.md` → project root. Later: `copilot plugin
-install` / `/plugin install` from a marketplace.
+Install is marketplace-only, no standalone installer: `/plugin marketplace add owner/repo` (CC)
+/ `copilot plugin marketplace add owner/repo` (GHCP) read the root marketplace stubs above, which
+point at `dist/claude/` and `dist/ghcp/` respectively. GHCP also supports installing
+`dist/ghcp/` directly via `copilot plugin install owner/repo:dist/ghcp`, no marketplace step.
 
 ---
 
@@ -127,8 +131,8 @@ re-review if needed. All handoffs use **GORP** (§6).
 ## 5. The trail crew — agents (generated per platform)
 
 Authored once as neutral `<name>.agent.md` (frontmatter + body); generator emits
-`.claude/agents/<n>.md` and `.github/agents/<n>.agent.md`, mapping `tier`→model and neutral
-tools→platform tools; the markdown body carries over verbatim.
+`dist/claude/agents/<n>.md` and `dist/ghcp/agents/<n>.agent.md`, mapping `tier`→model and
+neutral tools→platform tools; the markdown body carries over verbatim.
 
 | Agent | Role | Tier | Tools (neutral) | Isolation |
 |---|---|---|---|---|
@@ -180,23 +184,34 @@ non-negotiable — **lazy ≠ broken.**
 
 ---
 
-## 8. Instructions — `AGENTS.md` (the always-on core, keep < 200 lines)
+## 8. Instructions — `AGENTS.md` (bundled reference) + the SessionStart hook (the always-on core)
 
-The single source for the always-on core. **Copilot CLI** reads it at repo root natively.
-**Claude Code reads `CLAUDE.md`, not `AGENTS.md`** — so the generator emits a `CLAUDE.md` that
-`@AGENTS.md`-imports it, and the installer places both. Keep tiny; push detail into skills (JIT).
+`src/instructions/AGENTS.md` is the single source for trailmix's always-on conventions —
+bootstrap, style, tool conventions, security — kept tiny, detail pushed into skills (JIT). It is
+copied verbatim into `dist/{claude,ghcp}/AGENTS.md` for humans browsing the installed plugin,
+but **neither CLI auto-loads a file by this name (or `CLAUDE.md`) from inside an installed
+plugin.** There is no standalone installer that would place it at a project/global root either
+(marketplace-only install, decided after weighing it against install.sh — see `STATUS.md`). So
+the bundled `AGENTS.md` file itself never reaches a live session.
+
+The **only** always-on mechanism is the `SessionStart` hook: the *same* `AGENTS.md` content is
+injected as `additionalContext` (CC: plain stdout; GHCP: `{"additionalContext": ...}` JSON) at
+session start/resume (CC also covers `clear`/`compact`; GHCP has no equivalent for those two).
+This mirrors how Superpowers' `SessionStart` hook injects its full `using-superpowers` meta-skill
+rather than a short pointer (verified against the real repo) — trailmix initially shipped a
+one-line reminder here, then expanded to the full body once that comparison surfaced that the
+one-liner was the more conservative, unvalidated choice, not the pattern that's actually shown
+to work. Because `AGENTS.md` is kept intentionally small (§8 title), this stays cheap per
+session-boundary event; it is not resent on every turn.
 
 Contents:
-1. **Bootstrap** — trailmix is active; at session start consult **trailhead**; before any build
-   task pull the matching **waypoint** skill; artifacts live in `.trailmix/trail/<slug>/`.
+1. **Bootstrap** — trailmix is active; consult **trailhead** for any build/change/fix/ship
+   request; before any build task pull the matching **waypoint** skill; artifacts live in
+   `.trailmix/trail/<slug>/`.
 2. **Style defaults** — terse prose + lean code with the §7 carve-outs.
 3. **Tool conventions** — prefer `rg`/`fd`/`bat`/`jq`/`sg` with silent fallbacks (from refs).
 4. **Security constraints** — never read `.env`; no bulk env-var reads; no HTTP POST without
    explicit per-request permission (from refs). These override everything.
-
-Portable bootstrap = AGENTS.md (+ generated CLAUDE.md import for CC). A
-`SessionStart`/`sessionStart` hook that re-injects trailhead after compaction is an **optional
-per-platform enhancement**, not core.
 
 ---
 
@@ -232,11 +247,18 @@ neutral tools→platform tools.
 | task | `Task` | `agent` |
 | todo | `TodoWrite` | `todo` |
 
-**Instructions:** `AGENTS.md` is copied to the target root for GHCP (read natively). For CC the
-generator also emits `CLAUDE.md` (`@AGENTS.md` import) — **required**, since CC ignores
-`AGENTS.md`. `--global` routes the core to `~/.claude/CLAUDE.md` and
-`~/.copilot/copilot-instructions.md` (a managed block), and skills/agents to the CLIs' global
-dirs (`~/.claude/{skills,agents}`, `~/.copilot/{skills,agents}`).
+**Instructions:** `AGENTS.md` is copied into each `dist/<platform>/AGENTS.md` as a bundled copy
+(see §8) — not installed anywhere else, since there's no standalone installer. The same content
+also becomes the `SessionStart` hook's payload (below).
+
+**Hooks:** `AGENTS.md`'s content renders into each platform's `hooks/hooks.json` with a
+different JSON shape per §1's table (shell-quoted for CC's plain-stdout `command`; JSON-wrapped
+and shell-quoted again for GHCP's `bash`/`powershell` fields — always via `printf '%s'`, never
+`echo`, since POSIX `sh`/`dash` interpret backslash escapes in `echo`'s argument by default while
+`bash` doesn't, which silently corrupted the embedded JSON under `dash` until caught by testing).
+CC's manifest doesn't need a `hooks` field (auto-discovered from the default `hooks/` folder like
+`skills/`/`agents/`), GHCP's `plugin.json` must declare `"hooks": "hooks/hooks.json"` explicitly
+(no default-folder convention there).
 
 ---
 
@@ -261,9 +283,14 @@ dirs (`~/.claude/{skills,agents}`, `~/.copilot/{skills,agents}`).
 2. ✅ Waypoint skills `trailmix-discuss` → `trailmix-plan` → `trailmix-implement` →
    `trailmix-review` → `trailmix-document` with their `refs/`.
 3. ✅ Neutral agent specs + `generate.mjs` + maps → `dist/`.
-4. ✅ `install.sh`/`install.ps1` (detect CLI, copy into target).
+4. ✅ `install.sh`/`install.ps1` (detect CLI, copy into target) — **removed**; marketplace-only
+   install now (see decision in `STATUS.md`), no standalone installer maintained.
 5. `evals/` skill-behavior tests.
-6. ✅ Package `dist/*` as plugins (`plugin.json` + `marketplace.json` per platform); publish to CC + GHCP marketplaces (publishing pending).
+6. ✅ Package `dist/*` as plugins (`plugin.json` + `marketplace.json` per platform, plus root
+   marketplace stubs so `owner/repo` marketplace-add resolves); publish to CC + GHCP
+   marketplaces (publishing pending live verification).
+7. ✅ `SessionStart` hook — the always-on core, replacing the root `AGENTS.md`/`CLAUDE.md`
+   delivery `install.sh` used to provide.
 
 ---
 
