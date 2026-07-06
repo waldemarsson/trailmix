@@ -1,0 +1,21 @@
+name: CI
+
+# Runs the test suite: unit tests, trail frontmatter lint, dist/ freshness check, and
+# generated-plugin structure checks (see scripts/verify.sh). Doesn't write anything —
+# unlike build-dist.yml, which regenerates and commits dist/ on pushes to main.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - run: npm run verify
