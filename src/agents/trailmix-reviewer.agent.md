@@ -1,7 +1,6 @@
 ---
 name: trailmix-reviewer
 description: Senior read-only code reviewer — reviews the uncommitted implementation against spec and plan across architecture, code, security, tests, and style, and returns HIGH/MED/LOW findings with a clear verdict. Never edits anything.
-tier: strong
 tools: [read, search, shell]
 ---
 

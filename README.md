@@ -97,7 +97,7 @@ manifest location. The generator hides those differences.
 | Plugin manifest | `src/meta/plugin.meta.json` | `.claude-plugin/plugin.json` | root `plugin.json` |
 | Bundled copy (same content, not auto-loaded) | `src/instructions/AGENTS.md` | `AGENTS.md` | `AGENTS.md` |
 
-Agent frontmatter is transformed per platform: neutral `tier` → model name
+Agent frontmatter is transformed per platform: each agent's neutral name → model name
 (`build/maps/models.json`), neutral tool aliases → platform tool names
 (`build/maps/tools.json`), and the tool-list format (comma string vs JSON array). CC's build also
 strips the manual `trailmix-` prefix from every skill/agent name (folder, frontmatter `name`, and

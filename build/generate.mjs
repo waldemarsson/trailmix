@@ -7,7 +7,7 @@
 //
 // Emits, per platform:
 //   dist/<p>/skills/**            copied verbatim (frontmatter is the portable common subset)
-//   dist/<p>/agents/<name>.<ext>  frontmatter transformed (tier->model, neutral tools->platform)
+//   dist/<p>/agents/<name>.<ext>  frontmatter transformed (agent name->model, neutral tools->platform)
 //   dist/<p>/hooks/hooks.json     SessionStart hook — the one thing actually loaded automatically
 //   dist/<p>/AGENTS.md            bundled reference only; not auto-loaded from inside a plugin
 
@@ -84,10 +84,9 @@ function mapTools(neutral, platform) {
 // `shell` because it needs `git diff`/`git status`, so its read-only is prompt discipline (spelled
 // out in the agent body), not an enforced flag. Emitting a `readonly` field would look meaningful
 // while doing nothing, and risks tripping a platform's frontmatter parser.
-function renderAgent(data, body, platform) {
-  const tier = data.tier || "standard";
-  if (!models[tier]) throw new Error(`unknown tier: ${tier}`);
-  const model = models[tier][platform];
+function renderAgent(data, body, platform, neutralName) {
+  if (!models[neutralName]) throw new Error(`no model mapping for agent: ${neutralName}`);
+  const model = models[neutralName][platform];
   const mapped = mapTools(data.tools, platform);
   const lines = ["---", `name: ${data.name}`, `description: ${yamlQuote(data.description)}`];
   if (platform === "claude") {
@@ -329,12 +328,13 @@ function generate() {
     for (const file of readdirSync(join(SRC, "agents"))) {
       if (!file.endsWith(".agent.md")) continue;
       let { data, body } = parseFrontmatter(readFileSync(join(SRC, "agents", file), "utf8"));
+      const neutralName = data.name;
       if (p.dir === "claude") {
         data = { ...data, name: stripNamespace(data.name), description: stripNamespace(data.description) };
         body = stripNamespace(body);
       }
       const outName = data.name + p.agentExt;
-      writeFileSync(join(base, "agents", outName), renderAgent(data, body, p.dir));
+      writeFileSync(join(base, "agents", outName), renderAgent(data, body, p.dir, neutralName));
     }
 
     // SessionStart hook — injects the full always-on core (AGENTS.md), since neither CLI

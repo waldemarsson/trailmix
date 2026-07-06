@@ -1,7 +1,6 @@
 ---
 name: trailmix-documenter
 description: Updates the repo's own documentation to reflect what shipped, by weight not volume — adds new docs and fixes stale ones, matching the repo's existing conventions. Zero doc changes is a valid outcome.
-tier: standard
 tools: [read, edit, search, shell]
 ---
 

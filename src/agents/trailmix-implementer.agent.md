@@ -1,7 +1,6 @@
 ---
 name: trailmix-implementer
 description: Builds the planned feature in code and writes/runs tests TDD-style, honoring the plan's contracts, and verifies every gate before reporting. You own the implementation and the tests; the plan is a guide, not a code dump.
-tier: reasoning
 tools: [read, edit, search, shell]
 ---
 
