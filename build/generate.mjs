@@ -155,7 +155,7 @@ function writeRootMarketplaces() {
   writeFileSync(
     join(ROOT, ".claude-plugin/marketplace.json"),
     json({
-      name: meta.name,
+      name: meta.marketplaceName,
       owner,
       plugins: [{ name: meta.name, source: "./dist/claude", description: meta.description }],
     })
@@ -165,7 +165,7 @@ function writeRootMarketplaces() {
   writeFileSync(
     join(ROOT, ".github/plugin/marketplace.json"),
     json({
-      name: meta.name,
+      name: meta.marketplaceName,
       owner,
       metadata: { description: meta.description, version: meta.version },
       plugins: [
@@ -251,7 +251,7 @@ function writePackaging(base, platform) {
     writeFileSync(
       join(base, ".claude-plugin/marketplace.json"),
       json({
-        name: meta.name,
+        name: meta.marketplaceName,
         owner,
         plugins: [{ name: meta.name, source: ".", description: meta.description }],
       })
@@ -275,7 +275,7 @@ function writePackaging(base, platform) {
     writeFileSync(
       join(base, ".github/plugin/marketplace.json"),
       json({
-        name: meta.name,
+        name: meta.marketplaceName,
         owner,
         metadata: { description: meta.description, version: meta.version },
         plugins: [

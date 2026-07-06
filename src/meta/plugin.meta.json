@@ -1,5 +1,6 @@
 {
   "name": "trailmix",
+  "marketplaceName": "trailmix-marketplace",
   "version": "0.2.0",
   "description": "A portable, token-efficient agentic coding workflow (Discuss -> Plan -> Implement -> Review -> Document) for GitHub Copilot CLI and Claude Code.",
   "author": { "name": "Martin Waldemarsson" },

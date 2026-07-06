@@ -51,7 +51,7 @@ either CLI:
 
 ```
 /plugin marketplace add waldemarsson/trailmix
-/plugin install trailmix@trailmix
+/plugin install trailmix@trailmix-marketplace
 ```
 
 Skills and agents auto-namespace under the plugin name (`trailmix:discuss`,
@@ -61,7 +61,7 @@ Skills and agents auto-namespace under the plugin name (`trailmix:discuss`,
 
 ```
 copilot plugin marketplace add waldemarsson/trailmix
-copilot plugin install trailmix@trailmix
+copilot plugin install trailmix@trailmix-marketplace
 # or, skipping the marketplace, install the dist/ghcp subdirectory directly:
 copilot plugin install waldemarsson/trailmix:dist/ghcp
 ```

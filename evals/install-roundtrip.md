@@ -10,7 +10,7 @@ Cannot be automated from the repo (needs the live CLIs + marketplace). Run by ha
 
 ```
 /plugin marketplace add waldemarsson/trailmix
-/plugin install trailmix@trailmix
+/plugin install trailmix@trailmix-marketplace
 ```
 
 - [ ] `marketplace add` resolves (clones the repo; the root `.claude-plugin/marketplace.json`
@@ -31,7 +31,7 @@ Cannot be automated from the repo (needs the live CLIs + marketplace). Run by ha
 
 ```
 copilot plugin marketplace add waldemarsson/trailmix
-copilot plugin install trailmix@trailmix
+copilot plugin install trailmix@trailmix-marketplace
 ```
 
 - [ ] `marketplace add` resolves (root `.github/plugin/marketplace.json` → `./dist/ghcp`).
