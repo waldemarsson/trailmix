@@ -37,6 +37,10 @@ trailhead reads the **frontmatter only** (not the full artifacts), reports where
 and continues from the right waypoint. Ask for trail *status* the same way to survey every trail.
 No `trail.json`, no CLI — just the frontmatter on disk.
 
+`.trailmix/` is working state: **gitignore it by default** (resume still works on your machine —
+the files are just untracked). Commit it instead if you want trails resumable across machines or
+by teammates.
+
 ## Install
 
 trailmix is installed only as a plugin, through each CLI's own marketplace/plugin system —
@@ -102,8 +106,7 @@ Agent frontmatter is transformed per platform: each agent's neutral name → mod
 (`build/maps/tools.json`), and the tool-list format (comma string vs JSON array). CC's build also
 strips the manual `trailmix-` prefix from every skill/agent name (folder, frontmatter `name`, and
 cross-references in prose): CC auto-namespaces plugin components by the plugin's own name, so
-`discuss` ships as `discuss` and is invoked as `trailmix:discuss`. GHCP never auto-namespaces, so
-its output keeps the manual `trailmix-` prefix as the only collision guard.
+`discuss` ships as `discuss` and is invoked as `trailmix:discuss`.
 
 ## Repo layout
 
@@ -159,8 +162,8 @@ Baked in at every layer:
 - **Disk over chat** — artifacts go to `.trailmix/…`; the human reads them, the context stays
   clean.
 - **Context isolation** — phase work runs in subagents; the parent context stays lean.
-- **Cheap-model routing** — read/explore/summarize/websearch on cheap models; implement on a
-  reasoning model; review on a strong one.
+- **Cheap-model routing** — the explorer (read/summarize/websearch) runs on a cheap model;
+  every other agent's model is pinned per agent in `build/maps/models.json` — adjust to taste.
 - **GORP handoffs** — agent-to-agent messages are counts + exact commands + one-line findings
   with hard word caps, never pasted logs.
 

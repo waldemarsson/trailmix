@@ -15,14 +15,15 @@ tests, and style. Read-only — never edit.
   not installed). Commits don't exist yet — it inspects the unstaged diff, staged diff, and
   untracked files (`git status`, `git diff`, `git diff --cached`, and untracked file contents).
   It comments only on code it actually read.
-- Load `refs/review-checklist.md` for the dimensions to assess and severity calibration.
+- Pass the reviewer the path to `refs/review-checklist.md` (under this skill's base directory) —
+  it holds the dimensions, severity calibration, and report shape. Don't load it into your own
+  context; the reviewer reads it.
 
 ## Output — `.trailmix/trail/<slug>/review.md`
 Scaffold the file with `trail.mjs new <slug> review` (correct `waypoint: review`, `status: draft`
-frontmatter; see `trailhead/refs/trail-metadata.md`), then write the body per
-`refs/review-checklist.md`: GORP findings, each with a stable id: `id · file:line · what → why →
-fix`. Group HIGH / MEDIUM / LOW. Include a spec-compliance checklist and a verdict: **Ready to
-proceed? Yes | No | With fixes.** No preamble, no sign-off — the report *is* the artifact.
+frontmatter; see `trailhead/refs/trail-metadata.md`), then write the reviewer's returned
+report as the body verbatim — the report *is* the artifact; transcribe it, don't rewrite it.
+(This artifact necessarily transits chat once — the reviewer is read-only and can't write it.)
 
 ## Checkpoint
 The human picks which findings to fix (e.g. `H1, M2`). Selected fixes go back through

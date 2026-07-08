@@ -70,11 +70,18 @@ no gates, no enforced ordering, no state machine. Even `status`, which derives t
 only *reports* — it blocks nothing. You decide when to act.
 
 Command surface: `new` · `approve`/`supersede`/`document-done`/`document-skipped` · `read` ·
-`check` · `status`. Invoke via the plugin-root path (both platforms; falls back across the two
-var names):
-```sh
-node "${CLAUDE_PLUGIN_ROOT:-$PLUGIN_ROOT}/skills/trailhead/refs/trail.mjs" <cmd> ...
-```
+`check` · `status`.
+
+**Resolve the helper's path once, then reuse it.** The examples below write `"$TRAIL"` for the
+resolved script path — substitute the real path (shell state doesn't persist between tool
+calls, so set it inline or paste the literal). Resolution order:
+1. **The loaded skill's base directory.** Every skill loads with a `Base directory for this
+   skill: <path>` line. From trailhead's base dir the helper is `<base>/refs/trail.mjs`;
+   from a sibling waypoint skill's base dir it's `<base>/../trailhead/refs/trail.mjs`.
+2. `$CLAUDE_PLUGIN_ROOT` / `$PLUGIN_ROOT` + `/skills/trailhead/refs/trail.mjs` — only
+   where the host actually sets them (hook commands do; the interactive tool shell usually does
+   **not** — never assume, check first).
+3. Neither resolvable, or no `node`: use the zero-dep fallback below.
 
 **Scaffold** a new artifact — writes a correct frontmatter block (slug, today's dates, initial
 `status: draft` / `document: pending`, the right `waypoint`) so none of that is hand-typed, then
@@ -82,14 +89,12 @@ you fill the body from the phase's template ref. `<template>` is `spec | spec-pl
 review`; an unknown one or a non-kebab slug fails loudly, and it refuses to clobber an existing
 artifact:
 ```sh
-node "${CLAUDE_PLUGIN_ROOT:-$PLUGIN_ROOT}/skills/trailhead/refs/trail.mjs" \
-  new <slug> spec "Human-readable title"
+node "$TRAIL" new <slug> spec "Human-readable title"
 ```
 
 **Read** frontmatter only (never bodies) — for resume (one trail) or status (all trails):
 ```sh
-node "${CLAUDE_PLUGIN_ROOT:-$PLUGIN_ROOT}/skills/trailhead/refs/trail.mjs" \
-  read .trailmix/trail/<slug>/*.md          # one trail; use trail/*/*.md for all
+node "$TRAIL" read .trailmix/trail/<slug>/*.md    # one trail; use trail/*/*.md for all
 ```
 It prints `path: key: value` per line, skips paths that don't exist (an unexpanded `*` glob is
 harmless), and prints `no trails yet` when nothing readable was passed.
@@ -106,8 +111,7 @@ can't be misspelled (a mistyped op exits non-zero instead of writing a bad value
 | `document-skipped <anchor>` | `document: skipped` | zero-doc was the right call |
 
 ```sh
-node "${CLAUDE_PLUGIN_ROOT:-$PLUGIN_ROOT}/skills/trailhead/refs/trail.mjs" \
-  approve .trailmix/trail/<slug>/spec.md
+node "$TRAIL" approve .trailmix/trail/<slug>/spec.md
 ```
 These are the *only* status writes — the vocabulary (`approved`/`superseded`/`done`/`skipped`)
 lives once, inside the helper, never as a literal at the call site. The helper knows the
@@ -119,8 +123,7 @@ rather than corrupt it, and leaves the body byte-for-byte unchanged.
 frontmatter, the derivation in "Deriving current position" done for you. No args = all trails;
 pass a dir for one:
 ```sh
-node "${CLAUDE_PLUGIN_ROOT:-$PLUGIN_ROOT}/skills/trailhead/refs/trail.mjs" \
-  status .trailmix/trail/<slug>          # omit the path for all trails
+node "$TRAIL" status .trailmix/trail/<slug>       # omit the path for all trails
 ```
 
 **Lint** frontmatter — `check` validates every artifact against the schema (status/waypoint/
@@ -128,12 +131,14 @@ document in their closed sets, dates well-formed, anchor fields present) and exi
 problem. It's the retroactive guard against a bad value that slipped in via the hand-edit
 fallback. No args = all trails. Wired into `scripts/verify.sh` for this repo's own trail:
 ```sh
-node "${CLAUDE_PLUGIN_ROOT:-$PLUGIN_ROOT}/skills/trailhead/refs/trail.mjs" check
+node "$TRAIL" check
 ```
 
-**Zero-dep fallback.** If neither plugin-root var is set or `node` isn't available (e.g. some
+**Zero-dep fallback.** If the helper path can't be resolved or `node` isn't available (e.g. some
 GHCP shells), fall back: for **read**, one awk pass; for a **transition**, hand-edit the field
 per the status schema above (the one path where the value is typed by hand — get it right).
+The helper itself is portable Node, but these examples are POSIX — on Windows (GHCP PowerShell)
+invoke `node` with the backslash path, and read frontmatter with your file tools instead of awk.
 Guard the awk glob first (with no trails the `*` stays literal and awk errors):
 ```sh
 ls -d .trailmix/trail/*/ >/dev/null 2>&1 || { echo "no trails yet"; exit 0; }

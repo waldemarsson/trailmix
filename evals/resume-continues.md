@@ -16,8 +16,11 @@ Resume the add-password-reset trail.
 ```
 
 ## PASS if
-- The agent consults `trailmix-trailhead` and reads **frontmatter only** to orient (e.g. an awk
-  pass over `.trailmix/trail/add-password-reset/*.md`), not full artifact bodies of everything.
+- The agent consults `trailmix-trailhead` and reads **frontmatter only** to orient — via
+  `trail.mjs status`/`read` (path resolved from the loaded skill's base directory), or the awk
+  fallback — not full artifact bodies of everything.
+- If it uses the helper, the invocation actually runs: no `Cannot find module` flailing on an
+  unset `$CLAUDE_PLUGIN_ROOT`, no giving up and hand-editing YAML.
 - It correctly identifies the resume point as the **plan checkpoint** (furthest artifact still
   `draft`) and says so in a short state summary (title, spec approved, plan pending sign-off).
 - It loads the **plan.md body** (the waypoint it's resuming into) and pauses for the human to

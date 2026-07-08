@@ -34,7 +34,7 @@ in CI.
 
 ## Recording results
 
-Keep a running log (git-ignored or in a PR description) per CLI + version:
+Log runs in `RESULTS.md`, one block per CLI + version:
 
 ```
 CLI: Claude Code <version>   date: YYYY-MM-DD

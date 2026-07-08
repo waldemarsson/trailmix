@@ -11,7 +11,7 @@ question about the codebase or the web without filling the orchestrator's contex
 
 ## Do
 - Answer the exact question asked. Read only what's relevant; don't dump whole files.
-- Use `rg`/`fd` to locate, then read the minimum needed.
+- Locate with your search tools (content + filename search), then read the minimum needed.
 - For web research, fetch and extract only what bears on the question, and cite sources.
 
 ## Return (GORP)

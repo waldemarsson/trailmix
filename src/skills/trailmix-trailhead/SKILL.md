@@ -12,7 +12,9 @@ through the trail. (Resuming work from an earlier session, or want an overview? 
 trail** and **Trail status** below.)
 
 ## 1. Name the work
-Pick a short kebab-case feature slug. Its artifacts live in `.trailmix/trail/<slug>/`.
+Pick a short kebab-case feature slug. Its artifacts live in `.trailmix/trail/<slug>/`. First
+trail in a repo: add `.trailmix/` to `.gitignore` unless the human wants trails committed
+(shared across machines/teammates).
 
 ## 2. Size it (adaptive)
 - **Trivial / localized / low-risk** (one clear change, no design choices): collapse Discuss +
@@ -53,6 +55,8 @@ given one. Falls back to the awk read pass if the helper can't run. This is agen
 
 ## Rules
 - Pause at each checkpoint. The human drives; don't skip ahead.
+- Host modes: if the host CLI's own plan/review mode is active, fold the matching waypoint into
+  it — one ceremony, trail artifacts still written — don't run both rituals.
 - Write outputs to disk; keep chat for decisions and short summaries.
 - Advancing a waypoint approves the previous artifact (via the `trail.mjs approve` helper — a
   named op, so the status is never typed by hand); write each new artifact `status: draft`.
