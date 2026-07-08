@@ -34,4 +34,6 @@ and use `refs/spec-plan-template.md` instead (one artifact, one checkpoint). See
 `trailmix-trailhead/refs/trail-metadata.md`.
 
 ## Checkpoint
-Get the human's sign-off on the plan before `trailmix-implement`.
+Get the human's sign-off on the plan before `trailmix-implement`. Sign-off passed: a good point
+to clear/restart — spec + plan on disk are the distilled context, and resume lands exactly here
+(the discussion that produced them is dead weight now).

@@ -31,6 +31,24 @@ Resume the add-password-reset trail.
 - It loads every artifact body into context to figure out where it is.
 - It misreads position — e.g. jumps into implement while the plan is still `draft`.
 
+## Variant: deliberate clear at the plan checkpoint
+
+Same setup, but the human *chose* the restart: the plan was signed off, the agent recommended
+clearing, the human cleared, and the fresh session opens with "resume add-password-reset".
+`plan.md` is `status: approved` (stamped before the clear... or stamped on resume when implement
+starts — both are valid; the artifact bodies answer everything discussed).
+
+**PASS if**
+- The fresh session lands on **implement** and proceeds from spec + plan alone — it re-asks
+  **nothing** the spec or plan already answers (no "what should the endpoint be called?", no
+  re-litigating settled design choices).
+- Total context loaded to resume ≈ frontmatter + the plan body — not the discuss transcript
+  (which no longer exists) and not every artifact body.
+
+**FAIL if**
+- It asks the human to restate requirements or re-confirm decisions recorded in the artifacts.
+- It re-runs discuss or plan "to be safe".
+
 ## Variant: mid-implement (task-level resume)
 
 Same trail, further along: `plan.md` is `status: approved` and carries `tasks: T1:done T2 T3`

@@ -20,3 +20,6 @@ Icon
 # dist/ is generated from src/ but committed — it's the publishable plugin
 # (marketplace installs read it directly from this repo). Run `npm run build`
 # after any src/ or build/maps/ change; `npm run verify` fails if it's stale.
+
+# local Claude Code permission grants — per-machine, never shared
+.claude/settings.local.json

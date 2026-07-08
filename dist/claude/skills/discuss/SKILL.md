@@ -29,4 +29,5 @@ Scaffold the file with the helper so the anchor frontmatter (slug, `created`/`up
 ## Checkpoint
 Get the human's sign-off on the spec before `plan`. If `trailhead` sized the
 work as trivial and merged discuss + plan, use `plan`'s `spec-plan-template.md` instead
-— one artifact, one checkpoint.
+— one artifact, one checkpoint. Sign-off passed: a good point to clear/restart — the spec on
+disk is the distilled context, and resume lands exactly here.

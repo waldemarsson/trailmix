@@ -37,6 +37,12 @@ trailhead reads the **frontmatter only** (not the full artifacts), reports where
 and continues from the right waypoint. Ask for trail *status* the same way to survey every trail.
 No `trail.json`, no CLI — just the frontmatter on disk.
 
+This isn't just crash recovery — it's the recommended flow. State survives the session **by
+design**: after each checkpoint the approved artifact on disk is the distilled version of
+everything discussed, so clearing (or starting a fresh session) at a waypoint boundary sheds the
+dead-weight context and costs nothing. Mid-implement the plan's `tasks:` marks do the same at
+task granularity.
+
 `.trailmix/` is working state: **gitignore it by default** (resume still works on your machine —
 the files are just untracked). Commit it instead if you want trails resumable across machines or
 by teammates.

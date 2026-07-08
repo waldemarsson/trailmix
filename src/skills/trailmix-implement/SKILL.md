@@ -35,7 +35,8 @@ for bug fixes), and the GORP return format.
 
 ## Checkpoint
 Tasks end at a green gate. Report results as counts + exact commands (per `trailmix-gorp`). Then
-`trailmix-review`.
+`trailmix-review`. All gates green: a good point to clear/restart — the stamped `tasks:` field
+and the diff carry the state, and resume lands at review.
 
 ## Fix loop
 If dispatched with selected review findings (e.g. `H1, M2`), apply exactly those. Verify each

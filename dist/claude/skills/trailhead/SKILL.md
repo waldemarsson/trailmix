@@ -55,6 +55,9 @@ given one. Falls back to the awk read pass if the helper can't run. This is agen
 
 ## Rules
 - Pause at each checkpoint. The human drives; don't skip ahead.
+- A passed checkpoint is a good point to **clear or restart the session**: the approved artifact
+  on disk *is* the distilled context — everything else is dead weight — and resume lands exactly
+  there. Recommend it after heavy waypoints; never require it.
 - Host modes: if the host CLI's own plan/review mode is active, fold the matching waypoint into
   it — one ceremony, trail artifacts still written — don't run both rituals.
 - Write outputs to disk; keep chat for decisions and short summaries.

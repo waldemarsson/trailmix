@@ -27,4 +27,6 @@ report as the body verbatim — the report *is* the artifact; transcribe it, don
 
 ## Checkpoint
 The human picks which findings to fix (e.g. `H1, M2`). Selected fixes go back through
-`trailmix-implement` (apply exactly those, verify each). Then `trailmix-document`.
+`trailmix-implement` (apply exactly those, verify each). Then `trailmix-document`. Once the
+fix selection is settled, this too is a good point to clear/restart — `review.md` holds the
+findings, and resume lands exactly here.
