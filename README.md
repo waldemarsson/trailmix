@@ -124,6 +124,7 @@ dist/                         generated AND committed (published plugin; marketp
 .claude-plugin/marketplace.json  generated: root catalog, source → ./dist/claude
 .github/plugin/marketplace.json  generated: root catalog, source → ./dist/ghcp
 docs/architecture.md          the full blueprint / design source of truth
+docs/roadmap.md               agent-behavior roadmap (R1–R7), ordered by leverage
 evals/                        manual scenario checklists — does the workflow behave? (run by hand)
 ```
 
