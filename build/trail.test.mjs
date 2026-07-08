@@ -21,6 +21,9 @@ import {
   parseTasks,
   setTasks,
   taskDone,
+  parseFindings,
+  setFindings,
+  findingState,
 } from "../src/skills/trailmix-trailhead/refs/trail.mjs";
 
 const today = new Date().toISOString().slice(0, 10);
@@ -175,6 +178,54 @@ test("check flags a malformed or empty tasks field", () => {
   });
 });
 
+// ---- findings (review fix-loop) ----------------------------------------------------------------
+const REVIEW = `---
+slug: demo
+waypoint: review
+status: draft
+updated: 2020-01-01
+---
+
+# Review body
+`;
+
+test("findings registers ids once; finding flips one state", () => {
+  withFile(REVIEW, (f) => {
+    assert.equal(run(["findings", f, "H1", "M1", "L1"]), 0);
+    assert.match(readFileSync(f, "utf8"), /^findings: H1 M1 L1$/m);
+    assert.equal(run(["finding", f, "H1", "fixed"]), 0);
+    findingState(f, "L1", "wont-fix");
+    assert.match(readFileSync(f, "utf8"), /^findings: H1:fixed M1 L1:wont-fix$/m);
+    findingState(f, "H1", "open"); // reopen after a bad fix
+    assert.match(readFileSync(f, "utf8"), /^findings: H1 M1 L1:wont-fix$/m);
+    assert.throws(() => setFindings(f, ["H1"]), /already registered/);
+  });
+});
+
+test("finding rejects unknown ids and states outside the vocabulary", () => {
+  withFile(REVIEW, (f) => {
+    setFindings(f, ["H1"]);
+    assert.throws(() => findingState(f, "H2", "fixed"), /unknown finding id/);
+    assert.throws(() => findingState(f, "H1", "fixt"), /bad finding state/);
+    assert.throws(() => setFindings(f, ["X1"]), /bad finding id/);
+  });
+});
+
+test("parseFindings: bare id is open; bad token/state fails", () => {
+  assert.deepEqual(parseFindings("H1:fixed M2"), [
+    { id: "H1", state: "fixed" },
+    { id: "M2", state: "open" },
+  ]);
+  assert.throws(() => parseFindings("Q1"), /bad finding token/);
+  assert.throws(() => parseFindings("H1:done"), /bad finding state/);
+});
+
+test("check flags a malformed findings field", () => {
+  withFile(REVIEW.replace("---\n\n", "findings: H1:nope\n---\n\n"), (f) => {
+    assert.ok(checkFile(f).some((p) => /bad findings/.test(p)));
+  });
+});
+
 // ---- new -------------------------------------------------------------------------------------
 test("new scaffolds an anchor with today's dates and valid frontmatter", () => {
   inTemp(() => {
@@ -284,6 +335,24 @@ test("derive: tasks on a draft plan don't preempt the plan checkpoint", () => {
     "plan.md": nonAnchor("plan", "draft") + "\ntasks: T1:done T2",
   });
   assert.equal(deriveTrail(d).next, "plan (awaiting sign-off)");
+});
+
+test("derive: draft review with open findings shows the open count", () => {
+  const d = trail({
+    "spec.md": anchor("approved"),
+    "plan.md": nonAnchor("plan", "approved"),
+    "review.md": nonAnchor("review", "draft") + "\nfindings: H1:fixed M1 M2 L1:wont-fix",
+  });
+  assert.equal(deriveTrail(d).next, "review (awaiting sign-off, 2 open)");
+});
+
+test("derive: draft review with no open findings stays plain", () => {
+  const d = trail({
+    "spec.md": anchor("approved"),
+    "plan.md": nonAnchor("plan", "approved"),
+    "review.md": nonAnchor("review", "draft") + "\nfindings: H1:fixed L1:wont-fix",
+  });
+  assert.equal(deriveTrail(d).next, "review (awaiting sign-off)");
 });
 
 test("derive: review approved + document pending -> next document", () => {

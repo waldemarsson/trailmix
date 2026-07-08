@@ -31,12 +31,14 @@ waypoint: plan              # plan | review
 status: draft               # draft | approved | superseded
 updated: YYYY-MM-DD
 tasks: T1:done T2 T3        # plan only, optional — implement progress, one token per plan task
+findings: H1:fixed M1 L1:wont-fix  # review only, optional — finding lifecycle; bare id = open
 ---
 ```
 
-Only `status` and `tasks` are non-derivable — they record whether the human checkpoint passed
-and which task gates went green. Waypoint name, which artifacts exist, and review counts/verdict
-are derivable or already in the body; never duplicate them into frontmatter.
+Only `status`, `tasks`, and `findings` are non-derivable — they record whether the human
+checkpoint passed, which task gates went green, and where each review finding stands. Waypoint
+name, which artifacts exist, and review counts/verdict are derivable or already in the body;
+never duplicate them into frontmatter.
 
 ## Status lifecycle
 
@@ -57,6 +59,9 @@ Trivial track: `spec-plan` → `implement` → `review` → `document`.
 - **Mid-implement:** when the plan carries `tasks`, resume lands on the first open task —
   `status` reports e.g. `implement (1/3 done, next T2)`; don't redo or re-read the diff of a
   `:done` task. All gates green ⇒ next is review.
+- **Mid-fix-loop:** while `review.md` is `draft` and carries `findings`, `status` appends the
+  open count — `review (awaiting sign-off, 2 open)`. Resume lands in the fix loop, not a fresh
+  review.
 
 `trail.mjs status` does exactly this derivation for you (see below) — prefer it over deriving by
 hand; the rules here are the spec it implements.
@@ -74,7 +79,7 @@ no gates, no enforced ordering, no state machine. Even `status`, which derives t
 only *reports* — it blocks nothing. You decide when to act.
 
 Command surface: `new` · `approve`/`supersede`/`document-done`/`document-skipped` ·
-`tasks`/`task-done` · `read` · `check` · `status`.
+`tasks`/`task-done` · `findings`/`finding` · `read` · `check` · `status`.
 
 **Resolve the helper's path once, then reuse it.** The examples below write `"$TRAIL"` for the
 resolved script path — substitute the real path (shell state doesn't persist between tool
@@ -126,6 +131,15 @@ node "$TRAIL" task-done .trailmix/trail/<slug>/plan.md T1
 ```
 A bad or unknown id fails loudly instead of writing a bad value. `status` derives the resume
 point from the marks (see "Deriving current position").
+
+**Track the review fix loop** — the same pattern for `review.md`'s `findings` field. Register
+the finding ids once when the review is transcribed, then name an id + state as the loop runs
+(`open | fixed | wont-fix | disputed` — the vocabulary lives in the helper; `open` reopens a
+finding whose fix didn't hold):
+```sh
+node "$TRAIL" findings .trailmix/trail/<slug>/review.md H1 M1 M2 L1
+node "$TRAIL" finding  .trailmix/trail/<slug>/review.md H1 fixed
+```
 
 These are the *only* status writes — the vocabulary (`approved`/`superseded`/`done`/`skipped`)
 lives once, inside the helper, never as a literal at the call site. The helper knows the

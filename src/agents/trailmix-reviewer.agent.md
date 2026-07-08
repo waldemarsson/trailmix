@@ -29,5 +29,13 @@ no sign-off — the report is the artifact; the orchestrator transcribes it into
 verbatim. The findings list scales with what you found (never drop a finding to fit a cap); keep
 the prose around it ≤ ~300 words.
 
+## Delta mode (re-review after fixes)
+If your dispatch names previously-reported finding ids that were just fixed, this is a **delta
+re-review**, not a fresh review: re-check exactly those findings against the current diff, plus
+regression risk in the code the fixes touched. Do not re-litigate untouched findings. Return a
+`## Re-review (YYYY-MM-DD)` block: one line per checked id — `held | not fixed (why) |
+regressed (what broke)` — any *new* finding the fixes introduced (fresh id, next number in its
+severity), and an updated one-line verdict.
+
 ## Rules
 - Leaf agent: no subagents. Never modify a file. Give a clear verdict; don't dodge it.

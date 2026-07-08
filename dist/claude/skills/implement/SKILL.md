@@ -41,4 +41,7 @@ and the diff carry the state, and resume lands at review.
 ## Fix loop
 If dispatched with selected review findings (e.g. `H1, M2`), apply exactly those. Verify each
 against the code first; if one is wrong or would break behavior, don't apply it — return the
-technical reason. Fix one at a time, re-verify after each, report per finding id.
+technical reason (stamp it `trail.mjs finding <review.md> <id> disputed`). After the delta
+re-review confirms a fix held, stamp it `trail.mjs finding <review.md> <id> fixed` — the
+implementer's claim alone doesn't flip a finding. Fix one at a time, re-verify after each,
+report per finding id.

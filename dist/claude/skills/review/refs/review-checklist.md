@@ -46,3 +46,13 @@ Spec compliance:
 - [ ] AC2 — not met because ...
 Verdict: Yes | No | With fixes — 1-line technical reasoning.
 ```
+
+## Re-review block shape (delta mode)
+Appended to `review.md` after a fix loop — scoped to the fixed findings + regression risk only:
+```
+## Re-review (YYYY-MM-DD)
+- H1 · held — fix verified at file:line
+- M2 · not fixed — why, what's still wrong
+- M3 (new) · file:line · introduced by the H1 fix → why → fix
+Verdict: Yes | No | With fixes — 1-line technical reasoning.
+```

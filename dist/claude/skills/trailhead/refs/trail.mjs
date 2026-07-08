@@ -19,6 +19,8 @@
 //   node trail.mjs document-skipped  <anchor.md>   document -> skipped
 //   node trail.mjs tasks <plan.md> <T1> [T2 ...]   register the plan's task ids (once)
 //   node trail.mjs task-done <plan.md> <id>        mark one task's gate green
+//   node trail.mjs findings <review.md> <H1 ...>   register the review's finding ids (once)
+//   node trail.mjs finding <review.md> <id> <state>  open | fixed | wont-fix | disputed
 //   node trail.mjs check [file.md ...]             lint frontmatter (default: all trails)
 //   node trail.mjs status [dir ...]                one line per trail (default: all trails)
 
@@ -152,6 +154,44 @@ export function taskDone(file, id) {
   setField(file, "tasks", tasks.map((t) => (t.done ? `${t.id}:done` : t.id)).join(" "));
 }
 
+// ---- findings (review fix-loop) ----------------------------------------------------------------
+// The review's `findings:` field records each finding's lifecycle state, so the fix loop is
+// iterative instead of one-shot. Bare id = open; otherwise `H1:fixed`. Same closed-vocabulary
+// rule: `findings` registers ids once, `finding` names an id + state — never hand-edited.
+export const FINDING_STATES = ["open", "fixed", "wont-fix", "disputed"];
+
+export function parseFindings(value) {
+  const toks = value.trim().split(/\s+/).filter(Boolean);
+  return toks.map((tok) => {
+    const m = tok.match(/^([HML]\d+)(?::([a-z-]+))?$/);
+    if (!m) throw new Error(`bad finding token: ${tok} (want H1, M2:fixed, …)`);
+    const state = m[2] || "open";
+    if (!FINDING_STATES.includes(state)) throw new Error(`bad finding state: ${m[2]} (use ${FINDING_STATES.join(" | ")})`);
+    return { id: m[1], state };
+  });
+}
+
+export function setFindings(file, ids) {
+  for (const id of ids) if (!/^[HML]\d+$/.test(id)) throw new Error(`bad finding id: ${id} (H1, M2, L3, …)`);
+  if (new Set(ids).size !== ids.length) throw new Error("duplicate finding ids");
+  const fm = frontmatter(readFileSync(file, "utf8"));
+  if (!fm) throw new Error(`no frontmatter block in ${file}`);
+  if (fm.findings !== undefined) throw new Error(`findings already registered in ${file} — finding <id> <state> updates one`);
+  setField(file, "findings", ids.join(" "));
+}
+
+export function findingState(file, id, state) {
+  if (!FINDING_STATES.includes(state)) throw new Error(`bad finding state: ${state} (use ${FINDING_STATES.join(" | ")})`);
+  const fm = frontmatter(readFileSync(file, "utf8"));
+  if (!fm) throw new Error(`no frontmatter block in ${file}`);
+  if (fm.findings === undefined) throw new Error(`no findings field in ${file} (register first: findings <file> H1 M1 …)`);
+  const findings = parseFindings(fm.findings);
+  const f = findings.find((f) => f.id === id);
+  if (!f) throw new Error(`unknown finding id: ${id} (have: ${findings.map((f) => f.id).join(" ") || "none"})`);
+  f.state = state;
+  setField(file, "findings", findings.map((f) => (f.state === "open" ? f.id : `${f.id}:${f.state}`)).join(" "));
+}
+
 // ---- new (scaffold) --------------------------------------------------------------------------
 // Create <slug>/<template>.md with a correct frontmatter block (dates, slug, waypoint, initial
 // status/document) — the creation-time misspelling surface, owned here. Writes frontmatter only;
@@ -196,6 +236,13 @@ export function checkFile(file) {
       probs.push(`bad tasks: ${fm.tasks || "(empty)"}`);
     }
   }
+  if (fm.findings !== undefined) {
+    try {
+      if (parseFindings(fm.findings).length === 0) throw new Error("empty");
+    } catch {
+      probs.push(`bad findings: ${fm.findings || "(empty)"}`);
+    }
+  }
   return probs.map((p) => `${file}: ${p}`);
 }
 
@@ -207,16 +254,16 @@ export function deriveTrail(dir) {
   const byWp = {};
   let anchorDoc;
   let tasks; // registered implement progress, from whichever artifact carries a tasks field
+  let findings; // registered review findings + lifecycle states
   for (const f of readdirSync(dir).filter((f) => f.endsWith(".md"))) {
     const fm = frontmatter(readFileSync(join(dir, f), "utf8"));
     if (!fm) continue;
     if (fm.waypoint) byWp[fm.waypoint] = fm.status;
     if (fm.document !== undefined) anchorDoc = fm.document;
-    if (fm.tasks !== undefined) {
-      try {
-        tasks = parseTasks(fm.tasks);
-      } catch {} // malformed tasks: derive without it; `check` reports the problem
-    }
+    try {
+      if (fm.tasks !== undefined) tasks = parseTasks(fm.tasks);
+      if (fm.findings !== undefined) findings = parseFindings(fm.findings);
+    } catch {} // malformed field: derive without it; `check` reports the problem
   }
   const phases = PHASES["spec-plan" in byWp ? "trivial" : "full"];
   const present = phases.filter((p) => HAS_ARTIFACT.has(p) && p in byWp);
@@ -225,7 +272,11 @@ export function deriveTrail(dir) {
   // Furthest artifact still draft => its checkpoint is pending; land there.
   let draft = null;
   for (const p of present) if (byWp[p] === "draft") draft = p;
-  if (draft) return { slug, state: "in-progress", next: `${draft} (awaiting sign-off)` };
+  if (draft) {
+    const open = draft === "review" && findings ? findings.filter((f) => f.state === "open").length : 0;
+    const detail = open ? `, ${open} open` : "";
+    return { slug, state: "in-progress", next: `${draft} (awaiting sign-off${detail})` };
+  }
 
   // All present artifacts signed off => the next phase after the last one present.
   const nextIdx = phases.indexOf(present[present.length - 1]) + 1;
@@ -297,6 +348,20 @@ export function run(argv) {
     process.stdout.write(`${file} ← ${id}:done (updated ${today()})\n`);
     return 0;
   }
+  if (cmd === "findings") {
+    const [file, ...ids] = rest;
+    if (!file || ids.length === 0) return usage("findings <review.md> <H1> [M1 ...]");
+    setFindings(file, ids);
+    process.stdout.write(`${file} ← findings=${ids.join(" ")} (updated ${today()})\n`);
+    return 0;
+  }
+  if (cmd === "finding") {
+    const [file, id, state] = rest;
+    if (!file || !id || !state) return usage(`finding <review.md> <id> <${FINDING_STATES.join(" | ")}>`);
+    findingState(file, id, state);
+    process.stdout.write(`${file} ← ${id}:${state} (updated ${today()})\n`);
+    return 0;
+  }
   if (cmd === "new") {
     const [slug, template, ...titleWords] = rest;
     if (!slug || !template) return usage("new <slug> <template> [title]");
@@ -318,7 +383,7 @@ export function run(argv) {
     return 0;
   }
   return usage(
-    `read <file...> | new <slug> <template> [title] | ${Object.keys(OPS).join(" | ")} <file> | tasks <plan> <T1...> | task-done <plan> <id> | check [file...] | status [dir...]`
+    `read <file...> | new <slug> <template> [title] | ${Object.keys(OPS).join(" | ")} <file> | tasks <plan> <T1...> | task-done <plan> <id> | findings <review> <H1...> | finding <review> <id> <state> | check [file...] | status [dir...]`
   );
 }
 
