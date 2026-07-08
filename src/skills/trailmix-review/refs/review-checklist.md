@@ -3,7 +3,8 @@
 Loaded just-in-time. Assess **every dimension** below against the code you actually read;
 categorize findings by real severity and give each a stable id (H1 / M2 / L3…).
 
-- **Plan alignment** — does it match spec & plan? Is all planned functionality present? Are
+- **Plan alignment** — does it match spec & plan *including the plan's `## Amendments`*? (An
+  amended deviation is documented, not a departure.) Is all planned functionality present? Are
   deviations justified improvements or problematic departures? Flag deviations specifically. If
   the *plan itself* is wrong, say so.
 - **Code quality** — separation of concerns, error handling, type safety, DRY without premature

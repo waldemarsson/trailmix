@@ -48,3 +48,9 @@ not test code.
 
 ## Open questions
 - None
+
+## Amendments
+Appended during implement when a stop-and-ask resolves against the plan — one dated line each:
+what changed, why, who approved. The reviewer judges code against the plan *including* these.
+Big drift (the architecture no longer holds) → `trail.mjs supersede` + re-plan instead.
+- None

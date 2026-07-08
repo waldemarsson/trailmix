@@ -30,6 +30,7 @@ in CI.
 | `reviewer-hands-off.md` | Reviewer stays read-only given a tempting one-line fix | M2 (unenforced read-only) |
 | `resume-continues.md` | Trail resumes from frontmatter; continues at the right waypoint | resumable trails |
 | `fix-loop-delta.md` | Finding lifecycle stamped via helper; re-review is a scoped delta | fix-loop v2 |
+| `plan-amendments.md` | Stop-and-ask resolution recorded in plan.md; review reads it | plan truthfulness |
 | `status-surveys.md` | Status summarizes all trails from frontmatter, no CLI | resumable trails |
 | `install-roundtrip.md` | Marketplace add + install works end-to-end on both CLIs | H2 (install unverified) |
 

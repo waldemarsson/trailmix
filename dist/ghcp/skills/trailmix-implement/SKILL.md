@@ -26,7 +26,10 @@ and `:done` tasks are done: don't redo them or re-read their diffs).
 - Keep the main context clean — the subagent does the work and returns a GORP summary; read
   diffs from `git diff`, not from its message.
 - If the plan has a blocking gap or a contract looks wrong, **stop and ask the human** — don't
-  guess past ambiguity or silently change a contract.
+  guess past ambiguity or silently change a contract. When the answer resolves it, **record the
+  amendment**: append one dated line to `plan.md`'s `## Amendments` (what changed, why, who
+  approved) so review judges code against the plan as amended, not the stale one. Big drift —
+  the architecture no longer holds — → `trail.mjs supersede` the plan and re-plan.
 
 ## Verify before claiming done
 Load `refs/verification.md` and follow it: the Iron Law (no completion claim without fresh
