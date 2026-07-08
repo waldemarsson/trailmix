@@ -4,15 +4,15 @@ Agent-behavior features, ordered by leverage. Theme for R1–R4: **the trail's s
 disk, fully** — resumable, checkpointed work as the differentiator, end-to-end. Each item names
 its mechanism, what it touches, and the eval that proves it behaves.
 
-| # | Feature | One-liner |
-|---|---|---|
-| R1 | Task-level resumability | resume lands mid-implement, not at the waypoint boundary |
-| R2 | Fresh-session-per-waypoint | restart at checkpoints as the *recommended* flow |
-| R3 | Fix-loop v2 | finding lifecycle + delta re-review |
-| R4 | Plan amendments | keep plan.md truthful when implement surfaces drift |
-| R5 | Debug/bugfix track | a trail shape for "it's broken", not just "build this" |
-| R6 | Trigger hardening | script-gated mid-session nudge, zero tokens when silent |
-| R7 | Agent retro | document waypoint feeds CLAUDE.md/AGENTS.md, trails compound |
+| # | Feature | One-liner | Status |
+|---|---|---|---|
+| R1 | Task-level resumability | resume lands mid-implement, not at the waypoint boundary | shipped 2026-07-08 |
+| R2 | Fresh-session-per-waypoint | restart at checkpoints as the *recommended* flow | shipped 2026-07-08 |
+| R3 | Fix-loop v2 | finding lifecycle + delta re-review | shipped 2026-07-08 |
+| R4 | Plan amendments | keep plan.md truthful when implement surfaces drift | shipped 2026-07-08 |
+| R5 | Debug/bugfix track | a trail shape for "it's broken", not just "build this" | shipped 2026-07-08 |
+| R6 | Trigger hardening | script-gated mid-session nudge, zero tokens when silent | eval-gated — long-session variant added; hook unshipped until it fails |
+| R7 | Agent retro | document waypoint feeds CLAUDE.md/AGENTS.md, trails compound | shipped 2026-07-08 |
 
 ---
 

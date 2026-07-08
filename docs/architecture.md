@@ -108,9 +108,14 @@ point at `dist/claude/` and `dist/ghcp/` respectively. GHCP also supports instal
 ## 4. The trail — five waypoints (soft, adaptive)
 
 Each waypoint is a skill that **auto-triggers on intent**, does its work (often via a subagent),
-writes an **artifact to disk**, and **pauses for a human checkpoint**. No state machine. Adaptive:
-for trivial work `trailmix-discuss`+`trailmix-plan` collapse into one `spec-plan.md`;
-`trailmix-document` may legitimately produce nothing.
+writes an **artifact to disk**, and **pauses for a human checkpoint**. No state machine. Adaptive —
+three tracks: the **full** trail; **trivial** work collapses `trailmix-discuss`+`trailmix-plan`
+into one `spec-plan.md`; **bug** work ("it's broken", not "build this") runs reproduce → red test
+→ fix → green → review, anchored by `bug.md` (repro steps, expected vs actual, suspected surface —
+`trailhead/refs/bug-template.md`), review mandatory, document usually skipped.
+`trailmix-document` may legitimately produce nothing. A passed checkpoint is the recommended
+point to clear/restart the session — the approved artifact is the distilled context and resume
+lands exactly there.
 
 Artifacts live in the target project at: `.trailmix/trail/<feature-slug>/`.
 
@@ -123,21 +128,32 @@ Artifacts live in the target project at: `.trailmix/trail/<feature-slug>/`.
 | 4 | **trailmix-review** | Read-only review vs spec+plan; `review-checklist.md`; HIGH/MED/LOW + verdict; human picks fixes | **trailmix-reviewer** (strong, read-only) | `review.md` |
 | 5 | **trailmix-document** | Weight-based doc updates (`weight-heuristics.md`); zero-doc is valid | **trailmix-documenter** (standard) | repo docs |
 
-Fix loop: human selects findings (e.g. `H1, M2`) → `trailmix-implementer` applies exactly those →
-re-review if needed. All handoffs use **GORP** (§6).
+Fix loop (iterative): findings carry a lifecycle (`open | fixed | wont-fix | disputed`) in
+`review.md`'s frontmatter, stamped via named ops. Human selects findings (e.g. `H1, M2`) →
+`trailmix-implementer` applies exactly those → a **delta re-review** re-checks only the touched
+findings + regression risk and appends a dated `## Re-review` block; a finding flips to `fixed`
+only after the re-review confirms it. Implement-time drift lands as dated one-liners in
+`plan.md`'s `## Amendments` (big drift → `supersede` + re-plan), and review judges code against
+the plan *including* amendments. At the document waypoint an **agent retro** question feeds
+one-line conventions/gotchas into the repo's own `CLAUDE.md`/`AGENTS.md` (same weight test —
+zero additions is the norm). All handoffs use **GORP** (§6).
 
 **Trail metadata & resume.** Each artifact carries minimal YAML frontmatter; `spec.md` /
-`spec-plan.md` is the **anchor** (trail identity + the Document outcome, which has no artifact of
-its own). The only non-derivable field is `status: draft | approved | superseded` — advancing a
-waypoint stamps the previous artifact `approved`, so an abandoned trail shows its last artifact
-`draft`. Both mechanical operations — reading **frontmatter only** (never bodies) to *resume* or
+`spec-plan.md` / `bug.md` is the **anchor** (trail identity + the Document outcome, which has no
+artifact of its own). The non-derivable fields are `status: draft | approved | superseded` —
+advancing a waypoint stamps the previous artifact `approved`, so an abandoned trail shows its
+last artifact `draft` — plus the plan's `tasks:` (which task gates went green; resume lands on
+the first open task, e.g. `implement (1/3 done, next T2)`) and the review's `findings:` (the
+fix-loop lifecycle above). Both mechanical operations — reading **frontmatter only** (never bodies) to *resume* or
 *survey status*, and *transitioning* a status — run through a bundled zero-dep Node helper
 (`trailmix-trailhead/refs/trail.mjs`), so the LLM never hand-parses or hand-edits YAML and never
 types a status value it could misspell — it names an intent and the helper owns the vocabulary
 (the correctness + token win). Commands: `new` (scaffold an artifact's frontmatter — dates and
 initial status correct by construction), the named transitions `approve`/`supersede`/
-`document-done`/`document-skipped`, `read`, `check` (lint all frontmatter against the schema;
-also run in CI via `verify.sh`), and `status` (derive the resume line per trail). The helper is a
+`document-done`/`document-skipped`, `tasks`/`task-done` (register the plan's task ids, flip one
+gate green), `findings`/`finding` (register review finding ids, flip one state), `read`, `check`
+(lint all frontmatter against the schema; also run in CI via `verify.sh`), and `status` (derive
+the resume line per trail). The helper is a
 **pure data tool** — it owns the closed vocabulary (statuses, waypoints, templates) but no
 workflow rules: no gates, no enforced ordering, no state machine; even `status` only reports. The
 skill decides when to call it. It ships inside the
@@ -316,6 +332,11 @@ CC's manifest doesn't need a `hooks` field (auto-discovered from the default `ho
    hand-edited and statuses are never typed by hand (can't be misspelled); it's a pure data tool
    that owns the status vocabulary but no transition rules — not a state machine or a PATH CLI.
    No `trail.json` (see §4).
+9. ✅ Agent-behavior roadmap R1–R5 + R7 (`docs/roadmap.md`): task-level resume inside implement
+   (`tasks:`/`task-done`), fresh-session-per-waypoint as the recommended flow, fix-loop v2
+   (finding lifecycle + delta re-review), plan amendments, the bug track, and the agent retro.
+   R6 (mid-session trigger hardening) is deliberately unshipped — gated on the long-session
+   variant of `evals/trailhead-fires.md` failing first.
 
 ---
 
