@@ -18,6 +18,9 @@ import {
   deriveTrail,
   summarize,
   OPS,
+  parseTasks,
+  setTasks,
+  taskDone,
 } from "../src/skills/trailmix-trailhead/refs/trail.mjs";
 
 const today = new Date().toISOString().slice(0, 10);
@@ -114,6 +117,64 @@ test("every op maps to a known field", () => {
   for (const [, [field]] of Object.entries(OPS)) assert.ok(["status", "document"].includes(field));
 });
 
+// ---- tasks (implement progress) ----------------------------------------------------------------
+const PLAN = `---
+slug: demo
+waypoint: plan
+status: approved
+updated: 2020-01-01
+---
+
+# Plan body
+`;
+
+test("tasks registers ids once and bumps updated", () => {
+  withFile(PLAN, (f) => {
+    assert.equal(run(["tasks", f, "T1", "T2", "T3"]), 0);
+    const out = readFileSync(f, "utf8");
+    assert.match(out, /^tasks: T1 T2 T3$/m);
+    assert.match(out, new RegExp(`^updated: ${today}$`, "m"));
+    assert.throws(() => setTasks(f, ["T1"]), /already registered/);
+  });
+});
+
+test("tasks rejects bad and duplicate ids", () => {
+  withFile(PLAN, (f) => {
+    assert.throws(() => setTasks(f, ["task-1"]), /bad task id/);
+    assert.throws(() => setTasks(f, ["T1", "T1"]), /duplicate/);
+  });
+});
+
+test("task-done flips one id; unknown id fails loudly; idempotent", () => {
+  withFile(PLAN, (f) => {
+    setTasks(f, ["T1", "T2", "T3"]);
+    taskDone(f, "T2");
+    assert.match(readFileSync(f, "utf8"), /^tasks: T1 T2:done T3$/m);
+    taskDone(f, "T2");
+    assert.match(readFileSync(f, "utf8"), /^tasks: T1 T2:done T3$/m);
+    assert.throws(() => taskDone(f, "T9"), /unknown task id/);
+    assert.throws(() => withFile(PLAN, (g) => taskDone(g, "T1")), /no tasks field/);
+  });
+});
+
+test("parseTasks rejects a malformed token", () => {
+  assert.throws(() => parseTasks("T1 done"), /bad task token/);
+  assert.deepEqual(parseTasks("T1:done T2"), [
+    { id: "T1", done: true },
+    { id: "T2", done: false },
+  ]);
+});
+
+test("check flags a malformed or empty tasks field", () => {
+  withFile(PLAN.replace("---\n\n", "tasks: T1 nope\n---\n\n"), (f) => {
+    assert.ok(checkFile(f).some((p) => /bad tasks/.test(p)));
+  });
+  withFile(PLAN, (f) => {
+    setTasks(f, ["T1"]);
+    assert.deepEqual(checkFile(f), []);
+  });
+});
+
 // ---- new -------------------------------------------------------------------------------------
 test("new scaffolds an anchor with today's dates and valid frontmatter", () => {
   inTemp(() => {
@@ -199,6 +260,30 @@ test("derive: spec approved, no plan -> next plan", () => {
 test("derive: plan approved -> next implement (artifact-less phase)", () => {
   const d = trail({ "spec.md": anchor("approved"), "plan.md": nonAnchor("plan", "approved") });
   assert.equal(deriveTrail(d).next, "implement");
+});
+
+test("derive: mid-implement tasks land on the first open task", () => {
+  const d = trail({
+    "spec.md": anchor("approved"),
+    "plan.md": nonAnchor("plan", "approved") + "\ntasks: T1:done T2 T3",
+  });
+  assert.equal(deriveTrail(d).next, "implement (1/3 done, next T2)");
+});
+
+test("derive: all task gates green -> next review", () => {
+  const d = trail({
+    "spec.md": anchor("approved"),
+    "plan.md": nonAnchor("plan", "approved") + "\ntasks: T1:done T2:done",
+  });
+  assert.equal(deriveTrail(d).next, "review");
+});
+
+test("derive: tasks on a draft plan don't preempt the plan checkpoint", () => {
+  const d = trail({
+    "spec.md": anchor("approved"),
+    "plan.md": nonAnchor("plan", "draft") + "\ntasks: T1:done T2",
+  });
+  assert.equal(deriveTrail(d).next, "plan (awaiting sign-off)");
 });
 
 test("derive: review approved + document pending -> next document", () => {

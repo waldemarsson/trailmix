@@ -30,12 +30,13 @@ slug: feature-slug
 waypoint: plan              # plan | review
 status: draft               # draft | approved | superseded
 updated: YYYY-MM-DD
+tasks: T1:done T2 T3        # plan only, optional — implement progress, one token per plan task
 ---
 ```
 
-Only `status` is non-derivable — it records whether the human checkpoint passed. Waypoint name,
-which artifacts exist, and review counts/verdict are derivable or already in the body; never
-duplicate them into frontmatter.
+Only `status` and `tasks` are non-derivable — they record whether the human checkpoint passed
+and which task gates went green. Waypoint name, which artifacts exist, and review counts/verdict
+are derivable or already in the body; never duplicate them into frontmatter.
 
 ## Status lifecycle
 
@@ -53,6 +54,9 @@ Trivial track: `spec-plan` → `implement` → `review` → `document`.
 - If every present artifact is `approved`, the position is the next waypoint after the last
   artifact; the trail is *done* when all artifacts are `approved` and the anchor's `document` is
   not `pending`.
+- **Mid-implement:** when the plan carries `tasks`, resume lands on the first open task —
+  `status` reports e.g. `implement (1/3 done, next T2)`; don't redo or re-read the diff of a
+  `:done` task. All gates green ⇒ next is review.
 
 `trail.mjs status` does exactly this derivation for you (see below) — prefer it over deriving by
 hand; the rules here are the spec it implements.
@@ -69,8 +73,8 @@ tool: it owns the closed vocabulary (statuses, waypoints, templates) but **no** 
 no gates, no enforced ordering, no state machine. Even `status`, which derives the resume point,
 only *reports* — it blocks nothing. You decide when to act.
 
-Command surface: `new` · `approve`/`supersede`/`document-done`/`document-skipped` · `read` ·
-`check` · `status`.
+Command surface: `new` · `approve`/`supersede`/`document-done`/`document-skipped` ·
+`tasks`/`task-done` · `read` · `check` · `status`.
 
 **Resolve the helper's path once, then reuse it.** The examples below write `"$TRAIL"` for the
 resolved script path — substitute the real path (shell state doesn't persist between tool
@@ -113,6 +117,16 @@ can't be misspelled (a mistyped op exits non-zero instead of writing a bad value
 ```sh
 node "$TRAIL" approve .trailmix/trail/<slug>/spec.md
 ```
+**Track implement progress** — same named-op rule for the plan's `tasks` field, so a task id or
+`:done` mark is never hand-typed. Register the plan's task ids once when implement starts
+(refuses to re-register — progress survives), then flip each task as its gate goes green:
+```sh
+node "$TRAIL" tasks .trailmix/trail/<slug>/plan.md T1 T2 T3
+node "$TRAIL" task-done .trailmix/trail/<slug>/plan.md T1
+```
+A bad or unknown id fails loudly instead of writing a bad value. `status` derives the resume
+point from the marks (see "Deriving current position").
+
 These are the *only* status writes — the vocabulary (`approved`/`superseded`/`done`/`skipped`)
 lives once, inside the helper, never as a literal at the call site. The helper knows the
 vocabulary but **not** the transition rules: it will `approve` regardless of current state — it's

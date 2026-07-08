@@ -17,6 +17,8 @@
 //   node trail.mjs supersede         <file.md>     status -> superseded
 //   node trail.mjs document-done     <anchor.md>   document -> done
 //   node trail.mjs document-skipped  <anchor.md>   document -> skipped
+//   node trail.mjs tasks <plan.md> <T1> [T2 ...]   register the plan's task ids (once)
+//   node trail.mjs task-done <plan.md> <id>        mark one task's gate green
 //   node trail.mjs check [file.md ...]             lint frontmatter (default: all trails)
 //   node trail.mjs status [dir ...]                one line per trail (default: all trails)
 
@@ -117,6 +119,39 @@ export function setField(file, field, value) {
   writeFileSync(file, open + lines.join("\n") + close + body);
 }
 
+// ---- tasks (implement progress) ----------------------------------------------------------------
+// The plan's `tasks:` field records which task gates passed, so resume can land mid-implement.
+// `tasks` registers the ids once (refuses to clobber recorded progress); `task-done` flips one id
+// to done. Both are named ops: the LLM never edits the field by hand.
+export function parseTasks(value) {
+  const toks = value.trim().split(/\s+/).filter(Boolean);
+  return toks.map((tok) => {
+    const m = tok.match(/^(T\d+)(:done)?$/);
+    if (!m) throw new Error(`bad task token: ${tok} (want T<n> or T<n>:done)`);
+    return { id: m[1], done: !!m[2] };
+  });
+}
+
+export function setTasks(file, ids) {
+  for (const id of ids) if (!/^T\d+$/.test(id)) throw new Error(`bad task id: ${id} (T1, T2, …)`);
+  if (new Set(ids).size !== ids.length) throw new Error("duplicate task ids");
+  const fm = frontmatter(readFileSync(file, "utf8"));
+  if (!fm) throw new Error(`no frontmatter block in ${file}`);
+  if (fm.tasks !== undefined) throw new Error(`tasks already registered in ${file} — task-done updates progress`);
+  setField(file, "tasks", ids.join(" "));
+}
+
+export function taskDone(file, id) {
+  const fm = frontmatter(readFileSync(file, "utf8"));
+  if (!fm) throw new Error(`no frontmatter block in ${file}`);
+  if (fm.tasks === undefined) throw new Error(`no tasks field in ${file} (register first: tasks <file> T1 T2 …)`);
+  const tasks = parseTasks(fm.tasks);
+  const t = tasks.find((t) => t.id === id);
+  if (!t) throw new Error(`unknown task id: ${id} (have: ${tasks.map((t) => t.id).join(" ") || "none"})`);
+  t.done = true;
+  setField(file, "tasks", tasks.map((t) => (t.done ? `${t.id}:done` : t.id)).join(" "));
+}
+
 // ---- new (scaffold) --------------------------------------------------------------------------
 // Create <slug>/<template>.md with a correct frontmatter block (dates, slug, waypoint, initial
 // status/document) — the creation-time misspelling surface, owned here. Writes frontmatter only;
@@ -154,6 +189,13 @@ export function checkFile(file) {
     bad("bad created", fm.created, DATE.test(fm.created || ""));
     bad("bad document", fm.document, DOC.includes(fm.document));
   }
+  if (fm.tasks !== undefined) {
+    try {
+      if (parseTasks(fm.tasks).length === 0) throw new Error("empty");
+    } catch {
+      probs.push(`bad tasks: ${fm.tasks || "(empty)"}`);
+    }
+  }
   return probs.map((p) => `${file}: ${p}`);
 }
 
@@ -164,11 +206,17 @@ export function deriveTrail(dir) {
   const slug = basename(dir);
   const byWp = {};
   let anchorDoc;
+  let tasks; // registered implement progress, from whichever artifact carries a tasks field
   for (const f of readdirSync(dir).filter((f) => f.endsWith(".md"))) {
     const fm = frontmatter(readFileSync(join(dir, f), "utf8"));
     if (!fm) continue;
     if (fm.waypoint) byWp[fm.waypoint] = fm.status;
     if (fm.document !== undefined) anchorDoc = fm.document;
+    if (fm.tasks !== undefined) {
+      try {
+        tasks = parseTasks(fm.tasks);
+      } catch {} // malformed tasks: derive without it; `check` reports the problem
+    }
   }
   const phases = PHASES["spec-plan" in byWp ? "trivial" : "full"];
   const present = phases.filter((p) => HAS_ARTIFACT.has(p) && p in byWp);
@@ -182,7 +230,15 @@ export function deriveTrail(dir) {
   // All present artifacts signed off => the next phase after the last one present.
   const nextIdx = phases.indexOf(present[present.length - 1]) + 1;
   if (nextIdx >= phases.length) return { slug, state: "done", next: "—" };
-  const p = phases[nextIdx];
+  let p = phases[nextIdx];
+  if (p === "implement" && tasks?.length) {
+    const open = tasks.filter((t) => !t.done);
+    if (open.length) {
+      const done = tasks.length - open.length;
+      return { slug, state: "in-progress", next: `implement (${done}/${tasks.length} done, next ${open[0].id})` };
+    }
+    p = phases[nextIdx + 1]; // every gate green => implement is done; land on review
+  }
   if (p === "document") {
     if (anchorDoc === undefined || anchorDoc === "pending") return { slug, state: "in-progress", next: "document" };
     return { slug, state: "done", next: "—" };
@@ -227,6 +283,20 @@ export function run(argv) {
     process.stdout.write(`${file} ← ${field}=${value} (updated ${today()})\n`);
     return 0;
   }
+  if (cmd === "tasks") {
+    const [file, ...ids] = rest;
+    if (!file || ids.length === 0) return usage("tasks <plan.md> <T1> [T2 ...]");
+    setTasks(file, ids);
+    process.stdout.write(`${file} ← tasks=${ids.join(" ")} (updated ${today()})\n`);
+    return 0;
+  }
+  if (cmd === "task-done") {
+    const [file, id] = rest;
+    if (!file || !id) return usage("task-done <plan.md> <T-id>");
+    taskDone(file, id);
+    process.stdout.write(`${file} ← ${id}:done (updated ${today()})\n`);
+    return 0;
+  }
   if (cmd === "new") {
     const [slug, template, ...titleWords] = rest;
     if (!slug || !template) return usage("new <slug> <template> [title]");
@@ -248,7 +318,7 @@ export function run(argv) {
     return 0;
   }
   return usage(
-    `read <file...> | new <slug> <template> [title] | ${Object.keys(OPS).join(" | ")} <file> | check [file...] | status [dir...]`
+    `read <file...> | new <slug> <template> [title] | ${Object.keys(OPS).join(" | ")} <file> | tasks <plan> <T1...> | task-done <plan> <id> | check [file...] | status [dir...]`
   );
 }
 
