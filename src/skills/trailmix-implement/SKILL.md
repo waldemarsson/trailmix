@@ -10,12 +10,14 @@ description: Waypoint 3 — build the planned feature with tests, TDD-style, and
 Turn the plan's tasks into working, tested code. The plan is the contract; you own the
 implementation and the tests.
 
-**On entry:** the plan checkpoint just passed — approve `plan.md` with the helper (`trail.mjs
-approve .trailmix/trail/<slug>/plan.md`, or `spec-plan.md` on the trivial track; it also bumps
-`updated` — see `trailmix-trailhead/refs/trail-metadata.md`) before building. Then register the
-plan's task ids so progress survives the session: `trail.mjs tasks <plan.md> T1 T2 …` (skip if
-already registered — that means you're resuming; `trail.mjs status` names the first open task,
-and `:done` tasks are done: don't redo them or re-read their diffs).
+**On entry:** the previous checkpoint just passed — approve the prior artifact with the helper
+(`trail.mjs approve .trailmix/trail/<slug>/plan.md`; `spec-plan.md` on the trivial track,
+`bug.md` on the bug track; it also bumps `updated` — see
+`trailmix-trailhead/refs/trail-metadata.md`) before building. Then register the plan's task ids
+so progress survives the session: `trail.mjs tasks <plan.md> T1 T2 …` (skip if already
+registered — that means you're resuming; `trail.mjs status` names the first open task, and
+`:done` tasks are done: don't redo them or re-read their diffs. The bug track has no task list —
+its spine is red → green).
 
 ## How
 - **Dispatch the `trailmix-implementer` agent** (reasoning-tier; or a general subagent if not installed)

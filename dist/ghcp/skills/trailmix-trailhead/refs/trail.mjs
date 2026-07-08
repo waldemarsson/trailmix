@@ -37,11 +37,13 @@ export const OPS = {
 export const TEMPLATES = {
   spec: { file: "spec.md", waypoint: "discuss", anchor: true },
   "spec-plan": { file: "spec-plan.md", waypoint: "spec-plan", anchor: true },
+  bug: { file: "bug.md", waypoint: "bug", anchor: true },
   plan: { file: "plan.md", waypoint: "plan", anchor: false },
   review: { file: "review.md", waypoint: "review", anchor: false },
 };
 const STATUS = ["draft", "approved", "superseded"];
-const WAYPOINT = ["discuss", "spec-plan", "plan", "review"]; // artifact-bearing waypoints
+const WAYPOINT = ["discuss", "spec-plan", "bug", "plan", "review"]; // artifact-bearing waypoints
+const ANCHOR_WP = ["discuss", "spec-plan", "bug"];
 const DOC = ["pending", "done", "skipped"];
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const SLUG = /^[a-z0-9][a-z0-9-]*$/;
@@ -49,6 +51,7 @@ const SLUG = /^[a-z0-9][a-z0-9-]*$/;
 const PHASES = {
   full: ["discuss", "plan", "implement", "review", "document"],
   trivial: ["spec-plan", "implement", "review", "document"],
+  bug: ["bug", "implement", "review", "document"],
 };
 const HAS_ARTIFACT = new Set(WAYPOINT);
 const TRAILS = ".trailmix/trail";
@@ -224,7 +227,7 @@ export function checkFile(file) {
   bad("bad status", fm.status, STATUS.includes(fm.status));
   bad("bad waypoint", fm.waypoint, WAYPOINT.includes(fm.waypoint));
   bad("bad updated", fm.updated, DATE.test(fm.updated || ""));
-  if (fm.waypoint === "discuss" || fm.waypoint === "spec-plan") {
+  if (ANCHOR_WP.includes(fm.waypoint)) {
     bad("missing title", fm.title, !!fm.title);
     bad("bad created", fm.created, DATE.test(fm.created || ""));
     bad("bad document", fm.document, DOC.includes(fm.document));
@@ -265,7 +268,7 @@ export function deriveTrail(dir) {
       if (fm.findings !== undefined) findings = parseFindings(fm.findings);
     } catch {} // malformed field: derive without it; `check` reports the problem
   }
-  const phases = PHASES["spec-plan" in byWp ? "trivial" : "full"];
+  const phases = PHASES["bug" in byWp ? "bug" : "spec-plan" in byWp ? "trivial" : "full"];
   const present = phases.filter((p) => HAS_ARTIFACT.has(p) && p in byWp);
   if (present.length === 0) return { slug, state: "empty", next: phases[0] };
 

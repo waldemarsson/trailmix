@@ -16,10 +16,17 @@ Pick a short kebab-case feature slug. Its artifacts live in `.trailmix/trail/<sl
 trail in a repo: add `.trailmix/` to `.gitignore` unless the human wants trails committed
 (shared across machines/teammates).
 
-## 2. Size it (adaptive)
+## 2. Size it (adaptive) — three tracks
 - **Trivial / localized / low-risk** (one clear change, no design choices): collapse Discuss +
   Plan into a single `spec-plan.md`, or for truly tiny work skip straight to implement. Still
   review.
+- **Bug / "it's broken"** (a defect in existing behavior, not new behavior): don't force it
+  through Discuss→Plan — run the bug track: **reproduce → red test → fix → green → review**.
+  Scaffold the anchor with `trail.mjs new <slug> bug "<title>"` and fill it from
+  `refs/bug-template.md` (repro steps, expected vs actual, suspected surface). Checkpoint: the
+  human confirms the repro. Then implement — a failing test that reproduces the bug comes
+  **before** any fix (the Iron Law's red-green rule is this track's spine). Review stays
+  mandatory; document usually skips.
 - **Design choices, multiple files, or real risk**: run the full trail.
 
 Scale detail to the work. When in doubt, ask the human which size fits.

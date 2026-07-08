@@ -7,8 +7,8 @@ or typing a status literal.
 
 ## Frontmatter schema
 
-**Anchor** — `spec.md` (full trail) or `spec-plan.md` (trivial track). Holds trail-level
-identity plus the Document outcome, which has no artifact of its own:
+**Anchor** — `spec.md` (full trail), `spec-plan.md` (trivial track), or `bug.md` (bug track).
+Holds trail-level identity plus the Document outcome, which has no artifact of its own:
 
 ```yaml
 ---
@@ -16,7 +16,7 @@ slug: feature-slug          # trail identity (matches the dir name)
 title: Human-readable title
 created: YYYY-MM-DD
 updated: YYYY-MM-DD
-waypoint: discuss           # or spec-plan on the trivial track
+waypoint: discuss           # or spec-plan (trivial track) | bug (bug track)
 status: draft               # draft | approved | superseded
 document: pending           # pending | done | skipped
 ---
@@ -51,6 +51,8 @@ never duplicate them into frontmatter.
 
 Order: `discuss(spec)` → `plan` → `implement (no artifact)` → `review` → `document (no artifact)`.
 Trivial track: `spec-plan` → `implement` → `review` → `document`.
+Bug track: `bug` → `implement` → `review` → `document` (repro confirmed at the bug checkpoint;
+implement is red test → fix → green).
 
 - **Resume point** = the furthest artifact still `draft` (its checkpoint is pending — land there).
 - If every present artifact is `approved`, the position is the next waypoint after the last
@@ -94,7 +96,7 @@ calls, so set it inline or paste the literal). Resolution order:
 
 **Scaffold** a new artifact — writes a correct frontmatter block (slug, today's dates, initial
 `status: draft` / `document: pending`, the right `waypoint`) so none of that is hand-typed, then
-you fill the body from the phase's template ref. `<template>` is `spec | spec-plan | plan |
+you fill the body from the phase's template ref. `<template>` is `spec | spec-plan | bug | plan |
 review`; an unknown one or a non-kebab slug fails loudly, and it refuses to clobber an existing
 artifact:
 ```sh

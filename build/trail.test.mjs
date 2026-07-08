@@ -373,6 +373,29 @@ test("derive: all approved + document done -> done", () => {
   assert.deepEqual(deriveTrail(d), { slug: "feat", state: "done", next: "—" });
 });
 
+test("new scaffolds a bug anchor (title, dates, document) that passes lint", () => {
+  inTemp(() => {
+    const f = newTrail("login-500", "bug", "Login 500s");
+    const fm = frontmatter(readFileSync(f, "utf8"));
+    assert.equal(fm.waypoint, "bug");
+    assert.equal(fm.title, "Login 500s");
+    assert.equal(fm.document, "pending");
+    assert.deepEqual(checkFile(f), []);
+  });
+});
+
+test("derive: bug track — draft repro, then implement, then done", () => {
+  const bugFm = (status, document = "pending") =>
+    `slug: feat\ntitle: T\ncreated: ${today}\nupdated: ${today}\nwaypoint: bug\nstatus: ${status}\ndocument: ${document}`;
+  assert.equal(deriveTrail(trail({ "bug.md": bugFm("draft") })).next, "bug (awaiting sign-off)");
+  assert.equal(deriveTrail(trail({ "bug.md": bugFm("approved") })).next, "implement");
+  const done = trail({
+    "bug.md": bugFm("approved", "skipped"),
+    "review.md": nonAnchor("review", "approved"),
+  });
+  assert.deepEqual(deriveTrail(done), { slug: "feat", state: "done", next: "—" });
+});
+
 test("derive: trivial track spec-plan draft", () => {
   const d = trail({ "spec-plan.md": `slug: feat\ntitle: T\ncreated: ${today}\nupdated: ${today}\nwaypoint: spec-plan\nstatus: draft\ndocument: pending` });
   assert.equal(deriveTrail(d).next, "spec-plan (awaiting sign-off)");
