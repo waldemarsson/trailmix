@@ -25,6 +25,11 @@ a correct outcome.**
    partial failure — anything surprising when reading the code.
 9. **Breaking changes** — removed/renamed public APIs, config keys, CLI flags, schemas, minimum
    runtime versions. Loudest of all; include migration steps.
+10. **For the agent** — a convention, workaround, or gotcha the *next trail's agent* needs (a
+    rule it would otherwise re-learn by failing: "X env var is unset in tool shells", "always
+    regenerate dist/ before verify"). Goes to the repo's agent instructions (`CLAUDE.md` /
+    `AGENTS.md`) as **one tight line**, not a paragraph. Higher bar than human docs: only rules
+    that change agent behavior, never narrative. Zero additions is the norm.
 
 ## Noise — almost never document on its own
 Patch/minor version bumps, lockfile churn, formatting/whitespace/comment edits, private renames,

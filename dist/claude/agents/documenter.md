@@ -19,6 +19,10 @@ change made stale. Most changes touch little or no documentation.
    dictates (reachable from README or the index/sidebar), and stale docs corrected. Edit
    surgically; don't reflow untouched prose.
 4. Verify commands/flags/examples against real code before writing them.
+5. **Agent retro:** did this trail surface a convention, workaround, or gotcha the next trail's
+   *agent* should know (a rule it would otherwise re-learn the hard way)? If yes — same weight
+   test — append one tight line to the repo's existing agent instructions (`CLAUDE.md` /
+   `AGENTS.md`); zero additions is the common, correct outcome.
 
 ## Weight test
 Would a developer joining in six months be worse off not knowing this? If no, skip. Document:
