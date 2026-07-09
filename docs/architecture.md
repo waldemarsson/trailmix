@@ -332,14 +332,25 @@ CC's manifest doesn't need a `hooks` field (auto-discovered from the default `ho
    hand-edited and statuses are never typed by hand (can't be misspelled); it's a pure data tool
    that owns the status vocabulary but no transition rules — not a state machine or a PATH CLI.
    No `trail.json` (see §4).
-9. ✅ Agent-behavior roadmap R1–R5 + R7 (`docs/roadmap.md`): task-level resume inside implement
-   (`tasks:`/`task-done`), fresh-session-per-waypoint as the recommended flow, fix-loop v2
-   (finding lifecycle + delta re-review), plan amendments, the bug track, and the agent retro.
-   R6 (mid-session trigger hardening) is deliberately unshipped — gated on the long-session
-   variant of `evals/trailhead-fires.md` failing first.
+9. ✅ Agent-behavior features: task-level resume inside implement (`tasks:`/`task-done`),
+   fresh-session-per-waypoint as the recommended flow, fix-loop v2 (finding lifecycle + delta
+   re-review), plan amendments, the bug track, and the agent retro. See §11.1 for the one item
+   still open.
+
+### 11.1 Open: mid-session trigger hardening
+
+The framework's core bet is that trailhead fires; `SessionStart` context fades in long sessions
+(attention decay). Candidate mechanism, not yet built: a `UserPromptSubmit` hook whose *script*
+decides whether to inject — e.g. only when the prompt matches build-intent patterns AND no
+`.trailmix/trail/` is active. Logic would live in the shell script, so it costs zero tokens when
+silent; when it fires, it injects one reminder line, not the full core. CC only at first (GHCP
+has no equivalent event).
+
+Deliberately unshipped: measure first. `evals/trailhead-fires.md`'s long-session variant is the
+gate — if `SessionStart` alone passes it, don't build the hook.
 
 ---
 
 ## Open questions
-- None. (Model names: pinned per agent in `build/maps/models.json`. `dist/`: committed, kept
-  fresh by CI.)
+- None besides §11.1. (Model names: pinned per agent in `build/maps/models.json`. `dist/`:
+  committed, kept fresh by CI.)

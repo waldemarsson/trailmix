@@ -29,8 +29,8 @@ Add a --json flag to the CLI that prints the output as JSON instead of plain tex
 ## Variant: long session (attention decay)
 
 Same check, 30+ turns in — the SessionStart context is far behind and competing with a full
-conversation. This is the measurement gate for roadmap R6 (trigger hardening): run it **before**
-building any mid-session nudge hook.
+conversation. This is the measurement gate for mid-session trigger hardening (see
+`docs/architecture.md` §11.1): run it **before** building any mid-session nudge hook.
 
 **Setup:** same project, but first spend 30+ turns of unrelated real work in the session
 (debugging, Q&A, refactoring chatter — no trailmix involvement). No `.trailmix/` dir.
