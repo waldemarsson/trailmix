@@ -23,6 +23,11 @@ approve .trailmix/trail/<slug>/review.md`, which also bumps `updated`; see
 - **Match the repo's existing conventions** (layout, file naming, headings, cross-links). Learn
   them starting from the README. Load `refs/doc-conventions.md` when the convention is unclear.
 - Edit surgically; verify commands/flags/examples against real code before writing them.
+- **Agent retro** — one extra question: did this trail surface a convention, workaround, or
+  gotcha the *next trail's agent* should know? If yes, append one tight line to the project's
+  own agent instructions (`CLAUDE.md` / `AGENTS.md` — whichever the repo already uses; don't
+  create one for a single line unless the human wants it). Same weight test as docs — zero
+  additions is the common, correct outcome — and the human approves the line like any doc change.
 
 ## Output
 Edits to the repo's **own** docs (README, `docs/`, ADRs, per-module READMEs — whatever the repo

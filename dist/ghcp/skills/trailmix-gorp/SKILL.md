@@ -19,6 +19,8 @@ what the reader needs.
 - **Findings are one line each**, with a stable id: `id · file:line · what → why → fix`
   (e.g. `H1 · auth.ts:42 · expiry uses < not <= → lets expired tokens pass → use <=`).
 - **Hard word caps.** Keep returns tight (implementer ≤ ~400 words; reviewer/documenter ≤ ~300).
+  Caps govern the prose *around* the findings — the findings list is one line each and scales
+  with what was actually found; never drop a finding to fit a cap.
 - **No preamble, no sign-off, no gratitude.** The return *is* the artifact.
 
 ## Return template

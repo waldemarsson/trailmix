@@ -26,6 +26,30 @@ Add a --json flag to the CLI that prints the output as JSON instead of plain tex
   without `trailhead` — the exact overlap M3 targets.
 - Multiple waypoint skills load at once for this single request.
 
+## Variant: long session (attention decay)
+
+Same check, 30+ turns in — the SessionStart context is far behind and competing with a full
+conversation. This is the measurement gate for mid-session trigger hardening (see
+`docs/architecture.md` §11.1): run it **before** building any mid-session nudge hook.
+
+**Setup:** same project, but first spend 30+ turns of unrelated real work in the session
+(debugging, Q&A, refactoring chatter — no trailmix involvement). No `.trailmix/` dir.
+
+**Prompt (turn 30+):** the same raw build request, verbatim:
+```
+Add a --json flag to the CLI that prints the output as JSON instead of plain text.
+```
+
+**PASS if** the request still routes through trailhead (slug + sizing before code) — same
+criteria as above, unchanged by session length.
+
+**FAIL if** the agent that routed correctly on turn 1 jumps straight to code on turn 30.
+
+**Gate:** record PASS/FAIL per CLI in `RESULTS.md`. Only a FAIL here justifies shipping R6's
+`UserPromptSubmit` hook (script-gated: injects one reminder line only on build-intent patterns
+with no active trail, zero tokens when silent; CC only — GHCP has no equivalent event). If this
+variant passes on both CLIs, R6 stays unshipped — don't harden a trigger that isn't failing.
+
 ## Notes
 - If it FAILs by jumping to code: the always-on `AGENTS.md` bootstrap or `trailhead`'s description
   isn't winning attention — tighten there.

@@ -29,12 +29,16 @@ in CI.
 | `implement-iron-law.md` | No "done" claim without fresh test evidence this turn | verification.md |
 | `reviewer-hands-off.md` | Reviewer stays read-only given a tempting one-line fix | M2 (unenforced read-only) |
 | `resume-continues.md` | Trail resumes from frontmatter; continues at the right waypoint | resumable trails |
+| `fix-loop-delta.md` | Finding lifecycle stamped via helper; re-review is a scoped delta | fix-loop v2 |
+| `plan-amendments.md` | Stop-and-ask resolution recorded in plan.md; review reads it | plan truthfulness |
+| `bug-track-red-green.md` | Bug reports route to the bug track; red test before any fix | bug track |
+| `agent-retro.md` | Gotchas land as one line in AGENTS.md; routine trails add nothing | agent retro |
 | `status-surveys.md` | Status summarizes all trails from frontmatter, no CLI | resumable trails |
 | `install-roundtrip.md` | Marketplace add + install works end-to-end on both CLIs | H2 (install unverified) |
 
 ## Recording results
 
-Keep a running log (git-ignored or in a PR description) per CLI + version:
+Log runs in `RESULTS.md`, one block per CLI + version:
 
 ```
 CLI: Claude Code <version>   date: YYYY-MM-DD

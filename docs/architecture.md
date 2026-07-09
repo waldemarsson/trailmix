@@ -22,7 +22,7 @@ Both CLIs share enough primitives that the methodology can be authored once:
 |---|---|---|---|
 | **Skills** (`SKILL.md`, open standard) | `skills/` (plugin root, auto-namespaced) | `skills/` (plugin root, flat) | author once, ship to both |
 | Custom agents | `agents/*.md` | `agents/*.agent.md` | generate per platform |
-| Per-agent model | `sonnet/opus/haiku` | full model names, per-subagent settings | map from neutral tier |
+| Per-agent model | `sonnet/opus/haiku` | full model names, per-subagent settings | map per agent name |
 | Tool names | `Read/Edit/Grep/Bash…` | `read/edit/search/shell…` (aliases) | map from neutral alias |
 | JIT skill loading | yes | yes | core of the token strategy |
 | **SessionStart hook** | `hooks/hooks.json`, matcher `startup\|resume\|clear\|compact` | `hooks/hooks.json`, `sessionStart` (no clear/compact equivalent) | the **only** always-on mechanism (see §12) |
@@ -108,9 +108,14 @@ point at `dist/claude/` and `dist/ghcp/` respectively. GHCP also supports instal
 ## 4. The trail — five waypoints (soft, adaptive)
 
 Each waypoint is a skill that **auto-triggers on intent**, does its work (often via a subagent),
-writes an **artifact to disk**, and **pauses for a human checkpoint**. No state machine. Adaptive:
-for trivial work `trailmix-discuss`+`trailmix-plan` collapse into one `spec-plan.md`;
-`trailmix-document` may legitimately produce nothing.
+writes an **artifact to disk**, and **pauses for a human checkpoint**. No state machine. Adaptive —
+three tracks: the **full** trail; **trivial** work collapses `trailmix-discuss`+`trailmix-plan`
+into one `spec-plan.md`; **bug** work ("it's broken", not "build this") runs reproduce → red test
+→ fix → green → review, anchored by `bug.md` (repro steps, expected vs actual, suspected surface —
+`trailhead/refs/bug-template.md`), review mandatory, document usually skipped.
+`trailmix-document` may legitimately produce nothing. A passed checkpoint is the recommended
+point to clear/restart the session — the approved artifact is the distilled context and resume
+lands exactly there.
 
 Artifacts live in the target project at: `.trailmix/trail/<feature-slug>/`.
 
@@ -123,27 +128,40 @@ Artifacts live in the target project at: `.trailmix/trail/<feature-slug>/`.
 | 4 | **trailmix-review** | Read-only review vs spec+plan; `review-checklist.md`; HIGH/MED/LOW + verdict; human picks fixes | **trailmix-reviewer** (strong, read-only) | `review.md` |
 | 5 | **trailmix-document** | Weight-based doc updates (`weight-heuristics.md`); zero-doc is valid | **trailmix-documenter** (standard) | repo docs |
 
-Fix loop: human selects findings (e.g. `H1, M2`) → `trailmix-implementer` applies exactly those →
-re-review if needed. All handoffs use **GORP** (§6).
+Fix loop (iterative): findings carry a lifecycle (`open | fixed | wont-fix | disputed`) in
+`review.md`'s frontmatter, stamped via named ops. Human selects findings (e.g. `H1, M2`) →
+`trailmix-implementer` applies exactly those → a **delta re-review** re-checks only the touched
+findings + regression risk and appends a dated `## Re-review` block; a finding flips to `fixed`
+only after the re-review confirms it. Implement-time drift lands as dated one-liners in
+`plan.md`'s `## Amendments` (big drift → `supersede` + re-plan), and review judges code against
+the plan *including* amendments. At the document waypoint an **agent retro** question feeds
+one-line conventions/gotchas into the repo's own `CLAUDE.md`/`AGENTS.md` (same weight test —
+zero additions is the norm). All handoffs use **GORP** (§6).
 
 **Trail metadata & resume.** Each artifact carries minimal YAML frontmatter; `spec.md` /
-`spec-plan.md` is the **anchor** (trail identity + the Document outcome, which has no artifact of
-its own). The only non-derivable field is `status: draft | approved | superseded` — advancing a
-waypoint stamps the previous artifact `approved`, so an abandoned trail shows its last artifact
-`draft`. Both mechanical operations — reading **frontmatter only** (never bodies) to *resume* or
+`spec-plan.md` / `bug.md` is the **anchor** (trail identity + the Document outcome, which has no
+artifact of its own). The non-derivable fields are `status: draft | approved | superseded` —
+advancing a waypoint stamps the previous artifact `approved`, so an abandoned trail shows its
+last artifact `draft` — plus the plan's `tasks:` (which task gates went green; resume lands on
+the first open task, e.g. `implement (1/3 done, next T2)`) and the review's `findings:` (the
+fix-loop lifecycle above). Both mechanical operations — reading **frontmatter only** (never bodies) to *resume* or
 *survey status*, and *transitioning* a status — run through a bundled zero-dep Node helper
 (`trailmix-trailhead/refs/trail.mjs`), so the LLM never hand-parses or hand-edits YAML and never
 types a status value it could misspell — it names an intent and the helper owns the vocabulary
 (the correctness + token win). Commands: `new` (scaffold an artifact's frontmatter — dates and
 initial status correct by construction), the named transitions `approve`/`supersede`/
-`document-done`/`document-skipped`, `read`, `check` (lint all frontmatter against the schema;
-also run in CI via `verify.sh`), and `status` (derive the resume line per trail). The helper is a
+`document-done`/`document-skipped`, `tasks`/`task-done` (register the plan's task ids, flip one
+gate green), `findings`/`finding` (register review finding ids, flip one state), `read`, `check`
+(lint all frontmatter against the schema; also run in CI via `verify.sh`), and `status` (derive
+the resume line per trail). The helper is a
 **pure data tool** — it owns the closed vocabulary (statuses, waypoints, templates) but no
 workflow rules: no gates, no enforced ordering, no state machine; even `status` only reports. The
 skill decides when to call it. It ships inside the
-plugin and is invoked by plugin-root path (`$CLAUDE_PLUGIN_ROOT` on CC / `$PLUGIN_ROOT` on GHCP),
-**not** installed on PATH — so it's not the rejected `trailmix` CLI. Where neither var resolves
-or `node` is absent, it falls back to an awk read pass / hand-edit. Schema + invocation live in
+plugin and is invoked by its path inside the installed plugin — resolved from the loaded skill's
+stated base directory, since the plugin-root env vars (`$CLAUDE_PLUGIN_ROOT` / `$PLUGIN_ROOT`)
+are set for hook commands but not for the shell the model runs tools in — **not** installed on
+PATH, so it's not the rejected `trailmix` CLI. Where the path can't be resolved or `node` is
+absent, it falls back to an awk read pass / hand-edit. Schema + invocation live in
 `trailmix-trailhead/refs/trail-metadata.md`. No sidecar `trail.json`, no state machine, no CLI.
 
 ---
@@ -151,25 +169,27 @@ or `node` is absent, it falls back to an awk read pass / hand-edit. Schema + inv
 ## 5. The trail crew — agents (generated per platform)
 
 Authored once as neutral `<name>.agent.md` (frontmatter + body); generator emits
-`dist/claude/agents/<n>.md` and `dist/ghcp/agents/<n>.agent.md`, mapping `tier`→model and
-neutral tools→platform tools; the markdown body carries over verbatim.
+`dist/claude/agents/<n>.md` and `dist/ghcp/agents/<n>.agent.md`, mapping agent name→model
+(`build/maps/models.json`) and neutral tools→platform tools; the markdown body carries over
+verbatim.
 
-| Agent | Role | Tier | Tools (neutral) | Isolation |
+| Agent | Role | Model (default map) | Tools (neutral) | Isolation |
 |---|---|---|---|---|
-| **trailmix-explorer** | Read codebase + web research, summarize | `cheap` | read, search, web | read-only |
-| **trailmix-implementer** | Code + tests + verification | `reasoning` | read, edit, search, shell | read/write |
-| **trailmix-reviewer** | Senior review, verdict | `strong` | read, search, shell | **read-only (discipline)** |
-| **trailmix-documenter** | Update repo docs by weight | `standard` | read, edit, search, shell | read/write |
+| **trailmix-explorer** | Read codebase + web research, summarize | cheap (haiku) | read, search, web | read-only |
+| **trailmix-implementer** | Code + tests + verification | sonnet / gpt-5.3-codex | read, edit, search, shell | read/write |
+| **trailmix-reviewer** | Senior review, verdict | sonnet | read, search, shell | **read-only (discipline)** |
+| **trailmix-documenter** | Update repo docs by weight | sonnet | read, edit, search, shell | read/write |
 
-Neutral agent spec (example shape):
+Tier words in waypoint prose ("cheap", "reasoning-tier", "strong-tier") describe *intent*;
+`models.json` pins what each agent actually gets, keyed by agent name — adjust per account.
+
+Neutral agent spec (example shape — model comes from `models.json`, not frontmatter):
 
 ```yaml
 name: trailmix-reviewer
 description: Senior read-only reviewer. Reviews uncommitted work vs spec+plan; returns
   HIGH/MED/LOW findings with a verdict. Never edits.
-tier: strong
 tools: [read, search, shell]
-returns: gorp        # handoff convention
 ```
 
 ---
@@ -243,17 +263,9 @@ Contents:
 subset (`name`, `description`, `allowed-tools`). Platform-only extras (CC `model`/`paths`/`hooks`)
 are emitted **only** into the CC copy from optional neutral hints. `refs/` copied as-is (JIT).
 
-**Agents:** neutral yaml → CC `<n>.md` and GHCP `<n>.agent.md`, mapping `tier`→model and
+**Agents:** neutral yaml → CC `<n>.md` and GHCP `<n>.agent.md`, mapping agent name→model
+(`build/maps/models.json` — pin exact names per account; see the §5 table for the defaults) and
 neutral tools→platform tools.
-
-**Model tiers** (`build/maps/models.json`, indicative — pin exact names at build time):
-
-| tier | CC | GHCP |
-|---|---|---|
-| cheap | `haiku` | `claude-haiku-4.5` / `gpt-5-mini` |
-| standard | `sonnet` | `claude-sonnet-4.6` |
-| reasoning | `sonnet` (or `opus`) | `gpt-5.3-codex` / `claude-sonnet` |
-| strong | `opus` | `claude-opus-4.x` / `gpt-5.5` |
 
 **Tool aliases** (`build/maps/tools.json`): neutral set mirrors GHCP aliases; map to CC caps.
 
@@ -289,7 +301,7 @@ CC's manifest doesn't need a `hooks` field (auto-discovered from the default `ho
 | JIT loading | tiny `SKILL.md`; detail in `refs/*.md` loaded only when the skill needs it |
 | Context isolation | phase work runs in subagents; parent context stays clean |
 | Disk over chat | artifacts (`spec/plan/review.md`) written to `.trailmix/…`; human reads them, not the context |
-| Cheap-model routing | explorer/read/summarize/websearch on `cheap`; implement on `reasoning`; review on `strong` |
+| Cheap-model routing | explorer (read/summarize/websearch) on a cheap model; the rest pinned per agent in `build/maps/models.json` |
 | Evidence not logs | GORP: counts + exact commands + one-line findings, hard word caps |
 | Terse + lean defaults | always-on style skills with safety carve-outs |
 | Tool-def deferral | rely on each CLI's native deferred tool loading when >~30 tools |
@@ -315,13 +327,17 @@ CC's manifest doesn't need a `hooks` field (auto-discovered from the default `ho
    delivery `install.sh` used to provide.
 8. ✅ Resumable trails — artifact frontmatter (anchor `spec.md`) + `trailhead` resume/status
    behavior, reading frontmatter only. Read + named status transitions go through a bundled
-   zero-dep helper (`trail.mjs`, plugin-root-invoked, awk/hand-edit fallback) so YAML is never
+   zero-dep helper (`trail.mjs`, resolved from the loaded skill's base dir, awk/hand-edit
+   fallback) so YAML is never
    hand-edited and statuses are never typed by hand (can't be misspelled); it's a pure data tool
    that owns the status vocabulary but no transition rules — not a state machine or a PATH CLI.
    No `trail.json` (see §4).
+9. ✅ Agent-behavior features: task-level resume inside implement (`tasks:`/`task-done`),
+   fresh-session-per-waypoint as the recommended flow, fix-loop v2 (finding lifecycle + delta
+   re-review), plan amendments, the bug track, and the agent retro.
 
 ---
 
 ## Open questions
-- None blocking. To pin at build time: exact model names per tier, and whether `dist/` is
-  committed or generated on install.
+- None. (Model names: pinned per agent in `build/maps/models.json`. `dist/`: committed, kept
+  fresh by CI.)

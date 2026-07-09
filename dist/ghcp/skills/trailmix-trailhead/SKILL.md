@@ -12,12 +12,21 @@ through the trail. (Resuming work from an earlier session, or want an overview? 
 trail** and **Trail status** below.)
 
 ## 1. Name the work
-Pick a short kebab-case feature slug. Its artifacts live in `.trailmix/trail/<slug>/`.
+Pick a short kebab-case feature slug. Its artifacts live in `.trailmix/trail/<slug>/`. First
+trail in a repo: add `.trailmix/` to `.gitignore` unless the human wants trails committed
+(shared across machines/teammates).
 
-## 2. Size it (adaptive)
+## 2. Size it (adaptive) — three tracks
 - **Trivial / localized / low-risk** (one clear change, no design choices): collapse Discuss +
   Plan into a single `spec-plan.md`, or for truly tiny work skip straight to implement. Still
   review.
+- **Bug / "it's broken"** (a defect in existing behavior, not new behavior): don't force it
+  through Discuss→Plan — run the bug track: **reproduce → red test → fix → green → review**.
+  Scaffold the anchor with `trail.mjs new <slug> bug "<title>"` and fill it from
+  `refs/bug-template.md` (repro steps, expected vs actual, suspected surface). Checkpoint: the
+  human confirms the repro. Then implement — a failing test that reproduces the bug comes
+  **before** any fix (the Iron Law's red-green rule is this track's spine). Review stays
+  mandatory; document usually skips.
 - **Design choices, multiple files, or real risk**: run the full trail.
 
 Scale detail to the work. When in doubt, ask the human which size fits.
@@ -53,6 +62,11 @@ given one. Falls back to the awk read pass if the helper can't run. This is agen
 
 ## Rules
 - Pause at each checkpoint. The human drives; don't skip ahead.
+- A passed checkpoint is a good point to **clear or restart the session**: the approved artifact
+  on disk *is* the distilled context — everything else is dead weight — and resume lands exactly
+  there. Recommend it after heavy waypoints; never require it.
+- Host modes: if the host CLI's own plan/review mode is active, fold the matching waypoint into
+  it — one ceremony, trail artifacts still written — don't run both rituals.
 - Write outputs to disk; keep chat for decisions and short summaries.
 - Advancing a waypoint approves the previous artifact (via the `trail.mjs approve` helper — a
   named op, so the status is never typed by hand); write each new artifact `status: draft`.

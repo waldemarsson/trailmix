@@ -3,7 +3,8 @@
 Loaded just-in-time. Assess **every dimension** below against the code you actually read;
 categorize findings by real severity and give each a stable id (H1 / M2 / L3…).
 
-- **Plan alignment** — does it match spec & plan? Is all planned functionality present? Are
+- **Plan alignment** — does it match spec & plan *including the plan's `## Amendments`*? (An
+  amended deviation is documented, not a departure.) Is all planned functionality present? Are
   deviations justified improvements or problematic departures? Flag deviations specifically. If
   the *plan itself* is wrong, say so.
 - **Code quality** — separation of concerns, error handling, type safety, DRY without premature
@@ -44,5 +45,15 @@ LOW:
 Spec compliance:
 - [x] AC1
 - [ ] AC2 — not met because ...
+Verdict: Yes | No | With fixes — 1-line technical reasoning.
+```
+
+## Re-review block shape (delta mode)
+Appended to `review.md` after a fix loop — scoped to the fixed findings + regression risk only:
+```
+## Re-review (YYYY-MM-DD)
+- H1 · held — fix verified at file:line
+- M2 · not fixed — why, what's still wrong
+- M3 (new) · file:line · introduced by the H1 fix → why → fix
 Verdict: Yes | No | With fixes — 1-line technical reasoning.
 ```

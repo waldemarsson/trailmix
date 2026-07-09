@@ -7,10 +7,5 @@
   "license": "MIT",
   "homepage": "https://github.com/waldemarsson/trailmix",
   "repository": "https://github.com/waldemarsson/trailmix",
-  "keywords": ["agentic", "workflow", "skills", "copilot", "claude-code"],
-  "components": {
-    "skills": "skills/",
-    "agents": "agents/",
-    "instructions": "AGENTS.md"
-  }
+  "keywords": ["agentic", "workflow", "skills", "copilot", "claude-code"]
 }

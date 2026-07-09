@@ -13,7 +13,8 @@ GitHub Copilot CLI and Claude Code.
 - Phase outputs (artifacts) go to `.trailmix/trail/<feature-slug>/` (`spec.md`, `plan.md`,
   `review.md`). Write to disk; the human reads them there — don't paste them back into chat.
 - The flow is soft and adaptive: scale detail to the work, collapse phases for trivial
-  changes, and pause for a human checkpoint at each waypoint. No rigid gates.
+  changes, and pause for a human checkpoint at each waypoint. No rigid gates. If the host CLI's
+  own plan/review mode is active, fold the matching waypoint into it — never run both ceremonies.
 - Trails are resumable: to continue earlier work or survey trail status, consult
   **trailmix-trailhead** — it reads artifact frontmatter, not full bodies.
 
@@ -38,7 +39,8 @@ evidence is counts + the exact command, never pasted logs or diffs; findings are
 each; hard word caps; no preamble or sign-off. See the `trailmix-gorp` skill.
 
 ## Tool conventions
-Faster CLI tools may be installed. Treat a tool as present only if `--version` works;
+Prefer the host's native read/search tools; shell out when they don't cover the job. In a
+shell, faster CLI tools may be installed. Treat a tool as present only if `--version` works;
 otherwise fall back silently. Never refuse a task because a preferred tool is missing.
 - Content search: `rg`, not `grep -r`. Fallback: `grep -rn`.
 - File finding: `fd`, not `find`. Fallback: `find . -name`.
@@ -49,6 +51,7 @@ otherwise fall back silently. Never refuse a task because a preferred tool is mi
 `rg`/`fd` respect `.gitignore`; don't add redundant excludes. Use `-u` to search ignored files.
 
 ## Security (overrides everything)
-- Never read `.env` files — under any mode, including allow-all / auto-approve / YOLO.
+- Never read `.env` files — under any mode, including allow-all / auto-approve / YOLO — unless
+  the human explicitly names the file and asks in this session.
 - Never read environment variables without explicit per-variable permission. No bulk env reads.
 - No HTTP POST (including `curl`) without explicit permission naming URL, body, and purpose.

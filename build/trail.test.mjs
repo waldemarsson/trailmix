@@ -18,6 +18,12 @@ import {
   deriveTrail,
   summarize,
   OPS,
+  parseTasks,
+  setTasks,
+  taskDone,
+  parseFindings,
+  setFindings,
+  findingState,
 } from "../src/skills/trailmix-trailhead/refs/trail.mjs";
 
 const today = new Date().toISOString().slice(0, 10);
@@ -114,6 +120,112 @@ test("every op maps to a known field", () => {
   for (const [, [field]] of Object.entries(OPS)) assert.ok(["status", "document"].includes(field));
 });
 
+// ---- tasks (implement progress) ----------------------------------------------------------------
+const PLAN = `---
+slug: demo
+waypoint: plan
+status: approved
+updated: 2020-01-01
+---
+
+# Plan body
+`;
+
+test("tasks registers ids once and bumps updated", () => {
+  withFile(PLAN, (f) => {
+    assert.equal(run(["tasks", f, "T1", "T2", "T3"]), 0);
+    const out = readFileSync(f, "utf8");
+    assert.match(out, /^tasks: T1 T2 T3$/m);
+    assert.match(out, new RegExp(`^updated: ${today}$`, "m"));
+    assert.throws(() => setTasks(f, ["T1"]), /already registered/);
+  });
+});
+
+test("tasks rejects bad and duplicate ids", () => {
+  withFile(PLAN, (f) => {
+    assert.throws(() => setTasks(f, ["task-1"]), /bad task id/);
+    assert.throws(() => setTasks(f, ["T1", "T1"]), /duplicate/);
+  });
+});
+
+test("task-done flips one id; unknown id fails loudly; idempotent", () => {
+  withFile(PLAN, (f) => {
+    setTasks(f, ["T1", "T2", "T3"]);
+    taskDone(f, "T2");
+    assert.match(readFileSync(f, "utf8"), /^tasks: T1 T2:done T3$/m);
+    taskDone(f, "T2");
+    assert.match(readFileSync(f, "utf8"), /^tasks: T1 T2:done T3$/m);
+    assert.throws(() => taskDone(f, "T9"), /unknown task id/);
+    assert.throws(() => withFile(PLAN, (g) => taskDone(g, "T1")), /no tasks field/);
+  });
+});
+
+test("parseTasks rejects a malformed token", () => {
+  assert.throws(() => parseTasks("T1 done"), /bad task token/);
+  assert.deepEqual(parseTasks("T1:done T2"), [
+    { id: "T1", done: true },
+    { id: "T2", done: false },
+  ]);
+});
+
+test("check flags a malformed or empty tasks field", () => {
+  withFile(PLAN.replace("---\n\n", "tasks: T1 nope\n---\n\n"), (f) => {
+    assert.ok(checkFile(f).some((p) => /bad tasks/.test(p)));
+  });
+  withFile(PLAN, (f) => {
+    setTasks(f, ["T1"]);
+    assert.deepEqual(checkFile(f), []);
+  });
+});
+
+// ---- findings (review fix-loop) ----------------------------------------------------------------
+const REVIEW = `---
+slug: demo
+waypoint: review
+status: draft
+updated: 2020-01-01
+---
+
+# Review body
+`;
+
+test("findings registers ids once; finding flips one state", () => {
+  withFile(REVIEW, (f) => {
+    assert.equal(run(["findings", f, "H1", "M1", "L1"]), 0);
+    assert.match(readFileSync(f, "utf8"), /^findings: H1 M1 L1$/m);
+    assert.equal(run(["finding", f, "H1", "fixed"]), 0);
+    findingState(f, "L1", "wont-fix");
+    assert.match(readFileSync(f, "utf8"), /^findings: H1:fixed M1 L1:wont-fix$/m);
+    findingState(f, "H1", "open"); // reopen after a bad fix
+    assert.match(readFileSync(f, "utf8"), /^findings: H1 M1 L1:wont-fix$/m);
+    assert.throws(() => setFindings(f, ["H1"]), /already registered/);
+  });
+});
+
+test("finding rejects unknown ids and states outside the vocabulary", () => {
+  withFile(REVIEW, (f) => {
+    setFindings(f, ["H1"]);
+    assert.throws(() => findingState(f, "H2", "fixed"), /unknown finding id/);
+    assert.throws(() => findingState(f, "H1", "fixt"), /bad finding state/);
+    assert.throws(() => setFindings(f, ["X1"]), /bad finding id/);
+  });
+});
+
+test("parseFindings: bare id is open; bad token/state fails", () => {
+  assert.deepEqual(parseFindings("H1:fixed M2"), [
+    { id: "H1", state: "fixed" },
+    { id: "M2", state: "open" },
+  ]);
+  assert.throws(() => parseFindings("Q1"), /bad finding token/);
+  assert.throws(() => parseFindings("H1:done"), /bad finding state/);
+});
+
+test("check flags a malformed findings field", () => {
+  withFile(REVIEW.replace("---\n\n", "findings: H1:nope\n---\n\n"), (f) => {
+    assert.ok(checkFile(f).some((p) => /bad findings/.test(p)));
+  });
+});
+
 // ---- new -------------------------------------------------------------------------------------
 test("new scaffolds an anchor with today's dates and valid frontmatter", () => {
   inTemp(() => {
@@ -201,6 +313,48 @@ test("derive: plan approved -> next implement (artifact-less phase)", () => {
   assert.equal(deriveTrail(d).next, "implement");
 });
 
+test("derive: mid-implement tasks land on the first open task", () => {
+  const d = trail({
+    "spec.md": anchor("approved"),
+    "plan.md": nonAnchor("plan", "approved") + "\ntasks: T1:done T2 T3",
+  });
+  assert.equal(deriveTrail(d).next, "implement (1/3 done, next T2)");
+});
+
+test("derive: all task gates green -> next review", () => {
+  const d = trail({
+    "spec.md": anchor("approved"),
+    "plan.md": nonAnchor("plan", "approved") + "\ntasks: T1:done T2:done",
+  });
+  assert.equal(deriveTrail(d).next, "review");
+});
+
+test("derive: tasks on a draft plan don't preempt the plan checkpoint", () => {
+  const d = trail({
+    "spec.md": anchor("approved"),
+    "plan.md": nonAnchor("plan", "draft") + "\ntasks: T1:done T2",
+  });
+  assert.equal(deriveTrail(d).next, "plan (awaiting sign-off)");
+});
+
+test("derive: draft review with open findings shows the open count", () => {
+  const d = trail({
+    "spec.md": anchor("approved"),
+    "plan.md": nonAnchor("plan", "approved"),
+    "review.md": nonAnchor("review", "draft") + "\nfindings: H1:fixed M1 M2 L1:wont-fix",
+  });
+  assert.equal(deriveTrail(d).next, "review (awaiting sign-off, 2 open)");
+});
+
+test("derive: draft review with no open findings stays plain", () => {
+  const d = trail({
+    "spec.md": anchor("approved"),
+    "plan.md": nonAnchor("plan", "approved"),
+    "review.md": nonAnchor("review", "draft") + "\nfindings: H1:fixed L1:wont-fix",
+  });
+  assert.equal(deriveTrail(d).next, "review (awaiting sign-off)");
+});
+
 test("derive: review approved + document pending -> next document", () => {
   const d = trail({
     "spec.md": anchor("approved"),
@@ -217,6 +371,29 @@ test("derive: all approved + document done -> done", () => {
     "review.md": nonAnchor("review", "approved"),
   });
   assert.deepEqual(deriveTrail(d), { slug: "feat", state: "done", next: "—" });
+});
+
+test("new scaffolds a bug anchor (title, dates, document) that passes lint", () => {
+  inTemp(() => {
+    const f = newTrail("login-500", "bug", "Login 500s");
+    const fm = frontmatter(readFileSync(f, "utf8"));
+    assert.equal(fm.waypoint, "bug");
+    assert.equal(fm.title, "Login 500s");
+    assert.equal(fm.document, "pending");
+    assert.deepEqual(checkFile(f), []);
+  });
+});
+
+test("derive: bug track — draft repro, then implement, then done", () => {
+  const bugFm = (status, document = "pending") =>
+    `slug: feat\ntitle: T\ncreated: ${today}\nupdated: ${today}\nwaypoint: bug\nstatus: ${status}\ndocument: ${document}`;
+  assert.equal(deriveTrail(trail({ "bug.md": bugFm("draft") })).next, "bug (awaiting sign-off)");
+  assert.equal(deriveTrail(trail({ "bug.md": bugFm("approved") })).next, "implement");
+  const done = trail({
+    "bug.md": bugFm("approved", "skipped"),
+    "review.md": nonAnchor("review", "approved"),
+  });
+  assert.deepEqual(deriveTrail(done), { slug: "feat", state: "done", next: "—" });
 });
 
 test("derive: trivial track spec-plan draft", () => {

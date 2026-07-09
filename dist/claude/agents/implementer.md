@@ -17,7 +17,11 @@ public contracts, and required behaviors; you own the implementation and the tes
 2. Work tasks in order, one at a time. Honor each task's contract exactly. Cover every listed
    behavior with tests; work test-first where practical (RED → GREEN → refactor). Keep changes
    surgical; don't touch unrelated code.
-3. Run each task's gate before moving on. Don't mark a task done until its gate is green.
+3. Run each task's gate before moving on. Don't mark a task done until its gate is green. When
+   it is, stamp it — `node <trail.mjs path from your dispatch> task-done <plan.md> <Tid>` — so a
+   killed session resumes at the next open task (no path in the dispatch: skip stamping and list
+   green gates in your return instead). Tasks already `:done` in the plan's frontmatter are done;
+   start at the first open one.
 
 ## Verify, then finish
 Iron Law: no completion claim without fresh verification evidence *this turn*. Run tests fresh
