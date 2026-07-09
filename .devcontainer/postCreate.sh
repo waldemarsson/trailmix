@@ -37,17 +37,11 @@ grep -q 'yoloclaude' "$HOME/.bashrc" 2>/dev/null \
 # .claude and .copilot's bind-mounted subdirs (skills, agents, etc.) are direct host
 # binds — never chown -R paths containing those, it would rewrite ownership on your
 # actual host files. Only fix the .copilot directory entry itself (Docker may have
-# auto-created it as root before the container started) and the true named volumes.
+# auto-created it as root before the container started) and the true named volume.
 echo "🔑 Fixing volume ownership..."
-sudo mkdir -p \
-    "$HOME/.nuget/packages" \
-    "$HOME/.npm" \
-    "$HOME/.copilot"
+sudo mkdir -p "$HOME/.npm" "$HOME/.copilot"
 sudo chown vscode:vscode "$HOME/.copilot"
-sudo chown -R vscode:vscode \
-    "$HOME/.nuget" \
-    "$HOME/.npm" \
-    2>/dev/null || true
+sudo chown -R vscode:vscode "$HOME/.npm" 2>/dev/null || true
 echo "   ✅ Done"
 
 # ── Git credentials via PAT (no SSH key mounted) ──────────────────────────────
@@ -70,14 +64,13 @@ echo "🌳 Installing ast-grep..."
 npm install -g @ast-grep/cli
 echo "   ✅ Done"
 
-# ── Install npm dependencies ──────────────────────────────────────────────────
-echo "📦 Installing npm dependencies..."
-if [ -f /workspace/package.json ]; then
-    cd /workspace && npm install
-    echo "   ✅ Done"
-else
-    echo "   ⚠️  No package.json yet, skipping"
-fi
+# ── Smoke-test the repo toolchain ─────────────────────────────────────────────
+# trailmix has zero npm dependencies — nothing to install. Instead prove the
+# toolchain works end-to-end: unit tests + the build-freshness/structure check.
+echo "🥾 Smoke-testing trailmix build + verify..."
+node --test build/trail.test.mjs
+npm run verify
+echo "   ✅ Done"
 
 # ── Drop NOPASSWD sudo rule ───────────────────────────────────────────────────
 # All privileged setup is complete. Removing this means AI agents in auto-approve
@@ -91,8 +84,6 @@ echo ""
 echo "══════════════════════════════════════════════════════════"
 echo "  Environment Verification"
 echo "══════════════════════════════════════════════════════════"
-echo "  .NET SDK       : $(dotnet --version 2>/dev/null || echo 'NOT FOUND')"
-echo "  Terraform      : $(terraform --version 2>/dev/null | head -n1 || echo 'NOT FOUND')"
 echo "  Node.js        : $(node --version 2>/dev/null || echo 'NOT FOUND')"
 echo "  npm            : $(npm --version 2>/dev/null || echo 'NOT FOUND')"
 echo "  Claude Code    : $(claude --version 2>/dev/null || echo 'NOT FOUND')"
@@ -106,19 +97,14 @@ echo "  micro          : $(micro -version 2>/dev/null | head -n1 || echo 'NOT FO
 echo "  ast-grep       : $(sg --version 2>/dev/null || echo 'NOT FOUND')"
 echo "  Copilot skills : $(ls "$HOME/.copilot/skills" 2>/dev/null | wc -l) file(s)"
 echo "  Copilot agents : $(ls "$HOME/.copilot/agents" 2>/dev/null | wc -l) file(s)"
-echo "  Copilot exts   : $(ls "$HOME/.copilot/extensions" 2>/dev/null | wc -l) file(s)"
-echo "  Copilot wkflow : $(ls "$HOME/.copilot/workflow" 2>/dev/null | wc -l) file(s)"
 echo "  Copilot plugins: $(ls "$HOME/.copilot/installed-plugins" 2>/dev/null | wc -l) file(s)"
-echo "  Claude agents  : $(ls "$HOME/.claude/agents" 2>/dev/null | wc -l) file(s)"
-echo "  Claude commands: $(ls "$HOME/.claude/commands" 2>/dev/null | wc -l) file(s)"
 echo "  Claude plugins : $(ls "$HOME/.claude/plugins/marketplaces" 2>/dev/null | wc -l) marketplace(s)"
 echo "══════════════════════════════════════════════════════════"
 echo ""
 echo "📋 Quick Start"
-echo "  Frontend dev:  npm run dev"
-echo "  .NET build:    dotnet build"
-echo "  .NET test:     dotnet test"
-echo "  Terraform:     terraform init && terraform plan"
+echo "  Build dist/:   npm run build"
+echo "  Verify:        npm run verify"
+echo "  Unit tests:    node --test build/trail.test.mjs"
 echo "  Claude Code:   claude"
-echo "  Copilot CLI:   copilot auth login"
+echo "  Copilot CLI:   copilot   (then: copilot auth login — config.json isn't mounted)"
 echo ""

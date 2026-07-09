@@ -1,57 +1,38 @@
 // .devcontainer/devcontainer.json
 {
-  "name": "babytabs (.NET + SvelteKit + Terraform)",
+  "name": "trailmix (Node + agent CLIs)",
   "build": {
     "dockerfile": "Dockerfile",
-    "context": "..",
+    "context": ".",
   },
   // ======================== Features ========================
+  // trailmix is a zero-dependency Node repo (generator, tests, trail.mjs) that ships a
+  // plugin for two agent CLIs — those three are the whole toolchain.
   "features": {
-    // .NET SDK 10 — backend
-    "ghcr.io/devcontainers/features/dotnet:2": {
-      "version": "10.0",
-    },
-    // Node.js — SvelteKit frontend + required runtime for Claude Code and Copilot CLI
+    // Node.js — build/generate.mjs, node --test, trail.mjs; also the runtime for both CLIs
     "ghcr.io/devcontainers/features/node:1": {
       "version": "22",
     },
-    // Terraform CLI — infrastructure
-    "ghcr.io/devcontainers/features/terraform:1": {},
-    // Docker-in-Docker — run/build containers inside the devcontainer
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {
-      "moby": true,
-      "version": "latest",
-      "enableNonRootDocker": true,
-      "installDockerBuildx": true,
-      "dockerDashComposeVersion": "v2",
-    },
-    // Claude Code — Anthropic's AI coding CLI
+    // Claude Code — install target #1 for the plugin
     "ghcr.io/anthropics/devcontainer-features/claude-code:1": {},
-    // GitHub Copilot CLI
+    // GitHub Copilot CLI — install target #2
     "ghcr.io/devcontainers/features/copilot-cli:1": {},
   },
   // Node.js must install before Claude Code and Copilot CLI (both npm-based).
   "overrideFeatureInstallOrder": [
-    "ghcr.io/devcontainers/features/dotnet",
-    "ghcr.io/devcontainers/features/terraform",
-    "ghcr.io/devcontainers/features/docker-in-docker",
     "ghcr.io/devcontainers/features/node",
     "ghcr.io/anthropics/devcontainer-features/claude-code",
     "ghcr.io/devcontainers/features/copilot-cli",
   ],
   // ======================== Filesystem Isolation ========================
-  // Mount target matches host path exactly (not /workspace) so .NET's baked-in
-  // absolute paths (obj/project.assets.json, bin refs) stay valid both inside
-  // and outside the container — no more forced re-restore on switch.
+  // Mount target matches host path exactly (not /workspace): Claude Code's plugin metadata
+  // (known_marketplaces.json) records this repo by its absolute host path when you
+  // `marketplace add` it, so the same path must resolve inside the container for the
+  // installed-from-here plugin to work.
   "workspaceMount": "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind,consistency=cached",
   "workspaceFolder": "${localWorkspaceFolder}",
   "mounts": [
-    // Named volumes for build caches — persist across rebuilds
-    {
-      "source": "devcontainer-nuget-${devcontainerId}",
-      "target": "/home/vscode/.nuget/packages",
-      "type": "volume",
-    },
+    // Named volume for the npm cache — persists across rebuilds
     {
       "source": "devcontainer-npm-${devcontainerId}",
       "target": "/home/vscode/.npm",
@@ -154,30 +135,13 @@
     "EDITOR": "micro",
     "VISUAL": "micro",
   },
-  // ======================== VS Code Extensions ========================
-  "customizations": {
-    "vscode": {
-      "extensions": [
-        "GitHub.copilot",
-        "GitHub.copilot-chat",
-        "ms-dotnettools.csharp",
-        "ms-dotnettools.csdevkit",
-        "svelte.svelte-vscode",
-        "hashicorp.terraform",
-        "bradlc.vscode-tailwindcss",
-        "esbenp.prettier-vscode",
-      ],
-      "settings": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode",
-      },
-    },
-  },
   // ======================== Lifecycle ========================
   "postCreateCommand": "bash .devcontainer/postCreate.sh",
   // ======================== Host Requirements ========================
+  // Markdown + a zero-dep Node build — this repo needs very little.
   "hostRequirements": {
-    "cpus": 4,
-    "memory": "8gb",
-    "storage": "32gb",
+    "cpus": 2,
+    "memory": "4gb",
+    "storage": "16gb",
   },
 }

@@ -1,5 +1,6 @@
 # .devcontainer/Dockerfile
-# Ubuntu 24.04 Noble — .NET, Node.js, Terraform, Claude Code, and Copilot CLI via devcontainer features.
+# Ubuntu 24.04 Noble — Node.js, Claude Code, and Copilot CLI come via devcontainer features;
+# this layer only adds the fast CLI tools trailmix's own tool conventions expect (AGENTS.md).
 FROM mcr.microsoft.com/devcontainers/base:noble
 
 # ── Agent tooling ────────────────────────────────────────────────────────────
