@@ -1,6 +1,6 @@
 {
   "name": "trailmix",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "description": "A portable, token-efficient agentic coding workflow for GitHub Copilot CLI and Claude Code.",

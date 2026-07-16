@@ -5,8 +5,10 @@ with a coding agent: **Discuss → Plan → Implement → Review → Document**.
 GitHub Copilot CLI and Claude Code.
 
 ## Bootstrap
-- For any request to build, add, change, fix, or ship something, consult the **trailmix-trailhead**
-  skill first — it routes you to the right waypoint.
+- For a request to build, add, change, fix, or ship something, consult the **trailmix-trailhead**
+  skill first — it routes you to the right waypoint. Skip it for read-only work (questions,
+  exploration, debugging investigation) and edits too small to outlive the session (typo-class
+  fixes, config tweaks) — just answer or make the change.
 - Pull a waypoint's skill (`trailmix-discuss`, `trailmix-plan`, `trailmix-implement`,
   `trailmix-review`, `trailmix-document`) only when you reach that phase. Don't hold the whole
   workflow in context at once.

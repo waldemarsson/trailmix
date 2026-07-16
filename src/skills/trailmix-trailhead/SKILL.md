@@ -1,8 +1,10 @@
 ---
 name: trailmix-trailhead
-description: Entry point for any request to build, add, change, fix, or ship something. Routes
+description: Entry point for a request to build, add, change, fix, or ship something. Routes
   the work through trailmix's Discuss→Plan→Implement→Review→Document workflow, sizes it, and
-  names the feature. Use at the start of a coding task, before diving into code.
+  names the feature. Use at the start of a coding task, before diving into code. SKIP for
+  read-only work (questions, exploration, debugging investigation) and edits too small to
+  outlive the session — those need no trail.
 ---
 
 # trailhead — route the work
@@ -16,7 +18,10 @@ Pick a short kebab-case feature slug. Its artifacts live in `.trailmix/trail/<sl
 trail in a repo: add `.trailmix/` to `.gitignore` unless the human wants trails committed
 (shared across machines/teammates).
 
-## 2. Size it (adaptive) — three tracks
+## 2. Size it (adaptive) — four tracks
+- **No trail** (read-only work, or an edit smaller than the ceremony — typo-class fix, config
+  tweak, rename): no slug, no artifacts, no mandated review. Just do it and note that the trail
+  was skipped.
 - **Trivial / localized / low-risk** (one clear change, no design choices): collapse Discuss +
   Plan into a single `spec-plan.md`, or for truly tiny work skip straight to implement. Still
   review.
@@ -26,7 +31,8 @@ trail in a repo: add `.trailmix/` to `.gitignore` unless the human wants trails 
   `refs/bug-template.md` (repro steps, expected vs actual, suspected surface). Checkpoint: the
   human confirms the repro. Then implement — a failing test that reproduces the bug comes
   **before** any fix (the Iron Law's red-green rule is this track's spine). Review stays
-  mandatory; document usually skips.
+  mandatory; document usually skips. If the human already stated the repro and the fix is
+  obviously localized, skip the anchor and checkpoint — go straight to red test → fix → green.
 - **Design choices, multiple files, or real risk**: run the full trail.
 
 Scale detail to the work. When in doubt, ask the human which size fits.
