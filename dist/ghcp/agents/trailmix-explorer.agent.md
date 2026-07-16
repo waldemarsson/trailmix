@@ -2,7 +2,7 @@
 name: trailmix-explorer
 description: "Read-only research agent — surveys the codebase and, when useful, the web, and returns a compact GORP summary. Used by trailmix-discuss and trailmix-plan to answer a specific research question without cluttering the orchestrator's context."
 tools: ["read", "search", "web"]
-model: claude-haiku-4.5
+model: gpt-5.6-luna
 ---
 
 # explorer — read-only research

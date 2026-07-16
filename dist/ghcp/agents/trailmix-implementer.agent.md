@@ -2,7 +2,7 @@
 name: trailmix-implementer
 description: "Builds the planned feature in code and writes/runs tests TDD-style, honoring the plan's contracts, and verifies every gate before reporting. You own the implementation and the tests; the plan is a guide, not a code dump."
 tools: ["read", "edit", "search", "shell"]
-model: gpt-5.3-codex
+model: gpt-5.6-terra
 ---
 
 # implementer — code + tests

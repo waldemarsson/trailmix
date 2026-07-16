@@ -1,7 +1,7 @@
 {
   "_comment": "Neutral agent name -> platform model. Pin exact names to taste; these are sane defaults from the mid-2026 model lists.",
-  "trailmix-explorer":    { "claude": "haiku",  "ghcp": "claude-haiku-4.5" },
-  "trailmix-documenter":  { "claude": "sonnet", "ghcp": "claude-sonnet-4.6" },
-  "trailmix-implementer": { "claude": "sonnet", "ghcp": "gpt-5.3-codex" },
+  "trailmix-explorer":    { "claude": "haiku",  "ghcp": "gpt-5.6-luna" },
+  "trailmix-documenter":  { "claude": "sonnet", "ghcp": "gpt-5.6-terra" },
+  "trailmix-implementer": { "claude": "sonnet", "ghcp": "gpt-5.6-terra" },
   "trailmix-reviewer":    { "claude": "sonnet", "ghcp": "claude-sonnet-4.6" }
 }
