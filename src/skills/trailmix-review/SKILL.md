@@ -28,7 +28,13 @@ Then register the finding ids so the fix loop has a lifecycle: `trail.mjs findin
 H1 M1 …` (every finding starts `open`).
 
 ## Checkpoint
-The human picks which findings to fix (e.g. `H1, M2`). Stamp their decisions with the helper —
+First **surface the findings in chat** — this is the one waypoint whose checkpoint needs the
+artifact's contents visible, not just its path (don't make the human open `review.md` to see what
+they're deciding on). Present a compact list from the report already in your context: open with a
+one-line count (`3 findings: 1 HIGH, 2 MED, 0 LOW`), then each finding grouped by severity as
+`id · file:line — what it is and why it matters`, then the verdict. Keep each finding to a line or
+two, in plain terms — the human is deciding, not re-reading GORP.
+Then the human picks which findings to fix (e.g. `H1, M2`). Stamp their decisions with the helper —
 `trail.mjs finding <review.md> <id> wont-fix` for declined findings, `… disputed` for contested
 ones (never hand-edit the field). Selected fixes go back through `trailmix-implement` (apply
 exactly those, verify each). Then `trailmix-document`. Once the fix selection is settled, this
