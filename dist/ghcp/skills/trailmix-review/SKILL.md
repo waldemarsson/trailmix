@@ -12,9 +12,9 @@ tests, and style. Read-only — never edit.
 
 ## How
 - **Dispatch the `trailmix-reviewer` agent** (strong-tier, read-only; or a general read-only subagent if
-  not installed). Commits don't exist yet — it inspects the unstaged diff, staged diff, and
-  untracked files (`git status`, `git diff`, `git diff --cached`, and untracked file contents).
-  It comments only on code it actually read.
+  not installed). Commits don't exist yet — give it the changed-file list and diff, or let it
+  inspect them when its host provides a read-only shell (`git status`, `git diff`,
+  `git diff --cached`, and untracked file contents). It comments only on code it actually read.
 - Pass the reviewer the path to `refs/review-checklist.md` (under this skill's base directory) —
   it holds the dimensions, severity calibration, and report shape. Don't load it into your own
   context; the reviewer reads it.

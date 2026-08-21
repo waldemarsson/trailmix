@@ -3,7 +3,7 @@ set -euo pipefail
 
 # trailmix verify — regenerate dist/ and the root marketplace stubs, then assert the
 # generated plugin structure is sound. No installer: the only supported install path is
-# each CLI's marketplace/plugin system, reading dist/claude/ and dist/ghcp/ directly.
+# each CLI's marketplace/plugin system or native project configuration, reading dist/ directly.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
@@ -13,7 +13,7 @@ valid_json() { node -e "JSON.parse(require('fs').readFileSync('$2','utf8'))" 2>/
 
 node "$SCRIPT_DIR/build/generate.mjs" >/dev/null
 
-GENERATED_PATHS="dist/ .claude-plugin/marketplace.json .github/plugin/marketplace.json"
+GENERATED_PATHS="dist/ .claude-plugin/marketplace.json .github/plugin/marketplace.json .opencode/INSTALL.md"
 if [ -n "$(git -C "$SCRIPT_DIR" status --porcelain -- $GENERATED_PATHS)" ]; then
   fail "generated output is stale vs. src/ — run 'npm run build' and commit the result"
 fi
@@ -21,6 +21,8 @@ fi
 # --- trail.mjs frontmatter helper: unit tests + lint this repo's own trail artifacts ---
 node --test "$SCRIPT_DIR/build/trail.test.mjs" >/dev/null \
   || fail "trail.mjs helper tests failed (run: node --test build/trail.test.mjs)"
+node --test "$SCRIPT_DIR/build/opencode-plugin.test.mjs" >/dev/null \
+  || fail "OpenCode plugin tests failed (run: node --test build/opencode-plugin.test.mjs)"
 ( cd "$SCRIPT_DIR" && node src/skills/trailmix-trailhead/refs/trail.mjs check ) >/dev/null \
   || fail "trail frontmatter lint failed (run: node src/skills/trailmix-trailhead/refs/trail.mjs check)"
 
@@ -49,6 +51,19 @@ valid_json "ghcp marketplace.json" "$G/.github/plugin/marketplace.json"
 valid_json "ghcp hooks.json"       "$G/hooks/hooks.json"
 grep -qF '"hooks": "hooks/hooks.json"' "$G/plugin.json" || fail "ghcp plugin.json missing hooks field"
 
+# --- dist/opencode: git-backed package plugin ---
+O="$SCRIPT_DIR/dist/opencode"
+check "opencode plugin"          "$O/plugin.js"
+check "opencode skill"           "$O/skills/trailmix-trailhead/SKILL.md"
+check "opencode agent"           "$O/agents/trailmix-explorer.md"
+check "opencode AGENTS"          "$O/AGENTS.md"
+grep -qF 'config.skills.paths' "$O/plugin.js" || fail "opencode plugin doesn't register skills"
+grep -qF 'config.agent' "$O/plugin.js" || fail "opencode plugin doesn't register agents"
+grep -qF '<TRAILMIX_BOOTSTRAP>' "$O/plugin.js" || fail "opencode plugin doesn't inject bootstrap"
+grep -qF '"main": "dist/opencode/plugin.js"' "$SCRIPT_DIR/package.json" \
+  || fail "package.json doesn't expose the OpenCode plugin"
+check "opencode install docs" "$SCRIPT_DIR/.opencode/INSTALL.md"
+
 # --- root marketplace stubs: point at the right subdirectory ---
 check "root claude marketplace" "$SCRIPT_DIR/.claude-plugin/marketplace.json"
 check "root ghcp marketplace"   "$SCRIPT_DIR/.github/plugin/marketplace.json"
@@ -72,4 +87,4 @@ check_ghcp_output bash
 # default (bash doesn't), which previously corrupted this exact JSON — regression guard.
 command -v dash >/dev/null 2>&1 && check_ghcp_output dash
 
-echo "OK — dist/claude and dist/ghcp are structurally sound plugins; root marketplace stubs resolve; hooks run and emit valid output"
+echo "OK — Claude, GHCP, and OpenCode plugins are sound; root marketplace stubs resolve; hooks emit valid output"

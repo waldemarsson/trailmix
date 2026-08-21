@@ -1,9 +1,9 @@
 {
   "name": "trailmix",
-  "version": "0.5.0",
-  "private": true,
+  "version": "0.6.0",
   "type": "module",
-  "description": "A portable, token-efficient agentic coding workflow for GitHub Copilot CLI and Claude Code.",
+  "main": "dist/opencode/plugin.js",
+  "description": "A portable, token-efficient agentic coding workflow for GitHub Copilot CLI, Claude Code, and OpenCode.",
   "license": "MIT",
   "scripts": {
     "build": "node build/generate.mjs",

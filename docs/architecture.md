@@ -1,37 +1,36 @@
 # trailmix — architecture & structure
 
 A portable, token-efficient agentic coding framework. One workflow — **Discuss → Plan →
-Implement → Review → Document** — that runs on both **GitHub Copilot CLI (GHCP)** and
-**Claude Code (CC)** from a single source.
+Implement → Review → Document** — that runs on **GitHub Copilot CLI (GHCP)**, **Claude Code
+(CC)**, and **OpenCode** from a single source.
 
 Status: **implemented.** This document is the design source of truth; §11 tracks build progress.
 
 Locked decisions: single neutral source + generator · soft rigidity (auto-trigger skills,
-human checkpoint per phase, no gate engine) · single adaptive flow · always-on SessionStart
-hook (injects the full AGENTS.md instruction file — the only always-on delivery mechanism) +
-terse prose + lean code + GORP handoffs · marketplace-only install, no standalone installer ·
-light theming (functional agent names, themed suite concepts).
+human checkpoint per phase, no gate engine) · single adaptive flow · platform-native bootstrap
+(SessionStart hooks on CC/GHCP, message transform on OpenCode) · terse prose + lean code + GORP
+handoffs · native plugin/package install, no standalone installer · light theming (functional
+agent names, themed suite concepts).
 
 ---
 
 ## 1. Why skills-first is portable
 
-Both CLIs share enough primitives that the methodology can be authored once:
+All three CLIs share enough primitives that the methodology can be authored once:
 
-| Primitive | CC | GHCP | Strategy |
-|---|---|---|---|
-| **Skills** (`SKILL.md`, open standard) | `skills/` (plugin root, auto-namespaced) | `skills/` (plugin root, flat) | author once, ship to both |
-| Custom agents | `agents/*.md` | `agents/*.agent.md` | generate per platform |
-| Per-agent model | `sonnet/opus/haiku` | full model names, per-subagent settings | map per agent name |
-| Tool names | `Read/Edit/Grep/Bash…` | `read/edit/search/shell…` (aliases) | map from neutral alias |
-| JIT skill loading | yes | yes | core of the token strategy |
-| **SessionStart hook** | `hooks/hooks.json`, matcher `startup\|resume\|clear\|compact` | `hooks/hooks.json`, `sessionStart` (no clear/compact equivalent) | the **only** always-on mechanism (see §12) |
-| **AGENTS.md** | bundled reference only — **not auto-loaded from inside a plugin** | same — GHCP's native root-`AGENTS.md` read doesn't apply to plugin-bundled files | authored once, informs the hook message; not itself delivered |
-| Plugins + marketplace | `.claude-plugin/plugin.json` + root `.claude-plugin/marketplace.json` (source → `./dist/claude`) | root `plugin.json` + root `.github/plugin/marketplace.json` (source → `./dist/ghcp`) | the only supported install path — no standalone installer |
+| Primitive | CC | GHCP | OpenCode | Strategy |
+|---|---|---|---|---|
+| **Skills** (`SKILL.md`, open standard) | `skills/` (plugin root, auto-namespaced) | `skills/` (plugin root, flat) | package-relative `dist/opencode/skills/` | author once, ship to all |
+| Custom agents | `agents/*.md` | `agents/*.agent.md` | registered by package plugin | generate per platform |
+| Per-agent model | `sonnet/opus/haiku` | full model names, per-subagent settings | inherits configured model | map where needed |
+| Tool names | `Read/Edit/Grep/Bash…` | `read/edit/search/shell…` (aliases) | permission rules | map only CC/GHCP aliases |
+| JIT skill loading | yes | yes | yes | core of the token strategy |
+| Always-on core | `hooks/hooks.json`, `SessionStart` | `hooks/hooks.json`, `sessionStart` | message-transform hook | platform-native delivery |
+| Plugins + marketplace | `.claude-plugin/plugin.json` + root catalog | root `plugin.json` + root catalog | git-backed package via root `package.json` | native install path |
 
-Portable by construction: **skills** (methodology) and the **SessionStart hook** (the one
-always-on instruction, kept deliberately short). Only mechanical differences (agent file shape,
-model/tool vocab, hook JSON schema, manifest location) get hidden behind the generator.
+Portable by construction: **skills** (methodology) and a platform-native always-on core. Only
+mechanical differences (agent file shape, model/tool vocab, hooks/config, manifest location) get
+hidden behind the generator.
 
 ---
 
@@ -86,13 +85,15 @@ trailmix/                              # framework SOURCE repo (produces install
 │   └── meta/
 │       └── plugin.meta.json           # name/version/author/component map (for later plugin pkg)
 ├── build/
-│   ├── generate.mjs                   # neutral src → dist/{claude,ghcp}
+│   ├── generate.mjs                   # neutral src → dist/{claude,ghcp,opencode}
 │   └── maps/                          # JSON (Node-native, zero-dep generator)
 │       ├── models.json                # tier → platform model name
 │       └── tools.json                 # neutral alias → platform tool name(s)
 ├── dist/                              # GENERATED, committed (published plugin; marketplace source)
 │   ├── claude/{skills/,agents/*.md,hooks/hooks.json,.claude-plugin/plugin.json}
-│   └── ghcp/{skills/,agents/*.agent.md,hooks/hooks.json,plugin.json}
+│   ├── ghcp/{skills/,agents/*.agent.md,hooks/hooks.json,plugin.json}
+│   └── opencode/{plugin.js,skills/,agents/,AGENTS.md}
+├── .opencode/INSTALL.md               # GENERATED OpenCode installation instructions
 ├── .claude-plugin/marketplace.json    # GENERATED, root catalog: source → ./dist/claude
 ├── .github/plugin/marketplace.json    # GENERATED, root catalog: source → ./dist/ghcp
 └── evals/                             # skill-behavior tests — manual scenario checklists
@@ -102,6 +103,11 @@ Install is marketplace-only, no standalone installer: `/plugin marketplace add o
 / `copilot plugin marketplace add owner/repo` (GHCP) read the root marketplace stubs above, which
 point at `dist/claude/` and `dist/ghcp/` respectively. GHCP also supports installing
 `dist/ghcp/` directly via `copilot plugin install owner/repo:dist/ghcp`, no marketplace step.
+
+OpenCode installs the repository as a git-backed package from its config's `plugin` array. The
+root `package.json` points `main` at `dist/opencode/plugin.js`; that plugin registers the generated
+skill directory and embedded subagent definitions, then injects the always-on core through a
+message-transform hook. OpenCode's package manager owns install and update caching.
 
 ---
 
@@ -169,9 +175,10 @@ absent, it falls back to an awk read pass / hand-edit. Schema + invocation live 
 ## 5. The trail crew — agents (generated per platform)
 
 Authored once as neutral `<name>.agent.md` (frontmatter + body); generator emits
-`dist/claude/agents/<n>.md` and `dist/ghcp/agents/<n>.agent.md`, mapping agent name→model
-(`build/maps/models.json`) and neutral tools→platform tools; the markdown body carries over
-verbatim.
+`dist/claude/agents/<n>.md`, `dist/ghcp/agents/<n>.agent.md`, and
+`dist/opencode/agents/<n>.md`. Claude and GHCP map agent name→model
+(`build/maps/models.json`) and neutral tools→platform tools; OpenCode agents inherit the user's
+configured model and use permission rules. The markdown body carries over verbatim.
 
 | Agent | Role | Model (default map) | Tools (neutral) | Isolation |
 |---|---|---|---|---|
@@ -224,19 +231,20 @@ non-negotiable — **lazy ≠ broken.**
 
 ---
 
-## 8. Instructions — `AGENTS.md` (bundled reference) + the SessionStart hook (the always-on core)
+## 8. Instructions — `AGENTS.md` + platform bootstrap (the always-on core)
 
 `src/instructions/AGENTS.md` is the single source for trailmix's always-on conventions —
 bootstrap, style, tool conventions, security — kept tiny, detail pushed into skills (JIT). It is
-copied verbatim into `dist/{claude,ghcp}/AGENTS.md` for humans browsing the installed plugin,
+copied verbatim into `dist/{claude,ghcp}/AGENTS.md` for humans browsing the installed plugins,
 but **neither CLI auto-loads a file by this name (or `CLAUDE.md`) from inside an installed
-plugin.** There is no standalone installer that would place it at a project/global root either
-(marketplace-only install, decided after weighing it against a standalone installer). So
-the bundled `AGENTS.md` file itself never reaches a live session.
+plugin.** OpenCode's copy is `dist/opencode/AGENTS.md`; the generated plugin embeds the same
+content for message-transform injection.
 
-The **only** always-on mechanism is the `SessionStart` hook: the *same* `AGENTS.md` content is
-injected as `additionalContext` (CC: plain stdout; GHCP: `{"additionalContext": ...}` JSON) at
-session start/resume (CC also covers `clear`/`compact`; GHCP has no equivalent for those two).
+For CC and GHCP, the **only** always-on mechanism is the `SessionStart` hook: the *same*
+`AGENTS.md` content is injected as `additionalContext` (CC: plain stdout; GHCP:
+`{"additionalContext": ...}` JSON) at session start/resume (CC also covers `clear`/`compact`;
+GHCP has no equivalent for those two). OpenCode has no SessionStart hook; its plugin injects the
+same bootstrap into the first user message through `experimental.chat.messages.transform`.
 This mirrors how Superpowers' `SessionStart` hook injects its full `using-superpowers` meta-skill
 rather than a short pointer (verified against the real repo) — trailmix initially shipped a
 one-line reminder here, then expanded to the full body once that comparison surfaced that the
@@ -257,9 +265,9 @@ Contents:
 
 ## 9. The generator — hiding the differences
 
-`build/generate.mjs` reads `src/` and writes `dist/claude/` + `dist/ghcp/`.
+`build/generate.mjs` reads `src/` and writes `dist/claude/`, `dist/ghcp/`, and `dist/opencode/`.
 
-**Skills:** copy `SKILL.md` near-verbatim to both; neutral frontmatter uses only the common
+**Skills:** copy `SKILL.md` near-verbatim to all targets; neutral frontmatter uses only the common
 subset (`name`, `description`, `allowed-tools`). Platform-only extras (CC `model`/`paths`/`hooks`)
 are emitted **only** into the CC copy from optional neutral hints. `refs/` copied as-is (JIT).
 
@@ -279,18 +287,16 @@ neutral tools→platform tools.
 | task | `Task` | `agent` |
 | todo | `TodoWrite` | `todo` |
 
-**Instructions:** `AGENTS.md` is copied into each `dist/<platform>/AGENTS.md` as a bundled copy
-(see §8) — not installed anywhere else, since there's no standalone installer. The same content
-also becomes the `SessionStart` hook's payload (below).
+**Instructions:** `AGENTS.md` is copied into each `dist/<platform>/AGENTS.md`. For CC/GHCP the
+same content becomes the `SessionStart` hook payload; for OpenCode it is embedded in the package
+plugin's message-transform payload.
 
-**Hooks:** `AGENTS.md`'s content renders into each platform's `hooks/hooks.json` with a
-different JSON shape per §1's table (shell-quoted for CC's plain-stdout `command`; JSON-wrapped
-and shell-quoted again for GHCP's `bash`/`powershell` fields — always via `printf '%s'`, never
-`echo`, since POSIX `sh`/`dash` interpret backslash escapes in `echo`'s argument by default while
-`bash` doesn't, which silently corrupted the embedded JSON under `dash` until caught by testing).
-CC's manifest doesn't need a `hooks` field (auto-discovered from the default `hooks/` folder like
-`skills/`/`agents/`), GHCP's `plugin.json` must declare `"hooks": "hooks/hooks.json"` explicitly
-(no default-folder convention there).
+**Hooks:** For CC/GHCP, `AGENTS.md` renders into `hooks/hooks.json` with a different JSON shape
+per §1's table (shell-quoted for CC's plain-stdout `command`; JSON-wrapped and shell-quoted again
+for GHCP's `bash`/`powershell` fields — always via `printf '%s'`, never `echo`). CC auto-discovers
+the default `hooks/` folder; GHCP's `plugin.json` declares it explicitly. OpenCode's package
+entrypoint registers skills and agents through the `config` hook and injects the core through
+`experimental.chat.messages.transform`.
 
 ---
 

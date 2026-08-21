@@ -14,15 +14,15 @@ is the design source of truth; read it before changing structure.
 
 ## The one hard rule
 
-**Edit `src/`, `build/`, `docs/`, `evals/` — never `dist/` or the two root
-`marketplace.json` stubs.** Those are generated *and* committed. A hand-edit there is silently
-overwritten by the next `npm run build`, and `.github/workflows/build-dist.yml` re-generates and
-commits on every push to `main`.
+**Edit `src/`, `build/`, `docs/`, `evals/` — never `dist/`, `.opencode/INSTALL.md`, or the two
+root `marketplace.json` stubs.** Those are generated *and* committed. A hand-edit there is
+silently overwritten by the next `npm run build`, and `.github/workflows/build-dist.yml`
+re-generates and commits on every push to `main`.
 
 ## Commands
 
 ```bash
-npm run build     # src/ → dist/{claude,ghcp} + root marketplace stubs
+npm run build     # src/ → dist/{claude,ghcp,opencode} + generated install/catalog files
 npm run verify    # build + freshness check + trail.mjs unit tests + frontmatter lint + structure checks
 ```
 

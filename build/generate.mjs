@@ -1,15 +1,14 @@
 #!/usr/bin/env node
-// trailmix generator — neutral src/ -> dist/{claude,ghcp}/
+// trailmix generator — neutral src/ -> dist/{claude,ghcp,opencode}/
 // Zero-dependency. Node >= 16.7 (uses fs.cpSync).
-// dist/{claude,ghcp}/ are real, self-contained plugins — the only supported install path is
-// each CLI's marketplace/plugin system (see the root .claude-plugin/ and .github/plugin/
-// marketplace.json stubs writeRootMarketplaces() emits). No standalone/flat installer.
+// dist/{claude,ghcp}/ are self-contained plugins; dist/opencode/ is the package entrypoint and
+// assets loaded by OpenCode's git-backed plugin installer.
 //
 // Emits, per platform:
 //   dist/<p>/skills/**            copied verbatim (frontmatter is the portable common subset)
 //   dist/<p>/agents/<name>.<ext>  frontmatter transformed (agent name->model, neutral tools->platform)
-//   dist/<p>/hooks/hooks.json     SessionStart hook — the one thing actually loaded automatically
-//   dist/<p>/AGENTS.md            bundled reference only; not auto-loaded from inside a plugin
+//   dist/<p>/hooks/hooks.json     SessionStart hook — where the platform supports hooks
+//   dist/<p>/AGENTS.md            bundled reference where the platform uses a plugin root
 
 import {
   readFileSync,
@@ -33,6 +32,7 @@ const meta = JSON.parse(readFileSync(join(SRC, "meta/plugin.meta.json"), "utf8")
 const PLATFORMS = {
   claude: { dir: "claude", agentExt: ".md" },
   ghcp: { dir: "ghcp", agentExt: ".agent.md" },
+  opencode: { dir: "opencode", agentExt: ".md" },
 };
 
 // --- minimal frontmatter parser (controlled inputs: single-line values, inline arrays) ---
@@ -78,6 +78,28 @@ function mapTools(neutral, platform) {
   return out;
 }
 
+function openCodePermissions(neutral, readonly) {
+  const permission = { "*": "deny" };
+  for (const tool of neutral || []) {
+    if (tool === "read") permission.read = "allow";
+    else if (tool === "edit") permission.edit = "allow";
+    else if (tool === "search") Object.assign(permission, { glob: "allow", grep: "allow", list: "allow" });
+    else if (tool === "shell") {
+      if (!readonly) permission.bash = "allow";
+    }
+    else if (tool === "web") Object.assign(permission, { webfetch: "allow", websearch: "allow" });
+    else if (tool === "task") permission.task = "allow";
+    else if (tool === "todo") permission.todowrite = "allow";
+    else throw new Error(`unknown OpenCode tool alias: ${tool}`);
+  }
+  permission.task = "deny";
+  if (readonly) {
+    permission.edit = "deny";
+    permission.bash = "deny";
+  }
+  return permission;
+}
+
 // Note on read-only agents: neutral specs may carry `readonly: true` (explorer, reviewer). It is
 // deliberately NOT emitted — neither platform has a read-only-shell primitive. The explorer is
 // read-only by construction (its tools are read/search/web, no shell/edit); the reviewer keeps
@@ -85,6 +107,18 @@ function mapTools(neutral, platform) {
 // out in the agent body), not an enforced flag. Emitting a `readonly` field would look meaningful
 // while doing nothing, and risks tripping a platform's frontmatter parser.
 function renderAgent(data, body, platform, neutralName) {
+  if (platform === "opencode") {
+    const lines = [
+      "---",
+      `name: ${data.name}`,
+      `description: ${yamlQuote(data.description)}`,
+      "mode: subagent",
+    ];
+    if (data.readonly) lines.push("permission:", "  edit: deny");
+    lines.push("---", "", body);
+    return lines.join("\n");
+  }
+
   if (!models[neutralName]) throw new Error(`no model mapping for agent: ${neutralName}`);
   const model = models[neutralName][platform];
   const mapped = mapTools(data.tools, platform);
@@ -205,7 +239,7 @@ function writeHooks(base, platform, message) {
         },
       })
     );
-  } else {
+  } else if (platform === "ghcp") {
     const contextJson = JSON.stringify({ additionalContext: message });
     writeFileSync(
       join(base, "hooks/hooks.json"),
@@ -233,7 +267,7 @@ function shellQuote(s) {
 // CC:   .claude-plugin/plugin.json           + .claude-plugin/marketplace.json
 // GHCP: plugin.json (root)                    + .github/plugin/marketplace.json
 // Both marketplaces list this dir as a single plugin with source ".".
-function writePackaging(base, platform) {
+function writePackaging(base, platform, agentsMd) {
   const owner = { name: meta.author?.name || meta.name };
 
   if (platform === "claude") {
@@ -256,7 +290,7 @@ function writePackaging(base, platform) {
         plugins: [{ name: meta.name, source: ".", description: meta.description }],
       })
     );
-  } else {
+  } else if (platform === "ghcp") {
     const manifest = {
       name: meta.name,
       description: meta.description,
@@ -283,6 +317,69 @@ function writePackaging(base, platform) {
         ],
       })
     );
+  } else {
+    const agentConfigs = {};
+    for (const file of readdirSync(join(SRC, "agents"))) {
+      if (!file.endsWith(".agent.md")) continue;
+      const { data, body } = parseFrontmatter(readFileSync(join(SRC, "agents", file), "utf8"));
+      agentConfigs[data.name] = {
+        description: data.description,
+        mode: "subagent",
+        prompt: body,
+        permission: openCodePermissions(data.tools, data.readonly),
+      };
+    }
+
+    writeFileSync(
+      join(base, "plugin.js"),
+      `import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const root = dirname(fileURLToPath(import.meta.url));
+const bootstrap = ${JSON.stringify(`<TRAILMIX_BOOTSTRAP>\n${agentsMd}\n</TRAILMIX_BOOTSTRAP>`)};
+const agents = ${JSON.stringify(agentConfigs, null, 2)};
+
+function mergePermissions(base, override) {
+  if (!override || typeof override !== "object") return override ?? base;
+  const merged = { ...base, ...override };
+  for (const [name, rule] of Object.entries(override)) {
+    if (rule && typeof rule === "object") {
+      const inherited = base[name];
+      merged[name] = {
+        ...(typeof inherited === "string" ? { "*": inherited } : inherited || {}),
+        ...rule,
+      };
+    }
+  }
+  return merged;
+}
+
+export default async () => ({
+  config(config) {
+    config.skills ||= {};
+    config.skills.paths ||= [];
+    const skills = join(root, "skills");
+    if (!config.skills.paths.includes(skills)) config.skills.paths.push(skills);
+
+    config.agent ||= {};
+    for (const [name, definition] of Object.entries(agents)) {
+      const override = config.agent[name] || {};
+      const external = { "*": "ask", [join(root, "skills", "*")]: "allow" };
+      const basePermission = { ...definition.permission, external_directory: external };
+      const permission = mergePermissions(basePermission, override.permission);
+      config.agent[name] = { ...definition, ...override, permission };
+    }
+  },
+
+  "experimental.chat.messages.transform": async (_input, output) => {
+    const firstUser = output.messages.find((message) => message.info.role === "user");
+    if (!firstUser?.parts.length) return;
+    if (firstUser.parts.some((part) => part.type === "text" && part.text.includes("<TRAILMIX_BOOTSTRAP>"))) return;
+    firstUser.parts.unshift({ ...firstUser.parts[0], type: "text", text: bootstrap });
+  },
+});
+`
+    );
   }
 }
 
@@ -305,10 +402,12 @@ function generate() {
 
   for (const [, p] of Object.entries(PLATFORMS)) {
     const base = join(DIST, p.dir);
-    mkdirSync(join(base, "agents"), { recursive: true });
+    const opencode = p.dir === "opencode";
+    const assets = base;
+    mkdirSync(join(assets, "agents"), { recursive: true });
 
     // skills — copy, then for CC strip the manual trailmix- prefix (plugin auto-namespaces)
-    cpSync(join(SRC, "skills"), join(base, "skills"), { recursive: true });
+    cpSync(join(SRC, "skills"), join(assets, "skills"), { recursive: true });
     if (p.dir === "claude") {
       for (const entry of readdirSync(join(base, "skills"))) {
         if (!entry.startsWith("trailmix-")) continue;
@@ -322,7 +421,9 @@ function generate() {
     // installed plugin, so this file itself never reaches a session; the hook is what's active.
     const agentsMd = readFileSync(join(SRC, "instructions/AGENTS.md"), "utf8");
     const platformAgentsMd = p.dir === "claude" ? stripNamespace(agentsMd) : agentsMd;
-    writeFileSync(join(base, "AGENTS.md"), platformAgentsMd);
+    const agentsPath = join(assets, "AGENTS.md");
+    mkdirSync(dirname(agentsPath), { recursive: true });
+    writeFileSync(agentsPath, platformAgentsMd);
 
     // agents — transform frontmatter (and for CC, strip the manual namespace prefix)
     for (const file of readdirSync(join(SRC, "agents"))) {
@@ -334,20 +435,22 @@ function generate() {
         body = stripNamespace(body);
       }
       const outName = data.name + p.agentExt;
-      writeFileSync(join(base, "agents", outName), renderAgent(data, body, p.dir, neutralName));
+      writeFileSync(join(assets, "agents", outName), renderAgent(data, body, p.dir, neutralName));
     }
 
     // SessionStart hook — injects the full always-on core (AGENTS.md), since neither CLI
     // auto-loads it from inside a plugin. Same content already computed above for the
     // bundled AGENTS.md copy.
-    writeHooks(base, p.dir, platformAgentsMd);
+    if (!opencode) writeHooks(base, p.dir, platformAgentsMd);
 
     // plugin manifest + marketplace catalog
-    writePackaging(base, p.dir);
+    writePackaging(base, p.dir, platformAgentsMd);
   }
 
   writeRootMarketplaces();
-  console.log("generated dist/claude, dist/ghcp, and root marketplace catalogs");
+  mkdirSync(join(ROOT, ".opencode"), { recursive: true });
+  cpSync(join(SRC, "opencode/INSTALL.md"), join(ROOT, ".opencode/INSTALL.md"));
+  console.log("generated dist/claude, dist/ghcp, dist/opencode, and root marketplace catalogs");
 }
 
 generate();

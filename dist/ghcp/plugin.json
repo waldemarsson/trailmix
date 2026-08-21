@@ -1,7 +1,7 @@
 {
   "name": "trailmix",
-  "description": "A portable, token-efficient agentic coding workflow (Discuss -> Plan -> Implement -> Review -> Document) for GitHub Copilot CLI and Claude Code.",
-  "version": "0.5.0",
+  "description": "A portable, token-efficient agentic coding workflow (Discuss -> Plan -> Implement -> Review -> Document) for GitHub Copilot CLI, Claude Code, and OpenCode.",
+  "version": "0.6.0",
   "author": {
     "name": "Martin Waldemarsson"
   },
@@ -16,6 +16,7 @@
     "workflow",
     "skills",
     "copilot",
-    "claude-code"
+    "claude-code",
+    "opencode"
   ]
 }

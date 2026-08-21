@@ -23,3 +23,9 @@ Icon
 
 # local Claude Code permission grants — per-machine, never shared
 .claude/settings.local.json
+
+# local OpenCode dependency cache — generated when OpenCode starts in this repo
+.opencode/node_modules/
+.opencode/package.json
+.opencode/package-lock.json
+.opencode/bun.lock

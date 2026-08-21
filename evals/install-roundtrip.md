@@ -1,6 +1,6 @@
 # eval: marketplace install round-trip
 
-**Checks:** the **only** supported install path actually works end-to-end on both CLIs against the
+**Checks:** the supported platform-native install path works end-to-end on each CLI against the
 live repo. Backs finding H2 (never verified). Run this **first** — the behavioral evals assume a
 real install.
 
@@ -52,6 +52,26 @@ copilot plugin install waldemarsson/trailmix:dist/ghcp
 **If it fails:** confirm `dist/ghcp/plugin.json` has the explicit `hooks` field (no
 default-folder discovery on GHCP). If the injected context is malformed, re-check the hook uses
 `printf '%s'` (not `echo`) — `echo` corrupts the JSON under `dash`.
+
+## OpenCode
+
+From a scratch project:
+
+```bash
+opencode plugin "trailmix@git+https://github.com/waldemarsson/trailmix.git"
+```
+
+Quit and restart OpenCode.
+
+- [ ] The OpenCode config validates and OpenCode starts.
+- [ ] Skills resolve: `trailmix-trailhead`, `trailmix-discuss`, …
+- [ ] Subagents resolve: `trailmix-explorer`, `trailmix-implementer`, `trailmix-reviewer`,
+      `trailmix-documenter`.
+- [ ] The always-on core appears in the first user message context.
+- [ ] The explorer and reviewer cannot edit (`permission.edit: deny`).
+- [ ] Update with `opencode plugin "trailmix@git+https://github.com/waldemarsson/trailmix.git#<new-commit-sha>" --force`, restart, and confirm the new commit is active.
+
+**If it fails:** check OpenCode logs for `trailmix`, verify the plugin entry, and restart.
 
 ## Record
 Log CLI + version + date + pass/fail per box. On any fail, capture the exact error before moving

@@ -1,9 +1,9 @@
 # trailmix
 
 A lightweight, portable, token-efficient agentic coding workflow that runs the same on
-**GitHub Copilot CLI** and **Claude Code**.
+**GitHub Copilot CLI**, **Claude Code**, and **OpenCode**.
 
-One source of truth → generated assets for both CLIs. Author once, ship to both.
+One source of truth → generated assets for all three CLIs. Author once, ship to all.
 
 ## The trail
 
@@ -49,9 +49,10 @@ by teammates.
 
 ## Install
 
-trailmix is installed only as a plugin, through each CLI's own marketplace/plugin system —
-there's no standalone installer script. `npm run build` emits the real per-platform plugins
-(`dist/claude/`, `dist/ghcp/`) plus two tiny root-level marketplace catalogs
+Claude Code and Copilot CLI install trailmix as plugins through their marketplace/plugin systems.
+OpenCode installs trailmix as a git-backed package through its native plugin manager.
+`npm run build` emits the two plugins (`dist/claude/`, `dist/ghcp/`) plus two tiny root-level
+marketplace catalogs
 (`.claude-plugin/marketplace.json`, `.github/plugin/marketplace.json`) that each point at the
 matching `dist/` subdirectory via a relative `source`. `owner/repo`-style marketplace-add clones
 the whole repo, so those relative paths resolve — no branch or subdirectory support needed from
@@ -86,26 +87,48 @@ Both also work from a local clone, pointing straight at the platform subdirector
 copilot plugin marketplace add ./dist/ghcp
 ```
 
-Both platforms' plugins ship a `SessionStart` hook that injects the full `AGENTS.md` always-on
+The two plugins ship a `SessionStart` hook that injects the full `AGENTS.md` always-on
 core (bootstrap, style, tool conventions, security) as context at session start/resume/clear/
 compact. This is the **only** always-on mechanism: neither CLI automatically reads a file named
 `AGENTS.md`/`CLAUDE.md` from inside an installed plugin, so the hook — not the bundled file — is
 what actually reaches a live session.
 
+**OpenCode**:
+
+OpenCode installs git-backed packages natively. From the target project, run:
+
+```bash
+opencode plugin "trailmix@git+https://github.com/waldemarsson/trailmix.git"
+```
+
+Use `--global` to install it for every project. Restart OpenCode after installation. The plugin
+registers package-relative skills and subagents, then injects the always-on core into the first
+user message without changing project files.
+
+OpenCode caches an unchanged git spec. Update by replacing it with the desired new commit:
+
+```bash
+opencode plugin "trailmix@git+https://github.com/waldemarsson/trailmix.git#<new-commit-sha>" --force
+```
+
+Then restart OpenCode. If installation still resolves stale code, clear OpenCode's package cache
+and run the command again. Agents inherit the model configured in OpenCode. See
+`.opencode/INSTALL.md` for troubleshooting.
+
 ## How it stays portable
 
-Both CLIs implement the same Agent Skills open standard (`SKILL.md`) and the same plugin system
-shape (`.claude-plugin/`/root `plugin.json`, `skills/`, `agents/`, `hooks/hooks.json`). Only the
-mechanical bits differ — agent file shape, model/tool vocabulary, hook JSON schema, plugin
-manifest location. The generator hides those differences.
+All three CLIs implement the Agent Skills open standard (`SKILL.md`). Claude Code and Copilot CLI
+use plugin directories; OpenCode's package plugin registers its generated skill path and agent
+definitions. The generator hides the mechanical differences — agent shape, model/tool vocabulary,
+hooks, manifests, and OpenCode runtime registration.
 
-| Asset | Source | Claude Code | Copilot CLI |
-|---|---|---|---|
-| SessionStart hook (always-on core) | `src/instructions/AGENTS.md` | `hooks/hooks.json` (`SessionStart`) | `hooks/hooks.json` (`sessionStart`) |
-| Skills | `src/skills/**/SKILL.md` (`trailmix-*`) | `skills/*` (bare name, auto-namespaced) | `skills/trailmix-*` |
-| Agents | `src/agents/*.agent.md` (`trailmix-*`) | `agents/*.md` (bare name, auto-namespaced) | `agents/trailmix-*.agent.md` |
-| Plugin manifest | `src/meta/plugin.meta.json` | `.claude-plugin/plugin.json` | root `plugin.json` |
-| Bundled copy (same content, not auto-loaded) | `src/instructions/AGENTS.md` | `AGENTS.md` | `AGENTS.md` |
+| Asset | Source | Claude Code | Copilot CLI | OpenCode |
+|---|---|---|---|---|
+| Always-on core | `src/instructions/AGENTS.md` | `hooks/hooks.json` (`SessionStart`) | `hooks/hooks.json` (`sessionStart`) | `experimental.chat.messages.transform` |
+| Skills | `src/skills/**/SKILL.md` (`trailmix-*`) | `skills/*` (bare name, auto-namespaced) | `skills/trailmix-*` | package `dist/opencode/skills/trailmix-*` |
+| Agents | `src/agents/*.agent.md` (`trailmix-*`) | `agents/*.md` (bare name, auto-namespaced) | `agents/trailmix-*.agent.md` | embedded plugin config from `dist/opencode/agents/*.md` |
+| Plugin manifest | `src/meta/plugin.meta.json` | `.claude-plugin/plugin.json` | root `plugin.json` | root `package.json` `main` |
+| Bundled copy | `src/instructions/AGENTS.md` | `AGENTS.md` | `AGENTS.md` | `dist/opencode/AGENTS.md` |
 
 Agent frontmatter is transformed per platform: each agent's neutral name → model name
 (`build/maps/models.json`), neutral tool aliases → platform tool names
@@ -124,7 +147,7 @@ src/
   agents/*.agent.md           neutral agent specs (trailmix-explorer/implementer/reviewer/documenter)
   meta/plugin.meta.json       name/version/author → plugin manifests
 build/
-  generate.mjs                zero-dep generator: src/ → dist/{claude,ghcp}/
+  generate.mjs                zero-dep generator: src/ → dist/{claude,ghcp,opencode}/
   maps/{models,tools}.json    neutral → platform mapping tables
 dist/                         generated AND committed (published plugin; marketplace source)
 .claude-plugin/marketplace.json  generated: root catalog, source → ./dist/claude
@@ -137,7 +160,7 @@ evals/                        manual scenario checklists — does the workflow b
 
 ```bash
 npm run build     # regenerate dist/ after editing anything in src/ or build/maps/
-npm run verify    # regenerate + assert dist/claude and dist/ghcp are sound plugins
+npm run verify    # regenerate + assert all platform outputs are sound
 ```
 
 Editing rules:

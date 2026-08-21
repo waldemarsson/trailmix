@@ -2,8 +2,8 @@ name: Regenerate dist/
 
 # Keeps the committed dist/ in sync with src/ automatically, so nobody has to
 # remember `npm run build` before pushing. Triggers only on changes that can
-# affect generator output; the bot's own commit only touches dist/, which
-# isn't in that path list, so it can't retrigger itself.
+# affect generator output; the bot's generated commit doesn't touch that path list, so it can't
+# retrigger itself.
 on:
   push:
     branches: [main]
@@ -34,14 +34,13 @@ jobs:
 
       - name: Commit generated output if it changed
         run: |
-          # generate.mjs writes dist/ AND the two root marketplace stubs — stage all of them,
-          # or a src/meta change could drift the root catalogs without ever being committed.
-          git add dist/ .claude-plugin/marketplace.json .github/plugin/marketplace.json
+          # generate.mjs writes dist/, the two root marketplace stubs, and OpenCode install docs.
+          git add dist/ .claude-plugin/marketplace.json .github/plugin/marketplace.json .opencode/INSTALL.md
           if git diff --cached --quiet; then
             echo "generated output already up to date"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "chore: regenerate dist/ + root marketplace stubs from src/" -m "Auto-generated for ${{ github.sha }}."
+          git commit -m "chore: regenerate platform output from src/" -m "Auto-generated for ${{ github.sha }}."
           git push
