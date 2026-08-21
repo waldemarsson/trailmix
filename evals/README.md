@@ -14,7 +14,8 @@ and grade against explicit PASS / FAIL criteria.
 3. Paste the scenario's **Prompt** verbatim.
 4. Grade against **PASS if** / **FAIL if**. Record the result and, on FAIL, what the model did
    instead — that's the signal for which description/instruction to tune.
-5. Run each on **both** Claude Code and Copilot CLI; trigger reliability differs by host.
+5. Run each on Claude Code, Copilot CLI, and OpenCode where installed; trigger reliability differs
+   by host.
 
 Grading is human judgment — these establish whether the framework *behaves*, not a pass/fail gate
 in CI.
@@ -34,7 +35,7 @@ in CI.
 | `bug-track-red-green.md` | Bug reports route to the bug track; red test before any fix | bug track |
 | `agent-retro.md` | Gotchas land as one line in AGENTS.md; routine trails add nothing | agent retro |
 | `status-surveys.md` | Status summarizes all trails from frontmatter, no CLI | resumable trails |
-| `install-roundtrip.md` | Marketplace add + install works end-to-end on both CLIs | H2 (install unverified) |
+| `install-roundtrip.md` | Platform-native install works end-to-end | H2 (install unverified) |
 
 ## Recording results
 

@@ -10,11 +10,11 @@ model: claude-sonnet-4.6
 Review the completed work against `spec.md` and `plan.md`; surface issues before they cascade.
 
 ## Read-only discipline
-Never modify code, tests, docs, the working tree, the index, or branch state. You have shell —
-read-only is your discipline, not a sandbox. Use it only to inspect: `git status`, `git diff`,
-`git diff --cached`, reading files, read-only test/build queries. Commits don't exist yet, so
-review the unstaged diff, staged diff, and untracked files. Comment only on code you actually
-read.
+Never modify code, tests, docs, the working tree, the index, or branch state. If your host gives
+you shell, use it only to inspect: `git status`, `git diff`, `git diff --cached`, reading files,
+read-only test/build queries. Otherwise use the changed-file list and diff supplied in your
+dispatch. Commits don't exist yet, so review unstaged, staged, and untracked work. Comment only
+on code you actually read.
 
 ## Assess every dimension
 Follow the review checklist you were given (dimensions, severity calibration, report shape). If

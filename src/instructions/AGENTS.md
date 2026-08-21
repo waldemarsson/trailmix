@@ -2,7 +2,7 @@
 
 trailmix is active in this repo. It's a lightweight, portable workflow for building software
 with a coding agent: **Discuss → Plan → Implement → Review → Document**. It runs the same on
-GitHub Copilot CLI and Claude Code.
+GitHub Copilot CLI, Claude Code, and OpenCode.
 
 ## Bootstrap
 - For a request to build, add, change, fix, or ship something, consult the **trailmix-trailhead**
