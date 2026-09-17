@@ -176,7 +176,7 @@ verbatim.
 | Agent | Role | Model (default map) | Tools (neutral) | Isolation |
 |---|---|---|---|---|
 | **trailmix-explorer** | Read codebase + web research, summarize | cheap (haiku) | read, search, web | read-only |
-| **trailmix-implementer** | Code + tests + verification | sonnet / gpt-5.3-codex | read, edit, search, shell | read/write |
+| **trailmix-implementer** | Code + tests + verification | sonnet / gpt-5.6-terra | read, edit, search, shell | read/write |
 | **trailmix-reviewer** | Senior review, verdict | sonnet | read, search, shell | **read-only (discipline)** |
 | **trailmix-documenter** | Update repo docs by weight | sonnet | read, edit, search, shell | read/write |
 
