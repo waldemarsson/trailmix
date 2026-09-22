@@ -6,7 +6,7 @@ created: 2026-09-22
 updated: 2026-09-22
 waypoint: discuss
 status: approved
-tasks: T1:done T2:done T3:done T4
+tasks: T1:done T2:done T3:done T4:done
 ---
 
 # Restructure to Discuss → Build → Handoff — brief

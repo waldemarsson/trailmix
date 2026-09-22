@@ -1,15 +1,15 @@
 ---
 slug: discuss-build-handoff
 waypoint: handoff
-status: draft
+status: approved
 updated: 2026-09-22
 ---
 
 # Restructure to Discuss → Build → Handoff — report
 
 **Result:** Five waypoints became three. There are two artifacts (`brief.md`, `report.md`) and two
-human checkpoints (the discuss digest and the handoff). **Verdict:** ready, pending commit.
-The full `npm run verify` freshness gate can only pass once `dist/` is committed.
+human checkpoints (the discuss digest and the handoff). **Verdict:** ready.
+Committed as 383cb3c; full `npm run verify` → OK.
 
 ## Try it
 1. `node --test build/trail.test.mjs`
