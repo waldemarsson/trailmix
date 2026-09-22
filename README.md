@@ -7,27 +7,30 @@ One source of truth → generated assets for both CLIs. Author once, ship to bot
 
 ## The trail
 
-trailmix guides a coding agent through five waypoints. The flow is *soft* — it scales detail
-to the work, collapses phases for trivial changes, and pauses for a human checkpoint at each
-waypoint. No rigid gates.
+trailmix guides a coding agent through three waypoints. Your attention goes to two places:
+clearing up uncertainty before build, and reviewing the result after it. Everything in between
+runs on its own. No rigid gates.
 
-| Waypoint | What happens |
-|---|---|
-| **Discuss** | Explore the feature, smooth edge cases, research code + web. → `spec.md` |
-| **Plan** | Interfaces, services, flows, endpoints — high level, no code blocks. → `plan.md` |
-| **Implement** | Build and test the feature. |
-| **Review** | Findings ranked HIGH / MEDIUM / LOW + recommendations. → `review.md` |
-| **Document** | Document changes *of weight* only. |
+| Waypoint | What happens | You |
+|---|---|---|
+| **Discuss** | Researches the code (and web) in parallel, then asks batched, numbered clarify questions — each with a recommended default — until nothing is open. → `brief.md` | answer rounds (`defaults, except 2: yes`); sign off on a ≤5-bullet digest |
+| **Build** | Plans tasks, implements TDD-style, self-reviews, auto-fixes clear in-scope findings (max 2 rounds), updates docs. Stops only for real blockers. | nothing, unless asked a blocker question |
+| **Handoff** | Verdict, what needs your call, how to try it, AC → proof, deviations. Fixes follow-ups until you accept. → `report.md` | review the diff, pick follow-ups, accept; then commit / open the PR yourself |
 
-Phase outputs (**artifacts**) are written to `.trailmix/trail/<feature-slug>/` — the human
-reads them on disk, they don't get pasted back into the chat context.
+Work too small for a trail (typo-class fixes, config tweaks, read-only questions) skips it
+entirely. Otherwise the brief scales to the work; a defect gets a bug brief, and build writes a
+failing test that reproduces it before any fix.
+
+Artifacts are written to `.trailmix/trail/<feature-slug>/`. Chat gets the digest and the handoff
+summary; the full brief and report stay on disk.
 
 ## Resume & status
 
-Each artifact carries small YAML frontmatter: the anchor `spec.md` holds the trail's identity and
-a `document:` outcome, and every artifact has a `status:` (`draft` → `approved`, stamped when the
-next waypoint starts). Because that state lives on disk, a fresh session can pick up where you
-left off — just ask:
+Each artifact carries small YAML frontmatter: the anchor `brief.md` holds the trail's identity
+and build progress (`tasks:`), `report.md` holds the findings left for you (`findings:`), and
+both have a `status:` (`draft` → `approved` — the brief when build starts, the report when you
+accept). Because that state lives on disk, a fresh session can pick up where you left off — just
+ask:
 
 ```
 resume the <feature-slug> trail
@@ -37,11 +40,12 @@ trailhead reads the **frontmatter only** (not the full artifacts), reports where
 and continues from the right waypoint. Ask for trail *status* the same way to survey every trail.
 No `trail.json`, no CLI — just the frontmatter on disk.
 
-This isn't just crash recovery — it's the recommended flow. State survives the session **by
-design**: after each checkpoint the approved artifact on disk is the distilled version of
-everything discussed, so clearing (or starting a fresh session) at a waypoint boundary sheds the
-dead-weight context and costs nothing. Mid-implement the plan's `tasks:` marks do the same at
-task granularity.
+This isn't just crash recovery — it's the recommended flow. The signed-off brief is the
+distilled version of everything discussed, so clearing (or starting a fresh session) after the
+discuss checkpoint sheds the dead-weight context and costs nothing. Mid-build the brief's
+`tasks:` marks do the same at task granularity.
+
+Trails from before 0.7.0 (spec/plan/review layout) are not supported.
 
 `.trailmix/` is working state: **gitignore it by default** (resume still works on your machine —
 the files are just untracked). Commit it instead if you want trails resumable across machines or
@@ -119,25 +123,25 @@ cross-references in prose): CC auto-namespaces plugin components by the plugin's
 ```
 src/
   instructions/AGENTS.md      always-on core: bootstrap, style, tools, security
-  skills/                     trailhead router + style skills + 5 waypoint skills
+  skills/                     trailhead router + style skills + 3 waypoint skills
     <skill>/SKILL.md          tiny; detail lives in refs/ (loaded JIT)
   agents/*.agent.md           neutral agent specs (trailmix-explorer/implementer/reviewer/documenter)
   meta/plugin.meta.json       name/version/author → plugin manifests
 build/
   generate.mjs                zero-dep generator: src/ → dist/{claude,ghcp}/
   maps/{models,tools}.json    neutral → platform mapping tables
+  trail.test.mjs              trail.mjs unit tests
 dist/                         generated AND committed (published plugin; marketplace source)
 .claude-plugin/marketplace.json  generated: root catalog, source → ./dist/claude
 .github/plugin/marketplace.json  generated: root catalog, source → ./dist/ghcp
 docs/architecture.md          the full blueprint / design source of truth
-evals/                        manual scenario checklists — does the workflow behave? (run by hand)
 ```
 
 ## Develop
 
 ```bash
 npm run build     # regenerate dist/ after editing anything in src/ or build/maps/
-npm run verify    # regenerate + assert dist/claude and dist/ghcp are sound plugins
+npm run verify    # build + freshness check + trail.mjs tests + frontmatter lint + structure checks
 ```
 
 Editing rules:
@@ -153,7 +157,7 @@ Editing rules:
 - Pin exact model names in `build/maps/models.json` for your account.
 - `npm run verify` only reads/regenerates files in this repo (`dist/`, the root marketplace
   stubs) — it doesn't install anything anywhere.
-- Requires Node ≥ 16.7 (uses `fs.cpSync`).
+- Requires Node ≥ 18 (`npm run verify` uses `node --test`; the generator alone needs ≥ 16.7 for `fs.cpSync`).
 
 ## Token efficiency
 
@@ -167,7 +171,8 @@ Baked in at every layer:
   skills rather than part of the hook payload.
 - **Disk over chat** — artifacts go to `.trailmix/…`; the human reads them, the context stays
   clean.
-- **Context isolation** — phase work runs in subagents; the parent context stays lean.
+- **Context isolation** — research, implementation, review, and docs run in subagents; the
+  orchestrator's context stays lean.
 - **Cheap-model routing** — the explorer (read/summarize/websearch) runs on a cheap model;
   every other agent's model is pinned per agent in `build/maps/models.json` — adjust to taste.
 - **GORP handoffs** — agent-to-agent messages are counts + exact commands + one-line findings

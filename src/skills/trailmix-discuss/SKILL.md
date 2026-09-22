@@ -1,33 +1,48 @@
 ---
 name: trailmix-discuss
-description: Waypoint 1 — refine a rough feature idea into an agreed spec through Socratic
-  questions and research, then write spec.md. Use once trailmix-trailhead has routed a non-trivial
-  feature into the discuss phase — not as the entry point for a raw request (that's the router).
+description: Waypoint 1 — research first, then clear every question and uncertainty with the human
+  in batched clarify rounds, and write brief.md. Ends at the trail's only pre-build checkpoint.
+  Use once trailmix-trailhead has routed work into a trail — not as the entry point for a raw
+  request (that's the router).
 ---
 
-# discuss — turn an idea into an agreed spec
+# discuss — settle every question, then write the brief
 
-Refine the request into a spec you and the human agree on. Don't design the implementation yet
-(that's `trailmix-plan`), and don't write code.
+This is where the human's input goes. Build runs without them, so anything left unclear here
+becomes a wrong guess later. Don't design the implementation in detail, and don't write code.
 
-## Do
-1. **Ask before assuming.** Surface the real goal, the users, the constraints, the edge cases.
-   Ask one focused question at a time when it changes direction; batch related ones.
-2. **Research to ground it.** Dispatch the `trailmix-explorer` agent (cheap, read-only; or a general
-   read-only subagent if not installed) to survey the current codebase and, when useful, the
-   web. It returns a GORP summary — don't fill your own context with raw file dumps.
-3. **Present in digestible chunks.** Show the emerging spec in short sections the human can
-   actually read and sign off on — not a wall of text.
-4. **Smooth the edge cases.** Name what's out of scope as clearly as what's in.
+## 1. Research first
+Before asking anything, dispatch `trailmix-explorer` agents (cheap, read-only; or general
+read-only subagents if not installed), **in parallel**, with one independent question each:
+affected code, existing patterns, constraints, prior art, and the web when useful. Each returns a
+GORP summary. Never ask the human something research can answer.
 
-## Output — `.trailmix/trail/<slug>/spec.md`
-Scaffold the file with the helper so the anchor frontmatter (slug, `created`/`updated` dates,
-`status: draft`, `document: pending`) is correct by construction — `trail.mjs new <slug> spec
-"<title>"` (see `trailmix-trailhead/refs/trail-metadata.md`). Then fill the body from
-`refs/spec-template.md`. Keep it tight; no placeholders, no TBDs.
+## 2. Clarify, in batched rounds
+Ask one numbered list per round. Each question gets a **recommended default** and a one-line why:
 
-## Checkpoint
-Get the human's sign-off on the spec before `trailmix-plan`. If `trailmix-trailhead` sized the
-work as trivial and merged discuss + plan, use `trailmix-plan`'s `spec-plan-template.md` instead
-— one artifact, one checkpoint. Sign-off passed: a good point to clear/restart — the spec on
-disk is the distilled context, and resume lands exactly here.
+```
+1. Error handling on bad input: reject with 400? (default: yes — matches api/users.ts)
+2. Migrate existing rows? (default: no — the new column is nullable)
+```
+
+The human answers in one line (`defaults, except 2: yes`). Run another round only if the answers
+opened new unknowns. Stop when nothing that changes behavior, scope, or a public contract is
+still open. Cover goal, scope in/out, edge cases, constraints, and how success is proven.
+Bug work: confirm the repro (steps, expected vs actual) in the same round.
+
+## 3. Write the brief — `.trailmix/trail/<slug>/brief.md`
+Scaffold with the helper so frontmatter is correct by construction: `trail.mjs new <slug> brief
+"<title>"` (or `new <slug> bug "<title>"` for a defect) — see
+`trailmix-trailhead/refs/trail-metadata.md`. Fill the body from `refs/brief-template.md`
+(`refs/bug-template.md` for bugs). Record what the research found under **Context** so build
+doesn't re-explore. Leave empty sections out. No open questions and no TBDs: a question you can't
+close is a question for the human.
+
+## Checkpoint — the digest
+Don't ask the human to read the brief. Show a **digest** in chat, at most 5 bullets: the
+decisions you made without explicit input (defaults taken), key assumptions, what's out of scope,
+and the riskiest part. Then the brief's path. One sign-off: approve and build starts, or correct
+and you update the brief.
+
+If the human pre-authorized ("go ahead once it's clear") and the last round left nothing open,
+show the digest and go straight to `trailmix-build` without pausing.

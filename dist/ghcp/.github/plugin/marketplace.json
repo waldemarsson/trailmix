@@ -4,14 +4,14 @@
     "name": "Martin Waldemarsson"
   },
   "metadata": {
-    "description": "A portable, token-efficient agentic coding workflow (Discuss -> Plan -> Implement -> Review -> Document) for GitHub Copilot CLI and Claude Code.",
-    "version": "0.6.0"
+    "description": "A portable, token-efficient agentic coding workflow (Discuss -> Build -> Handoff) for GitHub Copilot CLI and Claude Code.",
+    "version": "0.7.0"
   },
   "plugins": [
     {
       "name": "trailmix",
-      "description": "A portable, token-efficient agentic coding workflow (Discuss -> Plan -> Implement -> Review -> Document) for GitHub Copilot CLI and Claude Code.",
-      "version": "0.6.0",
+      "description": "A portable, token-efficient agentic coding workflow (Discuss -> Build -> Handoff) for GitHub Copilot CLI and Claude Code.",
+      "version": "0.7.0",
       "source": "."
     }
   ]

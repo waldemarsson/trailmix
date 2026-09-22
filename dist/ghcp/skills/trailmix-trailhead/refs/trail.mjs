@@ -5,7 +5,7 @@
 //
 // It is a PURE DATA TOOL over trail artifacts. It owns the closed *vocabulary* of the trail
 // (statuses, waypoints, templates) so the LLM can never misspell one — it names an intent
-// (`approve`, `new … spec`), not a literal. It does NOT own the workflow *rules*: no gates, no
+// (`approve`, `new … brief`), not a literal. It does NOT own the workflow *rules*: no gates, no
 // enforced ordering, no state machine. `status` derives a read-only summary from the same
 // vocabulary but blocks nothing. The skill decides *when* to act; this performs the mechanical
 // edit/extraction correctly and repeatably. Artifact bodies are left byte-for-byte unchanged.
@@ -15,12 +15,10 @@
 //   node trail.mjs new <slug> <template> [title]   scaffold a trail artifact (frontmatter only)
 //   node trail.mjs approve           <file.md>     status -> approved
 //   node trail.mjs supersede         <file.md>     status -> superseded
-//   node trail.mjs document-done     <anchor.md>   document -> done
-//   node trail.mjs document-skipped  <anchor.md>   document -> skipped
-//   node trail.mjs tasks <plan.md> <T1> [T2 ...]   register the plan's task ids (once)
-//   node trail.mjs task-done <plan.md> <id>        mark one task's gate green
-//   node trail.mjs findings <review.md> <H1 ...>   register the review's finding ids (once)
-//   node trail.mjs finding <review.md> <id> <state>  open | fixed | wont-fix | disputed
+//   node trail.mjs tasks <brief.md> <T1> [T2 ...]  register the build's task ids (once)
+//   node trail.mjs task-done <brief.md> <id>       mark one task's gate green
+//   node trail.mjs findings <report.md> <H1 ...>   register the hand-off's open finding ids (once)
+//   node trail.mjs finding <report.md> <id> <state>  open | fixed | wont-fix | disputed
 //   node trail.mjs check [file.md ...]             lint frontmatter (default: all trails)
 //   node trail.mjs status [dir ...]                one line per trail (default: all trails)
 
@@ -31,29 +29,18 @@ import { join, basename } from "node:path";
 export const OPS = {
   approve: ["status", "approved"],
   supersede: ["status", "superseded"],
-  "document-done": ["document", "done"],
-  "document-skipped": ["document", "skipped"],
 };
+// `brief` and `bug` both scaffold the anchor brief.md; they differ only in `kind`.
 export const TEMPLATES = {
-  spec: { file: "spec.md", waypoint: "discuss", anchor: true },
-  "spec-plan": { file: "spec-plan.md", waypoint: "spec-plan", anchor: true },
-  bug: { file: "bug.md", waypoint: "bug", anchor: true },
-  plan: { file: "plan.md", waypoint: "plan", anchor: false },
-  review: { file: "review.md", waypoint: "review", anchor: false },
+  brief: { file: "brief.md", waypoint: "discuss", kind: "feature" },
+  bug: { file: "brief.md", waypoint: "discuss", kind: "bug" },
+  report: { file: "report.md", waypoint: "handoff" },
 };
 const STATUS = ["draft", "approved", "superseded"];
-const WAYPOINT = ["discuss", "spec-plan", "bug", "plan", "review"]; // artifact-bearing waypoints
-const ANCHOR_WP = ["discuss", "spec-plan", "bug"];
-const DOC = ["pending", "done", "skipped"];
+const WAYPOINT = ["discuss", "handoff"]; // artifact-bearing waypoints (build has none)
+const KIND = ["feature", "bug"];
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const SLUG = /^[a-z0-9][a-z0-9-]*$/;
-// Phase order per track (implement + document have no artifact of their own).
-const PHASES = {
-  full: ["discuss", "plan", "implement", "review", "document"],
-  trivial: ["spec-plan", "implement", "review", "document"],
-  bug: ["bug", "implement", "review", "document"],
-};
-const HAS_ARTIFACT = new Set(WAYPOINT);
 const TRAILS = ".trailmix/trail";
 
 // Opening `---` line, the block, then a closing `---` line. Only the leading block counts, so a
@@ -124,8 +111,8 @@ export function setField(file, field, value) {
   writeFileSync(file, open + lines.join("\n") + close + body);
 }
 
-// ---- tasks (implement progress) ----------------------------------------------------------------
-// The plan's `tasks:` field records which task gates passed, so resume can land mid-implement.
+// ---- tasks (build progress) --------------------------------------------------------------------
+// The brief's `tasks:` field records which task gates passed, so resume can land mid-build.
 // `tasks` registers the ids once (refuses to clobber recorded progress); `task-done` flips one id
 // to done. Both are named ops: the LLM never edits the field by hand.
 export function parseTasks(value) {
@@ -157,10 +144,10 @@ export function taskDone(file, id) {
   setField(file, "tasks", tasks.map((t) => (t.done ? `${t.id}:done` : t.id)).join(" "));
 }
 
-// ---- findings (review fix-loop) ----------------------------------------------------------------
-// The review's `findings:` field records each finding's lifecycle state, so the fix loop is
-// iterative instead of one-shot. Bare id = open; otherwise `H1:fixed`. Same closed-vocabulary
-// rule: `findings` registers ids once, `finding` names an id + state — never hand-edited.
+// ---- findings (hand-off fix loop) --------------------------------------------------------------
+// The report's `findings:` field records the state of each finding left for the human, so the
+// hand-off fix loop survives a session. Bare id = open; otherwise `H1:fixed`. Same closed-
+// vocabulary rule: `findings` registers ids once, `finding` names an id + state — never hand-edited.
 export const FINDING_STATES = ["open", "fixed", "wont-fix", "disputed"];
 
 export function parseFindings(value) {
@@ -196,9 +183,9 @@ export function findingState(file, id, state) {
 }
 
 // ---- new (scaffold) --------------------------------------------------------------------------
-// Create <slug>/<template>.md with a correct frontmatter block (dates, slug, waypoint, initial
-// status/document) — the creation-time misspelling surface, owned here. Writes frontmatter only;
-// the skill fills the body from its template ref. Refuses to clobber an existing artifact.
+// Create the template's artifact under <slug>/ with a correct frontmatter block (dates, slug,
+// waypoint, kind, initial status) — the creation-time misspelling surface, owned here. Writes
+// frontmatter only; the skill fills the body from its template ref. Refuses to clobber.
 export function newTrail(slug, template, title) {
   if (!SLUG.test(slug)) throw new Error(`bad slug: ${slug} (kebab-case: a-z 0-9 -)`);
   const t = TEMPLATES[template];
@@ -207,8 +194,8 @@ export function newTrail(slug, template, title) {
   const file = join(dir, t.file);
   if (existsSync(file)) throw new Error(`already exists: ${file}`);
   const d = today();
-  const fm = t.anchor
-    ? [`slug: ${slug}`, `title: ${title || "<title>"}`, `created: ${d}`, `updated: ${d}`, `waypoint: ${t.waypoint}`, "status: draft", "document: pending"]
+  const fm = t.kind
+    ? [`slug: ${slug}`, `title: ${title || "<title>"}`, `kind: ${t.kind}`, `created: ${d}`, `updated: ${d}`, `waypoint: ${t.waypoint}`, "status: draft"]
     : [`slug: ${slug}`, `waypoint: ${t.waypoint}`, "status: draft", `updated: ${d}`];
   mkdirSync(dir, { recursive: true });
   writeFileSync(file, `---\n${fm.join("\n")}\n---\n`);
@@ -227,10 +214,10 @@ export function checkFile(file) {
   bad("bad status", fm.status, STATUS.includes(fm.status));
   bad("bad waypoint", fm.waypoint, WAYPOINT.includes(fm.waypoint));
   bad("bad updated", fm.updated, DATE.test(fm.updated || ""));
-  if (ANCHOR_WP.includes(fm.waypoint)) {
+  if (fm.waypoint === "discuss") {
     bad("missing title", fm.title, !!fm.title);
+    bad("bad kind", fm.kind, KIND.includes(fm.kind));
     bad("bad created", fm.created, DATE.test(fm.created || ""));
-    bad("bad document", fm.document, DOC.includes(fm.document));
   }
   if (fm.tasks !== undefined) {
     try {
@@ -252,52 +239,33 @@ export function checkFile(file) {
 // ---- status (derive, read-only) --------------------------------------------------------------
 // Reconstruct one trail's position from frontmatter alone. Reports the resume point; enforces
 // nothing. This is the one derivation that knows phase *order* (structure) — never the *rules*.
+// Order: discuss (brief.md) → build (no artifact; brief `tasks`) → handoff (report.md).
 export function deriveTrail(dir) {
   const slug = basename(dir);
-  const byWp = {};
-  let anchorDoc;
-  let tasks; // registered implement progress, from whichever artifact carries a tasks field
-  let findings; // registered review findings + lifecycle states
-  for (const f of readdirSync(dir).filter((f) => f.endsWith(".md"))) {
-    const fm = frontmatter(readFileSync(join(dir, f), "utf8"));
-    if (!fm) continue;
-    if (fm.waypoint) byWp[fm.waypoint] = fm.status;
-    if (fm.document !== undefined) anchorDoc = fm.document;
+  const read = (f) => (existsSync(join(dir, f)) ? frontmatter(readFileSync(join(dir, f), "utf8")) : null);
+  const brief = read("brief.md");
+  const report = read("report.md");
+  const parse = (fn, v) => {
     try {
-      if (fm.tasks !== undefined) tasks = parseTasks(fm.tasks);
-      if (fm.findings !== undefined) findings = parseFindings(fm.findings);
+      return v === undefined ? undefined : fn(v);
     } catch {} // malformed field: derive without it; `check` reports the problem
-  }
-  const phases = PHASES["bug" in byWp ? "bug" : "spec-plan" in byWp ? "trivial" : "full"];
-  const present = phases.filter((p) => HAS_ARTIFACT.has(p) && p in byWp);
-  if (present.length === 0) return { slug, state: "empty", next: phases[0] };
+  };
 
-  // Furthest artifact still draft => its checkpoint is pending; land there.
-  let draft = null;
-  for (const p of present) if (byWp[p] === "draft") draft = p;
-  if (draft) {
-    const open = draft === "review" && findings ? findings.filter((f) => f.state === "open").length : 0;
-    const detail = open ? `, ${open} open` : "";
-    return { slug, state: "in-progress", next: `${draft} (awaiting sign-off${detail})` };
+  if (!brief) return { slug, state: "empty", next: "discuss" };
+  if (brief.status === "superseded") return { slug, state: "in-progress", next: "discuss (brief superseded)" };
+  if (brief.status !== "approved") return { slug, state: "in-progress", next: "discuss (awaiting sign-off)" };
+
+  if (report) {
+    if (report.status === "approved") return { slug, state: "done", next: "—" };
+    const open = (parse(parseFindings, report.findings) || []).filter((f) => f.state === "open").length;
+    return { slug, state: "in-progress", next: `handoff (awaiting review${open ? `, ${open} open` : ""})` };
   }
 
-  // All present artifacts signed off => the next phase after the last one present.
-  const nextIdx = phases.indexOf(present[present.length - 1]) + 1;
-  if (nextIdx >= phases.length) return { slug, state: "done", next: "—" };
-  let p = phases[nextIdx];
-  if (p === "implement" && tasks?.length) {
-    const open = tasks.filter((t) => !t.done);
-    if (open.length) {
-      const done = tasks.length - open.length;
-      return { slug, state: "in-progress", next: `implement (${done}/${tasks.length} done, next ${open[0].id})` };
-    }
-    p = phases[nextIdx + 1]; // every gate green => implement is done; land on review
-  }
-  if (p === "document") {
-    if (anchorDoc === undefined || anchorDoc === "pending") return { slug, state: "in-progress", next: "document" };
-    return { slug, state: "done", next: "—" };
-  }
-  return { slug, state: "in-progress", next: p };
+  const tasks = parse(parseTasks, brief.tasks);
+  if (!tasks?.length) return { slug, state: "in-progress", next: "build" };
+  const open = tasks.filter((t) => !t.done);
+  if (!open.length) return { slug, state: "in-progress", next: "build (tasks done, next self-review)" };
+  return { slug, state: "in-progress", next: `build (${tasks.length - open.length}/${tasks.length} done, next ${open[0].id})` };
 }
 
 export function summarize(dirs) {
@@ -339,28 +307,28 @@ export function run(argv) {
   }
   if (cmd === "tasks") {
     const [file, ...ids] = rest;
-    if (!file || ids.length === 0) return usage("tasks <plan.md> <T1> [T2 ...]");
+    if (!file || ids.length === 0) return usage("tasks <brief.md> <T1> [T2 ...]");
     setTasks(file, ids);
     process.stdout.write(`${file} ← tasks=${ids.join(" ")} (updated ${today()})\n`);
     return 0;
   }
   if (cmd === "task-done") {
     const [file, id] = rest;
-    if (!file || !id) return usage("task-done <plan.md> <T-id>");
+    if (!file || !id) return usage("task-done <brief.md> <T-id>");
     taskDone(file, id);
     process.stdout.write(`${file} ← ${id}:done (updated ${today()})\n`);
     return 0;
   }
   if (cmd === "findings") {
     const [file, ...ids] = rest;
-    if (!file || ids.length === 0) return usage("findings <review.md> <H1> [M1 ...]");
+    if (!file || ids.length === 0) return usage("findings <report.md> <H1> [M1 ...]");
     setFindings(file, ids);
     process.stdout.write(`${file} ← findings=${ids.join(" ")} (updated ${today()})\n`);
     return 0;
   }
   if (cmd === "finding") {
     const [file, id, state] = rest;
-    if (!file || !id || !state) return usage(`finding <review.md> <id> <${FINDING_STATES.join(" | ")}>`);
+    if (!file || !id || !state) return usage(`finding <report.md> <id> <${FINDING_STATES.join(" | ")}>`);
     findingState(file, id, state);
     process.stdout.write(`${file} ← ${id}:${state} (updated ${today()})\n`);
     return 0;
@@ -386,7 +354,7 @@ export function run(argv) {
     return 0;
   }
   return usage(
-    `read <file...> | new <slug> <template> [title] | ${Object.keys(OPS).join(" | ")} <file> | tasks <plan> <T1...> | task-done <plan> <id> | findings <review> <H1...> | finding <review> <id> <state> | check [file...] | status [dir...]`
+    `read <file...> | new <slug> <template> [title] | ${Object.keys(OPS).join(" | ")} <file> | tasks <brief> <T1...> | task-done <brief> <id> | findings <report> <H1...> | finding <report> <id> <state> | check [file...] | status [dir...]`
   );
 }
 

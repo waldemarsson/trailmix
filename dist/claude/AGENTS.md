@@ -1,7 +1,7 @@
 # trailmix
 
 trailmix is active in this repo. It's a lightweight, portable workflow for building software
-with a coding agent: **Discuss → Plan → Implement → Review → Document**. It runs the same on
+with a coding agent: **Discuss → Build → Handoff**. It runs the same on
 GitHub Copilot CLI and Claude Code.
 
 ## Bootstrap
@@ -9,14 +9,14 @@ GitHub Copilot CLI and Claude Code.
   skill first — it routes you to the right waypoint. Skip it for read-only work (questions,
   exploration, debugging investigation) and edits too small to outlive the session (typo-class
   fixes, config tweaks) — just answer or make the change.
-- Pull a waypoint's skill (`discuss`, `plan`, `implement`,
-  `review`, `document`) only when you reach that phase. Don't hold the whole
-  workflow in context at once.
-- Phase outputs (artifacts) go to `.trailmix/trail/<feature-slug>/` (`spec.md`, `plan.md`,
-  `review.md`). Write to disk; the human reads them there — don't paste them back into chat.
-- The flow is soft and adaptive: scale detail to the work, collapse phases for trivial
-  changes, and pause for a human checkpoint at each waypoint. No rigid gates. If the host CLI's
-  own plan/review mode is active, fold the matching waypoint into it — never run both ceremonies.
+- Pull a waypoint's skill (`discuss`, `build`, `handoff`) only when
+  you reach that phase. Don't hold the whole workflow in context at once.
+- Artifacts go to `.trailmix/trail/<feature-slug>/` (`brief.md`, `report.md`). Write to disk;
+  keep chat for the digest, the findings, and decisions.
+- Two human checkpoints: sign-off on the brief after discuss has cleared every question, and
+  review of the finished result at handoff. Build runs in between without pausing, except for
+  real blockers. Scale the brief to the work. If the host CLI's own plan mode is active, fold
+  the discuss checkpoint into it — never run both ceremonies.
 - Trails are resumable: to continue earlier work or survey trail status, consult
   **trailhead** — it reads artifact frontmatter, not full bodies.
 

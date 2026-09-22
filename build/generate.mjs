@@ -103,19 +103,16 @@ function json(obj) {
 }
 
 // Every trailmix-prefixed skill/agent name this repo defines, longest first so a name that's a
-// prefix of another (trailmix-implement/trailmix-implementer, trailmix-review/-reviewer,
-// trailmix-document/-documenter) replaces correctly instead of leaving a dangling suffix.
+// prefix of another replaces correctly instead of leaving a dangling suffix.
 const NAMESPACED_NAMES = [
+  "trailmix-build",
   "trailmix-discuss",
-  "trailmix-document",
   "trailmix-documenter",
   "trailmix-explorer",
   "trailmix-gorp",
-  "trailmix-implement",
+  "trailmix-handoff",
   "trailmix-implementer",
   "trailmix-lean-code",
-  "trailmix-plan",
-  "trailmix-review",
   "trailmix-reviewer",
   "trailmix-terse",
   "trailmix-trailhead",

@@ -7,7 +7,7 @@
     {
       "name": "trailmix",
       "source": "./dist/claude",
-      "description": "A portable, token-efficient agentic coding workflow (Discuss -> Plan -> Implement -> Review -> Document) for GitHub Copilot CLI and Claude Code."
+      "description": "A portable, token-efficient agentic coding workflow (Discuss -> Build -> Handoff) for GitHub Copilot CLI and Claude Code."
     }
   ]
 }
