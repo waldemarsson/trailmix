@@ -11,6 +11,9 @@ description: Waypoint 1 — research first, then clear every question and uncert
 This is where the human's input goes. Build runs without them, so anything left unclear here
 becomes a wrong guess later. Don't design the implementation in detail, and don't write code.
 
+Helper: `${CLAUDE_PLUGIN_ROOT}/skills/trailhead/refs/trail.mjs` — the host fills in the
+path; use it for every `trail.mjs` call below.
+
 ## 1. Research first
 Before asking anything, dispatch `explorer` agents (cheap, read-only; or general
 read-only subagents if not installed), **in parallel**, with one independent question each:

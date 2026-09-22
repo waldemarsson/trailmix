@@ -91,10 +91,11 @@ copilot plugin marketplace add ./dist/ghcp
 ```
 
 Both platforms' plugins ship a `SessionStart` hook that injects the full `AGENTS.md` always-on
-core (bootstrap, style, tool conventions, security) as context at session start/resume/clear/
-compact. This is the **only** always-on mechanism: neither CLI automatically reads a file named
-`AGENTS.md`/`CLAUDE.md` from inside an installed plugin, so the hook — not the bundled file — is
-what actually reaches a live session.
+core (bootstrap, style, tool conventions, security) as context when a session starts or resumes
+(CC also on clear/compact/fork). This is the **only** always-on mechanism: neither CLI
+automatically reads a file named `AGENTS.md`/`CLAUDE.md` from inside an installed plugin, so the
+hook — not the bundled file — is what actually reaches a live session. Subagents don't see that
+context, so a `SubagentStart` hook gives trailmix's own agents the core's Security section.
 
 ## How it stays portable
 
@@ -106,14 +107,18 @@ manifest location. The generator hides those differences.
 | Asset | Source | Claude Code | Copilot CLI |
 |---|---|---|---|
 | SessionStart hook (always-on core) | `src/instructions/AGENTS.md` | `hooks/hooks.json` (`SessionStart`) | `hooks/hooks.json` (`sessionStart`) |
+| SubagentStart hook (Security section) | `src/instructions/AGENTS.md` | `hooks/hooks.json` (`SubagentStart`) | `hooks/hooks.json` (`subagentStart`) |
 | Skills | `src/skills/**/SKILL.md` (`trailmix-*`) | `skills/*` (bare name, auto-namespaced) | `skills/trailmix-*` |
 | Agents | `src/agents/*.agent.md` (`trailmix-*`) | `agents/*.md` (bare name, auto-namespaced) | `agents/trailmix-*.agent.md` |
 | Plugin manifest | `src/meta/plugin.meta.json` | `.claude-plugin/plugin.json` | root `plugin.json` |
 | Bundled copy (same content, not auto-loaded) | `src/instructions/AGENTS.md` | `AGENTS.md` | `AGENTS.md` |
 
-Agent frontmatter is transformed per platform: each agent's neutral name → model name
-(`build/maps/models.json`), neutral tool aliases → platform tool names
-(`build/maps/tools.json`), and the tool-list format (comma string vs JSON array). CC's build also
+Agent frontmatter is transformed per platform: each agent's neutral name → model and reasoning
+effort (`build/maps/models.json`; GHCP gets an ordered model fallback list), neutral tool
+aliases → platform tool names (`build/maps/tools.json`), the tool-list format (comma string vs
+JSON array), and preloaded skills (`trailmix:gorp` on CC, `trailmix-gorp` on GHCP). Prose that
+only one CLI should see sits in `<!-- only:claude -->` / `<!-- only:ghcp -->` … `<!-- /only -->`
+blocks — e.g. CC skills name the helper path via `${CLAUDE_PLUGIN_ROOT}`, which CC fills in. CC's build also
 strips the manual `trailmix-` prefix from every skill/agent name (folder, frontmatter `name`, and
 cross-references in prose): CC auto-namespaces plugin components by the plugin's own name, so
 `discuss` ships as `discuss` and is invoked as `trailmix:discuss`.
@@ -166,7 +171,7 @@ Baked in at every layer:
 - **JIT loading** — `SKILL.md` files are tiny; detail sits in `refs/*.md`, loaded only when a
   skill needs it.
 - **Loaded once per session, not per turn** — the `SessionStart` hook injects the full
-  always-on core at session start/resume/clear/compact, not on every message; the fuller
+  always-on core at session boundaries, not on every message; the fuller
   worked examples in `trailmix-terse` / `trailmix-lean-code` / `trailmix-gorp` stay JIT-pulled
   skills rather than part of the hook payload.
 - **Disk over chat** — artifacts go to `.trailmix/…`; the human reads them, the context stays

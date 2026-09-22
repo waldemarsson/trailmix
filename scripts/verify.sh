@@ -59,17 +59,31 @@ grep -qF '"source": "./dist/claude"' "$SCRIPT_DIR/.claude-plugin/marketplace.jso
 grep -qF '"source": "./dist/ghcp"' "$SCRIPT_DIR/.github/plugin/marketplace.json" \
   || fail "root ghcp marketplace: source doesn't point at ./dist/ghcp"
 
-# --- hook commands actually run and produce valid JSON where required ---
-bash -c "$(node -e "console.log(JSON.parse(require('fs').readFileSync('$C/hooks/hooks.json','utf8')).hooks.SessionStart[0].hooks[0].command)")" >/dev/null \
-  || fail "claude SessionStart command failed to run"
-GHCP_BASH_CMD="$(node -e "console.log(JSON.parse(require('fs').readFileSync('$G/hooks/hooks.json','utf8')).hooks.sessionStart[0].bash)")"
-check_ghcp_output() { # $1=shell used to run the command
-  printf '%s' "$("$1" -c "$GHCP_BASH_CMD")" | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const o=JSON.parse(d);if(typeof o.additionalContext!=='string')throw new Error('missing additionalContext')})" \
-    || fail "ghcp sessionStart bash output isn't valid {additionalContext} JSON under $1"
+# --- hook commands actually run and produce valid output ---
+# CC caps hook context at 10,000 chars (beyond it Claude only gets a file path + preview), so every
+# injected context is size-checked too.
+hook_cmd() { # $1=hooks.json $2=JS path to the command string
+  node -e "console.log(JSON.parse(require('fs').readFileSync('$1','utf8')).hooks$2)"
 }
-check_ghcp_output bash
-# Also check under dash/POSIX sh if available: it interprets backslash escapes in `echo` by
-# default (bash doesn't), which previously corrupted this exact JSON — regression guard.
-command -v dash >/dev/null 2>&1 && check_ghcp_output dash
+check_context() { # $1=label $2=JS path under the parsed JSON output to the context ('' = raw stdout)
+  local expr="d"; [ -n "$2" ] && expr="JSON.parse(d)$2"
+  node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const s=$expr;if(typeof s!=='string'||!s.trim())throw new Error('missing');if(s.length>10000)throw new Error('over 10k')})" \
+    || fail "$1: missing, malformed, or over 10,000 chars"
+}
+run_hook() { # $1=shell $2=command $3=label $4=JS path to the context
+  "$1" -c "$2" > /tmp/trailmix-hook.$$ || fail "$3: command failed under $1"
+  check_context "$3 ($1)" "$4" < /tmp/trailmix-hook.$$
+}
+trap 'rm -f /tmp/trailmix-hook.$$' EXIT
+SHELLS="bash"
+# Also run under dash/POSIX sh if available: it interprets backslash escapes in `echo` by default
+# (bash doesn't), which previously corrupted the GHCP JSON — regression guard.
+command -v dash >/dev/null 2>&1 && SHELLS="bash dash"
+for sh in $SHELLS; do
+  run_hook "$sh" "$(hook_cmd "$C/hooks/hooks.json" '.SessionStart[0].hooks[0].command')" "claude SessionStart" ""
+  run_hook "$sh" "$(hook_cmd "$C/hooks/hooks.json" '.SubagentStart[0].hooks[0].command')" "claude SubagentStart" ".hookSpecificOutput.additionalContext"
+  run_hook "$sh" "$(hook_cmd "$G/hooks/hooks.json" '.sessionStart[0].bash')" "ghcp sessionStart" ".additionalContext"
+  run_hook "$sh" "$(hook_cmd "$G/hooks/hooks.json" '.subagentStart[0].bash')" "ghcp subagentStart" ".additionalContext"
+done
 
 echo "OK — dist/claude and dist/ghcp are structurally sound plugins; root marketplace stubs resolve; hooks run and emit valid output"

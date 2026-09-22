@@ -1,8 +1,10 @@
 ---
 name: trailmix-implementer
 description: "Builds the briefed feature in code and writes/runs tests TDD-style, honoring the brief's decisions and task contracts, and verifies every gate before reporting. You own the implementation and the tests."
-tools: ["read", "edit", "search", "shell"]
-model: gpt-5.6-terra
+tools: ["read", "edit", "search", "execute"]
+model: [gpt-5.6-terra, claude-sonnet-5]
+reasoning-effort: high
+skills: [trailmix-gorp]
 ---
 
 # implementer — code + tests

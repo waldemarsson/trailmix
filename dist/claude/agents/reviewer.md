@@ -3,6 +3,8 @@ name: reviewer
 description: "Senior read-only code reviewer — reviews the uncommitted implementation against the brief across architecture, code, security, tests, and style, and returns HIGH/MED/LOW findings with a clear verdict. Never edits anything."
 tools: Read, Grep, Glob, Bash
 model: sonnet
+effort: high
+skills: [trailmix:gorp]
 ---
 
 # reviewer — senior read-only review

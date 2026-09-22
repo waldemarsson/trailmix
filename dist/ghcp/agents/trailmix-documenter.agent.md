@@ -1,8 +1,10 @@
 ---
 name: trailmix-documenter
 description: "Updates the repo's own documentation to reflect what shipped, by weight not volume — adds new docs and fixes stale ones, matching the repo's existing conventions. Zero doc changes is a valid outcome."
-tools: ["read", "edit", "search", "shell"]
-model: gpt-5.6-terra
+tools: ["read", "edit", "search", "execute"]
+model: [gpt-5.6-terra, claude-sonnet-5]
+reasoning-effort: medium
+skills: [trailmix-gorp]
 ---
 
 # documenter — docs by weight

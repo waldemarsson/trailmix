@@ -82,6 +82,10 @@ Command surface: `new` · `approve`/`supersede` · `tasks`/`task-done` · `findi
 **Resolve the helper's path once, then reuse it.** The examples below write `"$TRAIL"` for the
 resolved script path — substitute the real path (shell state doesn't persist between tool
 calls, so set it inline or paste the literal). Resolution order:
+<!-- only:claude -->
+0. **The `Helper:` line in the loaded waypoint skill.** Claude Code substitutes the real path
+   there; use it and skip the rest.
+<!-- /only -->
 1. **The loaded skill's base directory.** Every skill loads with a `Base directory for this
    skill: <path>` line. From trailmix-trailhead's base dir the helper is `<base>/refs/trail.mjs`;
    from a sibling waypoint skill's base dir it's `<base>/../trailmix-trailhead/refs/trail.mjs`.

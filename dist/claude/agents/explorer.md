@@ -3,6 +3,8 @@ name: explorer
 description: "Read-only research agent — surveys the codebase and, when useful, the web, and returns a compact GORP summary. Used by discuss and build to answer a specific research question without cluttering the orchestrator's context."
 tools: Read, Grep, Glob, WebSearch, WebFetch
 model: haiku
+effort: low
+skills: [trailmix:gorp]
 ---
 
 # explorer — read-only research

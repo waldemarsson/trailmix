@@ -12,6 +12,11 @@ Run the whole build without the human. They answer blockers only; their next che
 `trailmix-handoff`. Keep the main context clean: subagents do the work and return GORP; read
 diffs from `git diff`, not from their messages.
 
+<!-- only:claude -->
+Helper: `${CLAUDE_PLUGIN_ROOT}/skills/trailmix-trailhead/refs/trail.mjs` — the host fills in the
+path; use it for every `trail.mjs` call below.
+<!-- /only -->
+
 **On entry:** approve the brief (`trail.mjs approve .trailmix/trail/<slug>/brief.md`; see
 `trailmix-trailhead/refs/trail-metadata.md`). Resuming? `trail.mjs status` names the step; tasks
 marked `:done` are done — don't redo them or re-read their diffs.
@@ -55,3 +60,9 @@ holds, `trail.mjs supersede` the brief and go back to `trailmix-discuss`.
 
 Don't stop for anything you can decide yourself. Note those calls under **Deviations** in the
 report instead.
+<!-- only:ghcp -->
+
+Autopilot fits build: it runs without prompts, and parallel subagents (`/fleet`) can take
+independent tasks. Finishing build means handoff — write the report before signalling
+completion, and still stop for blockers.
+<!-- /only -->

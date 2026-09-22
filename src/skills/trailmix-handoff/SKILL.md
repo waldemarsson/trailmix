@@ -9,6 +9,11 @@ description: Waypoint 3 — hand the finished build to the human with report.md 
 
 This is the human's main checkpoint: they judge the actual change, not documents about it.
 
+<!-- only:claude -->
+Helper: `${CLAUDE_PLUGIN_ROOT}/skills/trailmix-trailhead/refs/trail.mjs` — the host fills in the
+path; use it for every `trail.mjs` call below.
+<!-- /only -->
+
 ## Write the report — `.trailmix/trail/<slug>/report.md`
 Scaffold with `trail.mjs new <slug> report` (see `trailmix-trailhead/refs/trail-metadata.md`) and
 fill the body from `refs/report-template.md`, using what build returned and fresh `git diff`

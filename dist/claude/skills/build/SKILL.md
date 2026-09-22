@@ -12,6 +12,9 @@ Run the whole build without the human. They answer blockers only; their next che
 `handoff`. Keep the main context clean: subagents do the work and return GORP; read
 diffs from `git diff`, not from their messages.
 
+Helper: `${CLAUDE_PLUGIN_ROOT}/skills/trailhead/refs/trail.mjs` — the host fills in the
+path; use it for every `trail.mjs` call below.
+
 **On entry:** approve the brief (`trail.mjs approve .trailmix/trail/<slug>/brief.md`; see
 `trailhead/refs/trail-metadata.md`). Resuming? `trail.mjs status` names the step; tasks
 marked `:done` are done — don't redo them or re-read their diffs.

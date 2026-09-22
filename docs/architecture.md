@@ -22,10 +22,13 @@ Both CLIs share enough primitives that the methodology can be authored once:
 |---|---|---|---|
 | **Skills** (`SKILL.md`, open standard) | `skills/` (plugin root, auto-namespaced) | `skills/` (plugin root, flat) | author once, ship to both |
 | Custom agents | `agents/*.md` | `agents/*.agent.md` | generate per platform |
-| Per-agent model | `sonnet/opus/haiku` | full model names, per-subagent settings | map per agent name |
-| Tool names | `Read/Edit/Grep/Bash…` | `read/edit/search/shell…` (aliases) | map from neutral alias |
+| Per-agent model + effort | alias (`sonnet/haiku…`) + `effort` | ordered model fallback list + `reasoning-effort` | map per agent name |
+| Tool names | `Read/Edit/Grep/Bash…` | `read/edit/search/execute…` (aliases) | map from neutral alias |
+| Skill preload in agents | `skills:` (plugin-scoped `trailmix:gorp`) | `skills:` (`trailmix-gorp`) | from neutral agent `skills` |
 | JIT skill loading | yes | yes | core of the token strategy |
-| **SessionStart hook** | `hooks/hooks.json`, matcher `startup\|resume\|clear\|compact` | `hooks/hooks.json`, `sessionStart` (no clear/compact equivalent) | the **only** always-on mechanism (see §12) |
+| **SessionStart hook** | `hooks/hooks.json`, matcher `startup\|resume\|clear\|compact\|fork` | `hooks/hooks.json`, `sessionStart` (startup/resume/new; nothing fires after compaction) | the **only** always-on mechanism (see §8) |
+| **SubagentStart hook** | `SubagentStart`, matcher `^trailmix:`, `hookSpecificOutput.additionalContext` | `subagentStart`, matcher `trailmix-`, `additionalContext` | Security section into trailmix's own subagents (see §8) |
+| Skill-text path substitution | `${CLAUDE_PLUGIN_ROOT}` filled in when a skill loads | none (skills resolve from their base dir) | `<!-- only:claude -->` block names the helper path |
 | **AGENTS.md** | bundled reference only — **not auto-loaded from inside a plugin** | same — GHCP's native root-`AGENTS.md` read doesn't apply to plugin-bundled files | authored once, informs the hook message; not itself delivered |
 | Plugins + marketplace | `.claude-plugin/plugin.json` + root `.claude-plugin/marketplace.json` (source → `./dist/claude`) | root `plugin.json` + root `.github/plugin/marketplace.json` (source → `./dist/ghcp`) | the only supported install path — no standalone installer |
 
@@ -195,10 +198,15 @@ verbatim.
 
 | Agent | Role | Model (default map) | Tools (neutral) | Isolation |
 |---|---|---|---|---|
-| **trailmix-explorer** | Read codebase + web research, summarize | cheap (haiku) | read, search, web | read-only |
-| **trailmix-implementer** | Code + tests (TDD) + verification; applies fixes | sonnet / gpt-5.6-terra | read, edit, search, shell | read/write |
-| **trailmix-reviewer** | Senior self-review vs the brief; findings + verdict to the orchestrator | sonnet | read, search, shell | **read-only (discipline)** |
-| **trailmix-documenter** | Update repo docs by weight + agent retro | sonnet | read, edit, search, shell | read/write |
+| **trailmix-explorer** | Read codebase + web research, summarize | cheap (haiku), effort low | read, search, web | read-only |
+| **trailmix-implementer** | Code + tests (TDD) + verification; applies fixes | sonnet / gpt-5.6-terra, effort high | read, edit, search, shell | read/write |
+| **trailmix-reviewer** | Senior self-review vs the brief; findings + verdict to the orchestrator | sonnet / claude-sonnet-5, effort high | read, search, shell | **read-only (discipline)** |
+| **trailmix-documenter** | Update repo docs by weight + agent retro | sonnet / gpt-5.6-terra, effort medium | read, edit, search, shell | read/write |
+
+Every agent preloads `trailmix-gorp` (`skills:`), so the return contract is in context from the
+first turn. The reviewer's read-only stays prompt discipline: CC documents no command-level
+allowlist for an agent's `tools` (a specifier in `disallowedTools` removes the whole tool), and
+GHCP agent `tools` take no patterns.
 
 Tier words in waypoint prose ("cheap", "reasoning-tier", "strong-tier") describe *intent*;
 `models.json` pins what each agent actually gets, keyed by agent name — adjust per account.
@@ -255,13 +263,19 @@ the bundled `AGENTS.md` file itself never reaches a live session.
 
 The **only** always-on mechanism is the `SessionStart` hook: the *same* `AGENTS.md` content is
 injected as `additionalContext` (CC: plain stdout; GHCP: `{"additionalContext": ...}` JSON) at
-session start/resume (CC also covers `clear`/`compact`; GHCP has no equivalent for those two).
+session start/resume (CC also covers `clear`/`compact`/`fork`; GHCP fires on startup/resume/new
+and has nothing after compaction).
 This mirrors how Superpowers' `SessionStart` hook injects its full `using-superpowers` meta-skill
 rather than a short pointer (verified against the real repo) — trailmix initially shipped a
 one-line reminder here, then expanded to the full body once that comparison surfaced that the
 one-liner was the more conservative, unvalidated choice, not the pattern that's actually shown
 to work. Because `AGENTS.md` is kept intentionally small (§8 title), this stays cheap per
 session-boundary event; it is not resent on every turn.
+
+Subagents don't inherit that context. A `SubagentStart` hook (matched to trailmix's own agents)
+injects the core's `## Security` section, verbatim, so the non-negotiable rules reach the agents
+that actually read files and run commands. Every hook context stays under CC's 10,000-char cap
+(beyond it Claude only gets a file path + preview); `verify.sh` checks it.
 
 Contents:
 1. **Bootstrap** — trailmix is active; consult **trailhead** for any build/change/fix/ship
@@ -283,9 +297,15 @@ Contents:
 subset (`name`, `description`, `allowed-tools`). Platform-only extras (CC `model`/`paths`/`hooks`)
 are emitted **only** into the CC copy from optional neutral hints. `refs/` copied as-is (JIT).
 
-**Agents:** neutral yaml → CC `<n>.md` and GHCP `<n>.agent.md`, mapping agent name→model
-(`build/maps/models.json` — pin exact names per account; see the §5 table for the defaults) and
-neutral tools→platform tools.
+**Agents:** neutral yaml → CC `<n>.md` and GHCP `<n>.agent.md`, mapping agent name→model +
+effort (`build/maps/models.json` — CC alias + `effort`; GHCP ordered fallback list +
+`reasoning-effort`; see the §5 table), neutral tools→platform tools, and neutral `skills`
+→ preloaded skills (CC plugin-scoped `trailmix:<skill>`).
+
+**Platform-only prose:** `<!-- only:claude -->` / `<!-- only:ghcp -->` … `<!-- /only -->`
+blocks in skills, agent bodies, and `AGENTS.md` are kept (markers dropped) for that platform and
+removed for the other; unbalanced markers fail the build. Used for CC's `${CLAUDE_PLUGIN_ROOT}`
+helper path and GHCP's autopilot note in `trailmix-build`.
 
 **Tool aliases** (`build/maps/tools.json`): neutral set mirrors GHCP aliases; map to CC caps.
 
@@ -294,16 +314,15 @@ neutral tools→platform tools.
 | read | `Read` | `read` |
 | edit | `Edit, Write` | `edit` |
 | search | `Grep, Glob` | `search` |
-| shell | `Bash` | `shell` |
+| shell | `Bash` | `execute` |
 | web | `WebSearch, WebFetch` | `web` |
-| task | `Task` | `agent` |
-| todo | `TodoWrite` | `todo` |
 
 **Instructions:** `AGENTS.md` is copied into each `dist/<platform>/AGENTS.md` as a bundled copy
 (see §8) — not installed anywhere else, since there's no standalone installer. The same content
 also becomes the `SessionStart` hook's payload (below).
 
-**Hooks:** `AGENTS.md`'s content renders into each platform's `hooks/hooks.json` with a
+**Hooks:** `AGENTS.md`'s content (SessionStart) and its Security section (SubagentStart) render
+into each platform's `hooks/hooks.json` with a
 different JSON shape per §1's table (shell-quoted for CC's plain-stdout `command`; JSON-wrapped
 and shell-quoted again for GHCP's `bash`/`powershell` fields — always via `printf '%s'`, never
 `echo`, since POSIX `sh`/`dash` interpret backslash escapes in `echo`'s argument by default while
@@ -357,6 +376,9 @@ CC's manifest doesn't need a `hooks` field (auto-discovered from the default `ho
    Build → Handoff. The human wasn't reading spec/plan, so checkpoints moved to where attention
    goes: clearing uncertainty up front and reviewing the result. Old-layout trails are not
    supported.
+11. ✅ Harness refresh (0.8.0): SubagentStart security injection, per-agent effort, GHCP model
+   fallback lists, GORP preload in agents, CC `${CLAUDE_PLUGIN_ROOT}` helper path, platform-only
+   prose blocks, `fork` matcher, GHCP `execute` alias, hook size guard.
 
 ---
 

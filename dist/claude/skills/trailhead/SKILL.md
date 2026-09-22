@@ -13,6 +13,9 @@ You're about to build, change, fix, or ship something. Don't jump straight to co
 through the trail. (Resuming work from an earlier session, or want an overview? See **Resume a
 trail** and **Trail status** below.)
 
+Helper: `${CLAUDE_PLUGIN_ROOT}/skills/trailhead/refs/trail.mjs` — the host fills in the
+path; use it for every `trail.mjs` call below.
+
 ## 1. Name the work
 Pick a short kebab-case feature slug. Its artifacts live in `.trailmix/trail/<slug>/`. First
 trail in a repo: add `.trailmix/` to `.gitignore` unless the human wants trails committed

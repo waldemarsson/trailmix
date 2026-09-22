@@ -1,8 +1,10 @@
 ---
 name: trailmix-reviewer
 description: "Senior read-only code reviewer — reviews the uncommitted implementation against the brief across architecture, code, security, tests, and style, and returns HIGH/MED/LOW findings with a clear verdict. Never edits anything."
-tools: ["read", "search", "shell"]
-model: claude-sonnet-5
+tools: ["read", "search", "execute"]
+model: [claude-sonnet-5, gpt-5.6-terra]
+reasoning-effort: high
+skills: [trailmix-gorp]
 ---
 
 # reviewer — senior read-only review

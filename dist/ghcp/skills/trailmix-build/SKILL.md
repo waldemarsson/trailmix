@@ -55,3 +55,7 @@ holds, `trail.mjs supersede` the brief and go back to `trailmix-discuss`.
 
 Don't stop for anything you can decide yourself. Note those calls under **Deviations** in the
 report instead.
+
+Autopilot fits build: it runs without prompts, and parallel subagents (`/fleet`) can take
+independent tasks. Finishing build means handoff — write the report before signalling
+completion, and still stop for blockers.
