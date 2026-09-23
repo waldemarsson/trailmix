@@ -11,7 +11,7 @@ Solve the problem with the least code that fully works. Simplicity is the goal â
 for its own sake.
 
 ## The ladder â€” stop at the first rung that works
-1. Does it need to exist at all? (delete / don't build)
+1. Does it need to exist at all? (don't build it)
 2. Standard library
 3. Language-native feature
 4. An existing dependency already in the project

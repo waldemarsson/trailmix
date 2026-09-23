@@ -9,8 +9,11 @@ GitHub Copilot CLI and Claude Code.
   (a clear fix, a rename, config, docs, tests), just make the change. Consult the
   **trailmix-trailhead** skill when there's something to clarify or the work spans modules,
   contracts, or data. Unsure? Ask the human in one line with a recommendation. Read-only work
-  never needs a trail. If a simpler approach exists, or the request reads more than one way,
-  say so before building — don't pick silently.
+  never needs a trail.
+- Outside a trail (inside one, discuss and build cover this): if the request reads more than
+  one way, ask — don't pick silently. If a simpler approach exists, say so in one line and
+  proceed. After three failed fix attempts at the same problem, stop changing code; name the
+  assumption that might be wrong and ask one diagnostic question.
 - Pull a waypoint's skill (`trailmix-discuss`, `trailmix-build`, `trailmix-handoff`) only when
   you reach that phase. Don't hold the whole workflow in context at once.
 - Artifacts go to `.trailmix/trail/<feature-slug>/` (`brief.md`, `report.md`). Write to disk;
@@ -33,8 +36,6 @@ speaks for itself. Shortest response that fully answers. Keep a hedge that carri
 uncertainty — cutting it manufactures confidence.
 Carve-out: code, commands, error text, file paths, and quoted content stay **verbatim** —
 never compress those.
-Debug spiral: after three failed fix attempts at the same problem, stop changing code. Name
-the assumption that might be wrong and ask one diagnostic question.
 
 **Lean code.** YAGNI. Walk the ladder, stop at the first rung that works: does it need to
 exist? → stdlib → language-native → existing dependency → one line → minimum block. The
