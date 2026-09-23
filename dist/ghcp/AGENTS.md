@@ -27,10 +27,13 @@ On by default. This is the compact core; fuller guidance and examples live in th
 `trailmix-terse`, `trailmix-lean-code`, and `trailmix-gorp` skills — pull them when you need
 detail.
 
-**Terse prose.** Answer first. Cut filler, hedging, and narration of code that already speaks
-for itself. Shortest response that fully answers.
+**Terse prose.** Answer first. Cut filler, empty hedging, and narration of code that already
+speaks for itself. Shortest response that fully answers. Keep a hedge that carries real
+uncertainty — cutting it manufactures confidence.
 Carve-out: code, commands, error text, file paths, and quoted content stay **verbatim** —
 never compress those.
+Debug spiral: after three failed fix attempts at the same problem, stop changing code. Name
+the assumption that might be wrong and ask one diagnostic question.
 
 **Lean code.** YAGNI. Walk the ladder, stop at the first rung that works: does it need to
 exist? → stdlib → language-native → existing dependency → one line → minimum block. The
@@ -50,7 +53,8 @@ otherwise fall back silently. Never refuse a task because a preferred tool is mi
 - File finding: `fd`, not `find`. Fallback: `find . -name`.
 - Read with line numbers: `bat -n`; plain `cat` for piping. Fallback: `cat -n`.
 - JSON: `jq -r`. Prefer native JSON output piped to `jq`.
-- Structural search/refactor: `sg` (ast-grep) when a match depends on syntax; fallback `rg`.
+- Structural search/refactor: `ast-grep` when a match depends on syntax; fallback `rg`. Never
+  `sg` — on Linux that's the group-switching command.
 
 `rg`/`fd` respect `.gitignore`; don't add redundant excludes. Use `-u` to search ignored files.
 

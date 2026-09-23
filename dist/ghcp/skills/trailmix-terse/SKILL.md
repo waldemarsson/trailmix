@@ -15,6 +15,16 @@ decision.
 - Cut: greetings, "I'd be happy to", restating the request, recaps, narrating obvious code.
 - Prefer short words; one clause where a paragraph was.
 - Pattern: `[thing] [action] [reason]. [next step].`
+- Cut empty hedges ("perhaps", "might"). Keep one that carries real uncertainty — cutting it
+  manufactures confidence.
+- Replace idioms ("circle back", "on the same page") with the literal action.
+- Asked for options? Give 2–4, ranked, recommendation first, one-line trade-off each. The
+  options are the answer; don't collapse them to one path.
+
+## Pre-send check
+Delete: a first sentence that announces what's coming, a last sentence that recaps or asks
+"anything else?", any "by the way" sidebar. Then: from the first and last lines alone, does the
+reader know what happened and what to do next? If not, fix those lines.
 
 ## Verbatim carve-outs — never compress
 Code, commands, error messages, file paths, and quoted text: reproduce exactly. Terseness is
