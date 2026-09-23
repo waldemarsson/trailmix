@@ -38,6 +38,8 @@ Nothing here installs to your machine or writes outside the repo.
   parser doesn't handle folded values.
 - Skill frontmatter uses only the common subset (`name`, `description`, `allowed-tools`).
   Platform-only keys come from optional neutral hints, not raw frontmatter.
+- Skill descriptions may wrap, but an unquoted value must not contain `: ` or ` #` — hosts parse
+  frontmatter as real YAML and reject the skill. The build fails on it.
 - The Claude build **strips the `trailmix-` prefix** from skill/agent names, folders, and
   cross-references in prose (CC auto-namespaces; GHCP does not). Write source names with the
   prefix and let the generator drop it.

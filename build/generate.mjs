@@ -319,10 +319,26 @@ function validateSkills() {
   for (const entry of readdirSync(skillsDir, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;
     const p = join(skillsDir, entry.name, "SKILL.md");
-    const { data } = parseFrontmatter(readFileSync(p, "utf8"));
+    const text = readFileSync(p, "utf8");
+    const { data } = parseFrontmatter(text);
     if (!data.name) throw new Error(`skill missing frontmatter 'name': ${p}`);
     if (!data.description) throw new Error(`skill missing frontmatter 'description': ${p}`);
+    assertPlainScalars(text, p);
   }
+}
+
+// Hosts parse skill frontmatter with real YAML parsers, and ours is lenient. In an unquoted value,
+// including a wrapped continuation line, `: ` starts a mapping and ` #` starts a comment, so either
+// breaks the skill on load (GHCP: "mapping values are not allowed in this context").
+function assertPlainScalars(text, p) {
+  const fm = text.match(/^---\r?\n([\s\S]*?)\r?\n---/)[1];
+  fm.split(/\r?\n/).forEach((line, i) => {
+    const value = /^\s/.test(line) ? line.trim() : (line.match(/^[A-Za-z_][\w-]*:\s*(.*)$/)?.[1] ?? "");
+    if (/^["'[]/.test(value)) return;
+    if (/:(\s|$)|\s#/.test(value)) {
+      throw new Error(`${p}: frontmatter line ${i + 2} has ': ' or ' #' in an unquoted value — reword or quote it`);
+    }
+  });
 }
 
 function generate() {
