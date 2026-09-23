@@ -1,7 +1,7 @@
 {
-  "_comment": "Neutral agent name -> platform model + reasoning effort. CC takes one alias (haiku=Haiku 4.5, sonnet=Sonnet 5). GHCP takes an ordered fallback list: names get retired, so the first one available to the account wins; keep a cross-vendor fallback. effort -> CC `effort`, GHCP `reasoning-effort` (low | medium | high | xhigh | max; a level the model lacks is ignored).",
-  "trailmix-explorer":    { "claude": "haiku",  "ghcp": ["gpt-5.6-luna", "claude-haiku-4.5"],  "effort": "high" },
-  "trailmix-documenter":  { "claude": "sonnet", "ghcp": ["gpt-5.6-terra", "claude-sonnet-5"],  "effort": "high" },
-  "trailmix-implementer": { "claude": "sonnet", "ghcp": ["gpt-5.6-terra", "claude-sonnet-5"],  "effort": "high" },
-  "trailmix-reviewer":    { "claude": "sonnet", "ghcp": ["claude-sonnet-5", "gpt-5.6-terra"],  "effort": "high" }
+  "_comment": "Neutral agent name -> platform model + reasoning effort. CC takes one alias (haiku=Haiku 4.5, sonnet=Sonnet 5, opus=Opus 5.5) or a full model ID. GHCP takes an ordered fallback list: names get retired and plans gate access, so the first one available to the account wins; keep a cross-vendor fallback. effort -> CC `effort`, GHCP `reasoning-effort` (low | medium | high | xhigh | max; a level the model lacks is ignored — Haiku 4.5 has none).",
+  "trailmix-explorer":    { "claude": "haiku",  "ghcp": ["gpt-6-luna", "gpt-5.6-luna", "claude-haiku-4.5"],  "effort": "high" },
+  "trailmix-documenter":  { "claude": "sonnet", "ghcp": ["gpt-6-sol", "gpt-5.6-terra", "claude-sonnet-5"],   "effort": "high" },
+  "trailmix-implementer": { "claude": "opus",   "ghcp": ["gpt-6-sol", "gpt-5.6-terra", "claude-sonnet-5"],   "effort": "high" },
+  "trailmix-reviewer":    { "claude": "opus",   "ghcp": ["claude-opus-5.5", "claude-opus-5", "gpt-6-sol"],   "effort": "high" }
 }

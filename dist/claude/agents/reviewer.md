@@ -2,7 +2,7 @@
 name: reviewer
 description: "Senior read-only reviewer — reviews the uncommitted implementation against the brief across architecture, code, security, tests, and style, and returns HIGH/MED/LOW findings with a clear verdict; in brief mode, challenges a brief for gaps before build. Never edits anything."
 tools: Read, Grep, Glob, Bash
-model: sonnet
+model: opus
 effort: high
 skills: [trailmix:gorp]
 ---
