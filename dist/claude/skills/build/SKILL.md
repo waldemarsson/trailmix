@@ -1,7 +1,7 @@
 ---
 name: build
 description: Waypoint 2 — autonomously turn an approved brief into verified, self-reviewed,
-  documented code: plan tasks, implement TDD-style, review, fix findings, update docs. No human
+  documented code — plan tasks, implement TDD-style, review, fix findings, update docs. No human
   checkpoint inside; stops only for real blockers. Use once the discuss checkpoint is signed off,
   not as an entry point for a raw request.
 ---
