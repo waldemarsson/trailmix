@@ -2,7 +2,7 @@
 name: implementer
 description: "Builds the briefed feature in code and writes/runs tests TDD-style, honoring the brief's decisions and task contracts, and verifies every gate before reporting. You own the implementation and the tests."
 tools: Read, Edit, Write, Grep, Glob, Bash
-model: sonnet
+model: opus
 effort: high
 skills: [trailmix:gorp]
 ---
