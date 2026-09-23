@@ -5,6 +5,9 @@
 **Decisions:** everything settled in clarify, one line each, including accepted defaults.
 - ...
 
+**Design:** the approach, and the trade-offs behind it when there was a real choice. No file or
+task plan; that's build's.
+
 **In scope:**
 - ...
 

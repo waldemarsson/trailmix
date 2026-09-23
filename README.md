@@ -13,8 +13,8 @@ runs on its own. No rigid gates.
 
 | Waypoint | What happens | You |
 |---|---|---|
-| **Discuss** | Researches the code (and web) in parallel, then asks batched, numbered clarify questions — each with a recommended default — until nothing is open. → `brief.md` | answer rounds (`defaults, except 2: yes`); sign off on a ≤5-bullet digest |
-| **Build** | Plans tasks, implements TDD-style, self-reviews, auto-fixes clear in-scope findings (max 2 rounds), updates docs. Stops only for real blockers. | nothing, unless asked a blocker question |
+| **Discuss** | Researches the code (and web) in parallel, then asks batched, numbered clarify questions — each with a recommended default — until nothing is open. → `brief.md` | answer rounds (`defaults, except 2: yes`); sign off on a short digest that lists every consequential decision |
+| **Build** | Plans tasks, implements TDD-style, self-reviews, auto-fixes clear in-scope findings while fixes converge (≤4 rounds), updates docs. Stops only for real blockers. | nothing, unless asked a blocker question |
 | **Handoff** | Verdict, what needs your call, how to try it, AC → proof, deviations. Fixes follow-ups until you accept. → `report.md` | review the diff, pick follow-ups, accept; then commit / open the PR yourself |
 
 No trail is the default. Small, localized work with unambiguous intent (a clear fix, a rename,

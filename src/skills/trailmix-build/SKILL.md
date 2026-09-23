@@ -39,7 +39,9 @@ It returns findings to you; there is no review artifact. Then:
 - **Fix every finding with a clear fix inside the brief's scope**, whatever its severity:
   dispatch the implementer with those ids, then a **delta re-review** of only those ids plus
   regression risk in the code they touched.
-- **At most 2 fix rounds.** Whatever is still open after that goes to the report.
+- **Keep going while it converges.** Run another round as long as the last one resolved at least
+  one finding. Escalate a finding to the report when its fix fails twice, when fixes conflict, or
+  when it turns out to need a scope change. Hard ceiling: 4 rounds.
 - **Leave for the human:** judgment calls, scope changes, anything that contradicts a brief
   decision, and fixes the implementer disputed with a technical reason.
 
@@ -54,7 +56,8 @@ Then go straight to `trailmix-handoff`.
 ## Stop and ask: the only pause
 Stop only when you can't continue without guessing on something that matters: a requirement that's
 ambiguous in a way that changes behavior, a brief decision the code proves wrong, a destructive
-or irreversible step, or missing access. Ask one crisp question with a recommended answer. Record
+or irreversible step, or missing access. Ask one crisp question with a recommended answer. When
+you decide alone, prefer the option that's easiest to reverse. Record
 the resolution as a dated line under the brief's `**Amendments:**`. If the approach no longer
 holds, `trail.mjs reopen <brief.md>` (back to draft, task progress cleared) and return to
 `trailmix-discuss`: revise the brief in place, drop its stale `## Build notes`, and show a new

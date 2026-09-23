@@ -11,8 +11,8 @@ description: Waypoint 1 — research first, then clear every question and uncert
 **This is the waypoint that matters most.** Build runs without the human, so every question,
 edge case, or ambiguity left open here becomes a guess there, and a wrong guess costs a rebuild.
 Don't write the brief, and don't let anything be implemented, until nothing is left to clarify.
-One more round is cheaper than a wrong build. Don't design the implementation in detail, and
-don't write code.
+One more round is cheaper than a wrong build. Settle the design approach and its trade-offs here;
+leave file and task planning to build, and don't write code.
 
 Helper: `${CLAUDE_PLUGIN_ROOT}/skills/trailhead/refs/trail.mjs` — the host fills in the
 path; use it for every `trail.mjs` call below.
@@ -35,13 +35,15 @@ The human answers in one line (`defaults, except 2: yes`). Run another round whe
 open new unknowns. Stop only when nothing that changes behavior, scope, or a public contract is
 still open.
 
-Cover goal, scope in/out, constraints, and how success is proven. Then sweep the edge cases
-deliberately, not just the ones that come to mind:
+Cover goal, scope in/out, constraints, the design approach (and its trade-offs when there's a
+real choice), and how success is proven. Then sweep the edge cases deliberately, not just the
+ones that come to mind:
 - inputs: empty, invalid, huge, duplicate, unicode
-- failure: errors, timeouts, partial failure, retries
-- state: existing data, migration, concurrency, ordering
+- failure: errors, timeouts, partial failure, retries, recovery
+- state: existing data, migration, rollout/rollback, concurrency, ordering
 - compatibility: public contracts, callers, config, versions
 - access: permissions, secrets, trust boundaries
+- operations: performance/scale, observability
 
 Skip the categories that don't apply. Bug work: confirm the repro (steps, expected vs actual) in
 the same round.
@@ -54,12 +56,21 @@ Scaffold with the helper so frontmatter is correct by construction: `trail.mjs n
 doesn't re-explore. Leave empty sections out. No open questions and no TBDs: a question you can't
 close is a question for the human.
 
+## 4. Challenge the brief
+Before the digest, dispatch `reviewer` (read-only) in **brief mode** with the brief's
+path. It hunts for what's missing: callers and states the brief ignores, migration and rollback,
+failure modes, unproven acceptance criteria, decisions that contradict each other. Settle what
+research can; turn the rest into one more clarify round, then update the brief. Skip it for a
+brief small enough that the challenge would cost more than the build.
+
 ## Checkpoint — the digest
-Don't ask the human to read the brief. Show a **digest** in chat, at most 5 bullets: the
-decisions you made without explicit input (defaults taken), key assumptions, what's out of scope,
-and the riskiest part. Then the brief's path. One sign-off: on approval run `trail.mjs approve
+Don't ask the human to read the brief, so the digest must not hide anything consequential. Show
+it in chat, aiming for about 5 bullets. It **must** include every irreversible, security, data,
+architecture, and public-contract decision, and every consequential default you took; group
+related ones rather than dropping any. Then key assumptions, what's out of scope, and the
+riskiest part. Then the brief's path. One sign-off: on approval run `trail.mjs approve
 <brief.md>` and start build; on correction, update the brief and show the digest again.
 
 If the human pre-authorized ("go ahead once it's clear") and the last round left nothing open,
-show the digest, approve the brief, and go straight to `build` without pausing. Pre-authorization skips the
-pause, never the questions.
+show the digest, approve the brief, and go straight to `build` without pausing.
+Pre-authorization skips the pause, never the questions.

@@ -126,29 +126,34 @@ Artifacts live in the target project at: `.trailmix/trail/<feature-slug>/`.
 | # | Waypoint (skill) | Does | Subagent / model tier | Human | Artifact |
 |---|---|---|---|---|---|
 | 0 | **trailmix-trailhead** | Detect "we're building something", size it, name the slug, route; resume/status | main | — | — |
-| 1 | **trailmix-discuss** | Parallel research first, then batched numbered clarify rounds (each question with a recommended default) until nothing that changes behavior, scope, or a contract is open | **trailmix-explorer** (cheap), in parallel | answers rounds; signs off on a ≤5-bullet digest in chat | `brief.md` |
+| 1 | **trailmix-discuss** | Parallel research first, then batched numbered clarify rounds (each question with a recommended default) until nothing that changes behavior, scope, or a contract is open | **trailmix-explorer** (cheap), in parallel | answers rounds; signs off on a short digest in chat that lists every consequential decision | `brief.md` |
 | 2 | **trailmix-build** | Autonomous: plan tasks into the brief's `## Build notes`, implement TDD, self-review, fix, update docs | **trailmix-implementer**, **trailmix-reviewer** (read-only), **trailmix-documenter** | none, unless blocked | code + tests + docs (git diff) |
 | 3 | **trailmix-handoff** | Write the report, surface it in chat, run the follow-up loop until accepted | **trailmix-implementer** + **trailmix-reviewer** for follow-ups | reviews the diff, picks follow-ups, accepts | `report.md` |
 
 **Discuss** is the waypoint that matters most: build is autonomous, so anything left open
-becomes a guess, and nothing is briefed or built until nothing is left to clarify. Clarify ends
-with a deliberate edge-case sweep (inputs, failure, state, compatibility, access). Never ask what
-research can answer. The human answers a round in one line
-(`defaults, except 2: yes`). The brief records decisions, scope, constraints, acceptance
+becomes a guess, and nothing is briefed or built until nothing is left to clarify. Discuss
+settles the design approach and its trade-offs; file and task planning stay in build. Clarify
+ends with a deliberate edge-case sweep (inputs, failure, state, compatibility, access,
+operations). Before the digest, the reviewer challenges the brief in read-only **brief mode**
+(missing callers and states, migration and rollback, unproven criteria); gaps become one more
+clarify round. Never ask what research can answer. The human answers a round in one line
+(`defaults, except 2: yes`). The brief records decisions, design, scope, constraints, acceptance
 criteria, edge cases, and research **Context** so build doesn't re-explore — no open questions,
-no TBDs. The checkpoint is a digest, not a document read: defaults taken, key assumptions, out of
-scope, riskiest part. If the human pre-authorized ("go ahead once it's clear") and nothing is
+no TBDs. The checkpoint is a digest, not a document read: about 5 bullets, but it must list every
+irreversible, security, data, architecture, and public-contract decision and every consequential
+default (grouped, never dropped), plus key assumptions, out of scope, and the riskiest part. If the human pre-authorized ("go ahead once it's clear") and nothing is
 open, discuss shows the digest and proceeds without pausing; pre-authorization skips the pause,
 never the questions. The signed-off brief is the
 recommended point to clear/restart the session — it's the distilled context and resume lands
 exactly there. Host plan mode, when active, absorbs the discuss checkpoint (one ceremony).
 
-**Build.** Starting build approves the brief. The file map and tasks (T1, T2…, each with
+**Build.** The brief was approved at the digest sign-off. The file map and tasks (T1, T2…, each with
 contract, behaviors, gate command; every AC mapped to a task) are appended to the brief — no
 separate plan artifact, no re-approval. The reviewer returns findings to the orchestrator; there
 is no review artifact. Every `clear` finding with an in-scope fix is auto-fixed regardless of
-severity, followed by a **delta re-review** of only those ids + regression risk; **at most 2 fix
-rounds**. `judgment` findings — judgment calls, scope changes, contradictions of a brief
+severity, followed by a **delta re-review** of only those ids + regression risk. Rounds continue while
+each resolves at least one finding; a finding whose fix fails twice, conflicting fixes, or a
+needed scope change escalates; hard ceiling 4 rounds. `judgment` findings — judgment calls, scope changes, contradictions of a brief
 decision, disputed fixes — plus anything still open go to the human via the report. The
 documenter updates docs by weight (zero edits is valid) and runs the **agent retro** (one-line
 conventions/gotchas into the repo's own `CLAUDE.md`/`AGENTS.md`; zero additions is the norm).
@@ -157,7 +162,7 @@ decision the code proves wrong, a destructive step, missing access): one questio
 recommended answer, resolution recorded as a dated line under the brief's `**Amendments:**`. If
 the approach no longer holds, `reopen` the brief (back to draft, task progress cleared) and
 return to discuss, which revises it in place and shows a new digest. Calls build makes on
-its own go under **Deviations** in the report.
+its own prefer the most reversible option and go under **Deviations** in the report.
 
 **Handoff.** `report.md` holds result + verdict (`ready` / `ready, N need your call` /
 `blocked`), needs your call, try it, AC → proof, changes, deviations, self-review, docs, and
@@ -166,8 +171,9 @@ the rest stays in the report. Follow-up loop: the human names findings (`H1, M2`
 changes → implementer applies exactly those → delta re-review (new findings register as open,
 existing ones keep their state) → each finding stamped via named
 op (`open | fixed | wont-fix | disputed`, lifecycle on the report's `findings:`; `fixed` only
-after the re-review confirms it) → a dated `## Follow-up` block appended. A request that changes
-the brief's goal or scope becomes a new trail. Acceptance approves the report; the trail is
+after the re-review confirms it) → a dated `## Follow-up` block appended. A change beyond the brief
+that serves the same outcome is amended into the brief and handled in the loop; an independent
+goal becomes a new trail. Acceptance approves the report; the trail is
 done. The human commits and opens the PR. All handoffs use **GORP** (§6).
 
 **Trail metadata & resume.** At most two artifacts, each with minimal YAML frontmatter.
@@ -210,7 +216,7 @@ verbatim.
 |---|---|---|---|---|
 | **trailmix-explorer** | Read codebase + web research, summarize | cheap (haiku), effort high | read, search, web | read-only |
 | **trailmix-implementer** | Code + tests (TDD) + verification; applies fixes | sonnet / gpt-5.6-terra, effort high | read, edit, search, shell | read/write |
-| **trailmix-reviewer** | Senior self-review vs the brief; findings + verdict to the orchestrator | sonnet / claude-sonnet-5, effort high | read, search, shell | **read-only (discipline)** |
+| **trailmix-reviewer** | Senior self-review vs the brief; findings + verdict to the orchestrator. Brief mode: challenges the brief for gaps before the digest | sonnet / claude-sonnet-5, effort high | read, search, shell | **read-only (discipline)** |
 | **trailmix-documenter** | Update repo docs by weight + agent retro | sonnet / gpt-5.6-terra, effort high | read, edit, search, shell | read/write |
 
 Every agent preloads `trailmix-gorp` (`skills:`), so the return contract is in context from the
