@@ -198,10 +198,10 @@ verbatim.
 
 | Agent | Role | Model (default map) | Tools (neutral) | Isolation |
 |---|---|---|---|---|
-| **trailmix-explorer** | Read codebase + web research, summarize | cheap (haiku), effort low | read, search, web | read-only |
+| **trailmix-explorer** | Read codebase + web research, summarize | cheap (haiku), effort high | read, search, web | read-only |
 | **trailmix-implementer** | Code + tests (TDD) + verification; applies fixes | sonnet / gpt-5.6-terra, effort high | read, edit, search, shell | read/write |
 | **trailmix-reviewer** | Senior self-review vs the brief; findings + verdict to the orchestrator | sonnet / claude-sonnet-5, effort high | read, search, shell | **read-only (discipline)** |
-| **trailmix-documenter** | Update repo docs by weight + agent retro | sonnet / gpt-5.6-terra, effort medium | read, edit, search, shell | read/write |
+| **trailmix-documenter** | Update repo docs by weight + agent retro | sonnet / gpt-5.6-terra, effort high | read, edit, search, shell | read/write |
 
 Every agent preloads `trailmix-gorp` (`skills:`), so the return contract is in context from the
 first turn. The reviewer's read-only stays prompt discipline: CC documents no command-level
