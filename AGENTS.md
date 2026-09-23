@@ -14,7 +14,7 @@ is the design source of truth; read it before changing structure.
 
 ## The one hard rule
 
-**Edit `src/`, `build/`, `docs/`, `evals/` — never `dist/` or the two root
+**Edit `src/`, `build/`, `docs/` — never `dist/` or the two root
 `marketplace.json` stubs.** Those are generated *and* committed. A hand-edit there is silently
 overwritten by the next `npm run build`, and `.github/workflows/build-dist.yml` re-generates and
 commits on every push to `main`.
@@ -41,16 +41,17 @@ Nothing here installs to your machine or writes outside the repo.
 - The Claude build **strips the `trailmix-` prefix** from skill/agent names, folders, and
   cross-references in prose (CC auto-namespaces; GHCP does not). Write source names with the
   prefix and let the generator drop it.
-- Model pins live in `build/maps/models.json`, tool aliases in `build/maps/tools.json` — keyed
-  by agent name, deliberately cross-vendor.
+- Model pins and reasoning effort live in `build/maps/models.json` (GHCP: ordered fallback
+  list), tool aliases in `build/maps/tools.json` — keyed by agent name, deliberately
+  cross-vendor.
+- Platform-only prose goes in `<!-- only:claude -->` / `<!-- only:ghcp -->` … `<!-- /only -->`
+  blocks (skills, agent bodies, instructions); the other build drops them. Unbalanced markers
+  fail the build.
+- `src/instructions/AGENTS.md` must keep a `## Security` section: the generator injects it into
+  trailmix's subagents via `SubagentStart`. Every hook context must stay under 10,000 chars (CC's
+  cap); `verify.sh` checks both.
 - Hook payloads shell-quote via `printf '%s'`, never `echo` — POSIX `sh`/`dash` expand
   backslash escapes and corrupt the embedded JSON. `verify.sh` guards this under `dash`.
-
-## Evals
-
-`evals/*.md` are **manual, human-run** scenario checklists (paste-the-prompt / PASS-if /
-FAIL-if), not an automated suite. Don't try to execute them; update the relevant checklist when
-you change the behavior it covers.
 
 ## Versioning (semver)
 
@@ -64,7 +65,7 @@ Nothing enforces the parity — bump both in the same commit, then `npm run buil
 generated manifests follow.
 
 **Bump only when generated plugin output changes.** Changes confined to `README.md`, `docs/`,
-`evals/`, CI workflows, `.devcontainer/`, or `scripts/verify.sh` ship nothing to users — leave
+CI workflows, `.devcontainer/`, or `scripts/verify.sh` ship nothing to users — leave
 the version alone.
 
 Currently pre-1.0, so breaking changes land as **MINOR**, not MAJOR. Until 1.0:

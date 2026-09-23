@@ -84,9 +84,13 @@ function mapTools(neutral, platform) {
 // `shell` because it needs `git diff`/`git status`, so its read-only is prompt discipline (spelled
 // out in the agent body), not an enforced flag. Emitting a `readonly` field would look meaningful
 // while doing nothing, and risks tripping a platform's frontmatter parser.
+// Model + effort come from models.json. GHCP's `model` may be an ordered fallback list; CC's is
+// one alias. `skills` preloads full skill content into the agent at startup — CC resolves plugin
+// skills by their namespaced name (`trailmix:gorp`), GHCP by the plain folder name.
 function renderAgent(data, body, platform, neutralName) {
-  if (!models[neutralName]) throw new Error(`no model mapping for agent: ${neutralName}`);
-  const model = models[neutralName][platform];
+  const m = models[neutralName];
+  if (!m) throw new Error(`no model mapping for agent: ${neutralName}`);
+  const model = Array.isArray(m[platform]) ? `[${m[platform].join(", ")}]` : m[platform];
   const mapped = mapTools(data.tools, platform);
   const lines = ["---", `name: ${data.name}`, `description: ${yamlQuote(data.description)}`];
   if (platform === "claude") {
@@ -94,8 +98,26 @@ function renderAgent(data, body, platform, neutralName) {
   } else {
     lines.push(`tools: [${mapped.map((t) => `"${t}"`).join(", ")}]`);
   }
-  lines.push(`model: ${model}`, "---", "", body);
+  lines.push(`model: ${model}`);
+  if (m.effort) lines.push(`${platform === "claude" ? "effort" : "reasoning-effort"}: ${m.effort}`);
+  if (data.skills?.length) {
+    const names = platform === "claude" ? data.skills.map((n) => n.replace(/^trailmix-/, `${meta.name}:`)) : data.skills;
+    lines.push(`skills: [${names.join(", ")}]`);
+  }
+  lines.push("---", "", body);
   return lines.join("\n");
+}
+
+// Platform-only prose: `<!-- only:claude -->` … `<!-- /only -->` (or `only:ghcp`). The block's
+// lines are kept for that platform (markers dropped) and removed for the other. Lets one source
+// use a platform feature — e.g. CC's ${CLAUDE_PLUGIN_ROOT} substitution in skill text — without
+// leaking it into the other build.
+// A dropped block also takes one blank line after it, so removal doesn't leave a double gap.
+const ONLY = /^<!-- only:(claude|ghcp) -->\r?\n([\s\S]*?)^<!-- \/only -->(?:\r?\n)?(\r?\n)?/gm;
+function platformBlocks(text, platform) {
+  const out = text.replace(ONLY, (_, p, inner, gap = "") => (p === platform ? inner + gap : ""));
+  if (/<!-- \/?only/.test(out)) throw new Error("unbalanced <!-- only:… --> block");
+  return out;
 }
 
 function json(obj) {
@@ -103,19 +125,16 @@ function json(obj) {
 }
 
 // Every trailmix-prefixed skill/agent name this repo defines, longest first so a name that's a
-// prefix of another (trailmix-implement/trailmix-implementer, trailmix-review/-reviewer,
-// trailmix-document/-documenter) replaces correctly instead of leaving a dangling suffix.
+// prefix of another replaces correctly instead of leaving a dangling suffix.
 const NAMESPACED_NAMES = [
+  "trailmix-build",
   "trailmix-discuss",
-  "trailmix-document",
   "trailmix-documenter",
   "trailmix-explorer",
   "trailmix-gorp",
-  "trailmix-implement",
+  "trailmix-handoff",
   "trailmix-implementer",
   "trailmix-lean-code",
-  "trailmix-plan",
-  "trailmix-review",
   "trailmix-reviewer",
   "trailmix-terse",
   "trailmix-trailhead",
@@ -180,49 +199,55 @@ function writeRootMarketplaces() {
   );
 }
 
-// SessionStart hook: injects the full AGENTS.md always-on core as context at every session
-// boundary. This is the only always-on delivery mechanism now (no installer writes a root
-// CLAUDE.md/AGENTS.md) — matches how Superpowers' SessionStart hook injects its full
-// using-superpowers meta-skill rather than a short pointer.
-// CC: matcher covers every session-boundary event; plain stdout becomes additionalContext.
-// GHCP: sessionStart only covers new/resumed sessions (no clear/compact equivalent to hook);
-// output must be the {"additionalContext": ...} JSON shape, from both a bash and a powershell
-// script since Copilot CLI runs on Windows too.
-function writeHooks(base, platform, message) {
+// Hooks — the only always-on delivery mechanism (no installer writes a root CLAUDE.md/AGENTS.md).
+// SessionStart injects the full AGENTS.md core at every session boundary — matches how
+// Superpowers' SessionStart hook injects its full using-superpowers meta-skill rather than a
+// short pointer. Subagents never see that context, so SubagentStart injects just the core's
+// Security section into trailmix's own agents (matched by name).
+// CC: SessionStart matcher covers every boundary; plain stdout becomes context. SubagentStart
+// needs the hookSpecificOutput JSON; plugin agents are named `trailmix:<agent>`.
+// GHCP: sessionStart fires on startup/resume/new (no matcher; nothing fires after compaction);
+// both events take the {"additionalContext": ...} JSON shape, from a bash and a powershell
+// command since Copilot CLI runs on Windows too.
+function writeHooks(base, platform, message, security) {
   mkdirSync(join(base, "hooks"), { recursive: true });
+  const bash = (s) => `printf '%s' ${shellQuote(s)}`;
+  const ps = (s) => `Write-Output '${s.replace(/'/g, "''")}'`;
 
   if (platform === "claude") {
+    const subagent = JSON.stringify({ hookSpecificOutput: { hookEventName: "SubagentStart", additionalContext: security } });
     writeFileSync(
       join(base, "hooks/hooks.json"),
       json({
         hooks: {
           SessionStart: [
-            {
-              matcher: "startup|resume|clear|compact",
-              hooks: [{ type: "command", command: `printf '%s' ${shellQuote(message)}` }],
-            },
+            { matcher: "startup|resume|clear|compact|fork", hooks: [{ type: "command", command: bash(message) }] },
           ],
+          SubagentStart: [{ matcher: `^${meta.name}:`, hooks: [{ type: "command", command: bash(subagent) }] }],
         },
       })
     );
   } else {
-    const contextJson = JSON.stringify({ additionalContext: message });
+    const session = JSON.stringify({ additionalContext: message });
+    const subagent = JSON.stringify({ additionalContext: security });
     writeFileSync(
       join(base, "hooks/hooks.json"),
       json({
         version: 1,
         hooks: {
-          sessionStart: [
-            {
-              type: "command",
-              bash: `printf '%s' ${shellQuote(contextJson)}`,
-              powershell: `Write-Output '${contextJson.replace(/'/g, "''")}'`,
-            },
-          ],
+          sessionStart: [{ type: "command", bash: bash(session), powershell: ps(session) }],
+          subagentStart: [{ type: "command", matcher: `${meta.name}-`, bash: bash(subagent), powershell: ps(subagent) }],
         },
       })
     );
   }
+}
+
+// The core's `## Security` section, verbatim — what every trailmix subagent must also obey.
+function securitySection(md) {
+  const m = md.match(/^## Security[^\n]*\n[\s\S]*?(?=^## |(?![\s\S]))/m);
+  if (!m) throw new Error("src/instructions/AGENTS.md has no '## Security' section");
+  return m[0].trim() + "\n";
 }
 
 function shellQuote(s) {
@@ -245,6 +270,7 @@ function writePackaging(base, platform) {
       license: meta.license,
     };
     if (meta.homepage) manifest.homepage = meta.homepage;
+    if (meta.repository) manifest.repository = meta.repository;
     if (meta.keywords) manifest.keywords = meta.keywords;
     mkdirSync(join(base, ".claude-plugin"), { recursive: true });
     writeFileSync(join(base, ".claude-plugin/plugin.json"), json(manifest));
@@ -307,20 +333,24 @@ function generate() {
     const base = join(DIST, p.dir);
     mkdirSync(join(base, "agents"), { recursive: true });
 
-    // skills — copy, then for CC strip the manual trailmix- prefix (plugin auto-namespaces)
+    // skills — copy, resolve platform-only blocks, then for CC strip the manual trailmix- prefix
+    // (plugin auto-namespaces)
     cpSync(join(SRC, "skills"), join(base, "skills"), { recursive: true });
     if (p.dir === "claude") {
       for (const entry of readdirSync(join(base, "skills"))) {
         if (!entry.startsWith("trailmix-")) continue;
         renameSync(join(base, "skills", entry), join(base, "skills", stripNamespace(entry)));
       }
-      transformTree(join(base, "skills"), stripNamespace);
     }
+    transformTree(join(base, "skills"), (t) => {
+      const out = platformBlocks(t, p.dir);
+      return p.dir === "claude" ? stripNamespace(out) : out;
+    });
 
     // AGENTS.md — bundled reference copy AND the source of the SessionStart hook's injected
     // content below. Neither CLI auto-loads a file named AGENTS.md/CLAUDE.md from inside an
     // installed plugin, so this file itself never reaches a session; the hook is what's active.
-    const agentsMd = readFileSync(join(SRC, "instructions/AGENTS.md"), "utf8");
+    const agentsMd = platformBlocks(readFileSync(join(SRC, "instructions/AGENTS.md"), "utf8"), p.dir);
     const platformAgentsMd = p.dir === "claude" ? stripNamespace(agentsMd) : agentsMd;
     writeFileSync(join(base, "AGENTS.md"), platformAgentsMd);
 
@@ -329,6 +359,7 @@ function generate() {
       if (!file.endsWith(".agent.md")) continue;
       let { data, body } = parseFrontmatter(readFileSync(join(SRC, "agents", file), "utf8"));
       const neutralName = data.name;
+      body = platformBlocks(body, p.dir);
       if (p.dir === "claude") {
         data = { ...data, name: stripNamespace(data.name), description: stripNamespace(data.description) };
         body = stripNamespace(body);
@@ -340,7 +371,7 @@ function generate() {
     // SessionStart hook — injects the full always-on core (AGENTS.md), since neither CLI
     // auto-loads it from inside a plugin. Same content already computed above for the
     // bundled AGENTS.md copy.
-    writeHooks(base, p.dir, platformAgentsMd);
+    writeHooks(base, p.dir, platformAgentsMd, securitySection(platformAgentsMd));
 
     // plugin manifest + marketplace catalog
     writePackaging(base, p.dir);

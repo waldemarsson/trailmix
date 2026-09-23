@@ -1,8 +1,10 @@
 ---
 name: trailmix-documenter
 description: "Updates the repo's own documentation to reflect what shipped, by weight not volume — adds new docs and fixes stale ones, matching the repo's existing conventions. Zero doc changes is a valid outcome."
-tools: ["read", "edit", "search", "shell"]
-model: gpt-5.6-terra
+tools: ["read", "edit", "search", "execute"]
+model: [gpt-5.6-terra, claude-sonnet-5]
+reasoning-effort: high
+skills: [trailmix-gorp]
 ---
 
 # documenter — docs by weight
@@ -11,7 +13,7 @@ Update the repo's own documentation so it matches what shipped — add what's ne
 change made stale. Most changes touch little or no documentation.
 
 ## Steps
-1. Understand what shipped: read spec/plan/review and the actual diff (`git status`, `git diff`,
+1. Understand what shipped: read the brief and the actual diff (`git status`, `git diff`,
    new files). Build a short inventory of things of weight; zero items is a valid outcome.
 2. Learn the repo's doc structure starting from the README (follow its links one level deep).
    Match layout, file naming, headings, cross-link style, and language.

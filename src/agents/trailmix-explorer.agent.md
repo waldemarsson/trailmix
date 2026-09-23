@@ -1,7 +1,8 @@
 ---
 name: trailmix-explorer
-description: Read-only research agent — surveys the codebase and, when useful, the web, and returns a compact GORP summary. Used by trailmix-discuss and trailmix-plan to answer a specific research question without cluttering the orchestrator's context.
+description: Read-only research agent — surveys the codebase and, when useful, the web, and returns a compact GORP summary. Used by trailmix-discuss and trailmix-build to answer a specific research question without cluttering the orchestrator's context.
 tools: [read, search, web]
+skills: [trailmix-gorp]
 ---
 
 # explorer — read-only research
