@@ -376,7 +376,7 @@ CC's manifest doesn't need a `hooks` field (auto-discovered from the default `ho
    Build → Handoff. The human wasn't reading spec/plan, so checkpoints moved to where attention
    goes: clearing uncertainty up front and reviewing the result. Old-layout trails are not
    supported.
-11. ✅ Harness refresh (0.8.0): SubagentStart security injection, per-agent effort, GHCP model
+11. ✅ Harness refresh (also 0.7.0): SubagentStart security injection, per-agent effort, GHCP model
    fallback lists, GORP preload in agents, CC `${CLAUDE_PLUGIN_ROOT}` helper path, platform-only
    prose blocks, `fork` matcher, GHCP `execute` alias, hook size guard.
 
