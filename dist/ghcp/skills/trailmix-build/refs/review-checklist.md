@@ -6,7 +6,9 @@ categorize findings by real severity and give each a stable id (H1 / M2 / L3…)
 - **Brief alignment** — does it match the brief, its decisions, and its `## Build notes`
   *including `**Amendments:**`*? (An amended deviation is documented, not a departure.) Is every
   acceptance criterion met? Are deviations justified improvements or problematic departures? Flag
-  them specifically. If the *brief itself* is wrong, say so.
+  them specifically. A solo decision in an escalate-class area (public contracts, dependencies,
+  data, security, deploy/runtime), unless the brief's **Autonomy** line allows it, is a
+  `judgment` finding. If the *brief itself* is wrong, say so.
 - **Code quality** — separation of concerns, error handling, type safety, DRY without premature
   abstraction, edge cases.
 - **Architecture** — sound design, scalability/performance, integrates cleanly.

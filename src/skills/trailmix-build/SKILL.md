@@ -53,11 +53,20 @@ human to review.
 
 Then go straight to `trailmix-handoff`.
 
+## Decision rights
+Default contract. The brief's **Autonomy** line, when present, overrides it.
+- **Decide alone**, preferring the option that's easiest to reverse: internal structure, naming,
+  helpers, and refactors inside scope; test design, fixtures, error messages; using existing
+  dependencies and patterns; following an existing convention where the brief is silent.
+- **Escalate:** public API, CLI, or file-format changes, or anything that breaks callers; new or
+  upgraded dependencies; schema or data migrations, or deleting or rewriting data; auth,
+  permissions, secrets, trust boundaries; deploy, config, or runtime changes outside the repo.
+
 ## Stop and ask: the only pause
-Stop only when you can't continue without guessing on something that matters: a requirement that's
-ambiguous in a way that changes behavior, a brief decision the code proves wrong, a destructive
-or irreversible step, or missing access. Ask one crisp question with a recommended answer. When
-you decide alone, prefer the option that's easiest to reverse. Record
+Stop only when you can't continue without guessing on something that matters: an escalate-class
+decision the brief doesn't settle, a requirement that's ambiguous in a way that changes behavior,
+a brief decision the code proves wrong, a destructive or irreversible step, or missing access.
+Ask one crisp question with a recommended answer. Record
 the resolution as a dated line under the brief's `**Amendments:**`. If the approach no longer
 holds, `trail.mjs reopen <brief.md>` (back to draft, task progress cleared) and return to
 `trailmix-discuss`: revise the brief in place, drop its stale `## Build notes`, and show a new

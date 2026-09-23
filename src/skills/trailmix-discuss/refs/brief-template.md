@@ -18,6 +18,9 @@ task plan; that's build's.
 naming/copy rules, platform/runtime limits).
 - ...
 
+**Autonomy:** only when the human's wishes differ from build's default decision rights, e.g.
+`may add dev dependencies` or `ask before any schema change`.
+
 **Acceptance criteria:**
 - [ ] AC1: testable criterion
 - [ ] AC2: testable criterion

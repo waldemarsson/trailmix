@@ -157,12 +157,19 @@ needed scope change escalates; hard ceiling 4 rounds. `judgment` findings — ju
 decision, disputed fixes — plus anything still open go to the human via the report. The
 documenter updates docs by weight (zero edits is valid) and runs the **agent retro** (one-line
 conventions/gotchas into the repo's own `CLAUDE.md`/`AGENTS.md`; zero additions is the norm).
-The only pause is **stop-and-ask** for a real blocker (behavior-changing ambiguity, a brief
-decision the code proves wrong, a destructive step, missing access): one question with a
+**Decision rights** are a default contract in the build skill: build decides internal
+structure, naming, tests, and use of existing dependencies and conventions alone (preferring the
+most reversible option), and escalates public contracts, new or upgraded dependencies, data
+migrations or rewrites, auth/secrets/trust boundaries, and deploy or runtime changes. A brief's
+optional **Autonomy** line overrides the default when the human wants something different, and
+the reviewer flags a solo escalate-class decision as `judgment`. The only pause is
+**stop-and-ask** for a real blocker (an escalate-class decision the brief doesn't settle,
+behavior-changing ambiguity, a brief decision the code proves wrong, a destructive step, missing
+access): one question with a
 recommended answer, resolution recorded as a dated line under the brief's `**Amendments:**`. If
 the approach no longer holds, `reopen` the brief (back to draft, task progress cleared) and
 return to discuss, which revises it in place and shows a new digest. Calls build makes on
-its own prefer the most reversible option and go under **Deviations** in the report.
+its own go under **Deviations** in the report.
 
 **Handoff.** `report.md` holds result + verdict (`ready` / `ready, N need your call` /
 `blocked`), needs your call, try it, AC → proof, changes, deviations, self-review, docs, and

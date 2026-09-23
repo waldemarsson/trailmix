@@ -55,7 +55,8 @@ Scaffold with the helper so frontmatter is correct by construction: `trail.mjs n
 "<title>"` (or `new <slug> bug "<title>"` for a defect) — see
 `trailmix-trailhead/refs/trail-metadata.md`. Fill the body from `refs/brief-template.md`
 (`refs/bug-template.md` for bugs). Record what the research found under **Context** so build
-doesn't re-explore. Leave empty sections out. No open questions and no TBDs: a question you can't
+doesn't re-explore. Add an **Autonomy** line only when the human asked for decision rights that
+differ from build's defaults. Leave empty sections out. No open questions and no TBDs: a question you can't
 close is a question for the human.
 
 ## 4. Challenge the brief
