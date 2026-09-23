@@ -8,8 +8,11 @@ description: Waypoint 1 — research first, then clear every question and uncert
 
 # discuss — settle every question, then write the brief
 
-This is where the human's input goes. Build runs without them, so anything left unclear here
-becomes a wrong guess later. Don't design the implementation in detail, and don't write code.
+**This is the waypoint that matters most.** Build runs without the human, so every question,
+edge case, or ambiguity left open here becomes a guess there, and a wrong guess costs a rebuild.
+Don't write the brief, and don't let anything be implemented, until nothing is left to clarify.
+One more round is cheaper than a wrong build. Don't design the implementation in detail, and
+don't write code.
 
 ## 1. Research first
 Before asking anything, dispatch `trailmix-explorer` agents (cheap, read-only; or general
@@ -25,10 +28,20 @@ Ask one numbered list per round. Each question gets a **recommended default** an
 2. Migrate existing rows? (default: no — the new column is nullable)
 ```
 
-The human answers in one line (`defaults, except 2: yes`). Run another round only if the answers
-opened new unknowns. Stop when nothing that changes behavior, scope, or a public contract is
-still open. Cover goal, scope in/out, edge cases, constraints, and how success is proven.
-Bug work: confirm the repro (steps, expected vs actual) in the same round.
+The human answers in one line (`defaults, except 2: yes`). Run another round whenever the answers
+open new unknowns. Stop only when nothing that changes behavior, scope, or a public contract is
+still open.
+
+Cover goal, scope in/out, constraints, and how success is proven. Then sweep the edge cases
+deliberately, not just the ones that come to mind:
+- inputs: empty, invalid, huge, duplicate, unicode
+- failure: errors, timeouts, partial failure, retries
+- state: existing data, migration, concurrency, ordering
+- compatibility: public contracts, callers, config, versions
+- access: permissions, secrets, trust boundaries
+
+Skip the categories that don't apply. Bug work: confirm the repro (steps, expected vs actual) in
+the same round.
 
 ## 3. Write the brief — `.trailmix/trail/<slug>/brief.md`
 Scaffold with the helper so frontmatter is correct by construction: `trail.mjs new <slug> brief
@@ -45,4 +58,5 @@ and the riskiest part. Then the brief's path. One sign-off: approve and build st
 and you update the brief.
 
 If the human pre-authorized ("go ahead once it's clear") and the last round left nothing open,
-show the digest and go straight to `trailmix-build` without pausing.
+show the digest and go straight to `trailmix-build` without pausing. Pre-authorization skips the
+pause, never the questions.

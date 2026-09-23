@@ -5,15 +5,17 @@ with a coding agent: **Discuss → Build → Handoff**. It runs the same on
 GitHub Copilot CLI and Claude Code.
 
 ## Bootstrap
-- For a request to build, add, change, fix, or ship something, consult the **trailhead**
-  skill first — it routes you to the right waypoint. Skip it for read-only work (questions,
-  exploration, debugging investigation) and edits too small to outlive the session (typo-class
-  fixes, config tweaks) — just answer or make the change.
+- Most small work needs no trail. When the intent is unambiguous and the change is localized
+  (a clear fix, a rename, config, docs, tests), just make the change. Consult the
+  **trailhead** skill when there's something to clarify or the work spans modules,
+  contracts, or data. Unsure? Ask the human in one line with a recommendation. Read-only work
+  never needs a trail.
 - Pull a waypoint's skill (`discuss`, `build`, `handoff`) only when
   you reach that phase. Don't hold the whole workflow in context at once.
 - Artifacts go to `.trailmix/trail/<feature-slug>/` (`brief.md`, `report.md`). Write to disk;
   keep chat for the digest, the findings, and decisions.
-- Two human checkpoints: sign-off on the brief after discuss has cleared every question, and
+- Two human checkpoints: sign-off on the brief after discuss has cleared every question and
+  edge case (discuss matters most — nothing is built until nothing is left to clarify), and
   review of the finished result at handoff. Build runs in between without pausing, except for
   real blockers. Scale the brief to the work. If the host CLI's own plan mode is active, fold
   the discuss checkpoint into it — never run both ceremonies.

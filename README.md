@@ -17,9 +17,14 @@ runs on its own. No rigid gates.
 | **Build** | Plans tasks, implements TDD-style, self-reviews, auto-fixes clear in-scope findings (max 2 rounds), updates docs. Stops only for real blockers. | nothing, unless asked a blocker question |
 | **Handoff** | Verdict, what needs your call, how to try it, AC → proof, deviations. Fixes follow-ups until you accept. → `report.md` | review the diff, pick follow-ups, accept; then commit / open the PR yourself |
 
-Work too small for a trail (typo-class fixes, config tweaks, read-only questions) skips it
-entirely. Otherwise the brief scales to the work; a defect gets a bug brief, and build writes a
-failing test that reproduces it before any fix.
+No trail is the default. Small, localized work with unambiguous intent (a clear fix, a rename,
+config, docs, tests) and read-only questions skip it entirely; when it's unclear, the agent asks.
+A trail is for work with something to clarify, or that spans modules, contracts, or data. Its
+brief scales to the work; a defect gets a bug brief, and build writes a failing test that
+reproduces it before any fix.
+
+Discuss is the waypoint that matters most. Build runs without you, so every question and edge
+case is settled before the brief is written.
 
 Artifacts are written to `.trailmix/trail/<feature-slug>/`. Chat gets the digest and the handoff
 summary; the full brief and report stay on disk.

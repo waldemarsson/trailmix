@@ -2,9 +2,8 @@
 name: trailhead
 description: Entry point for a request to build, add, change, fix, or ship something. Routes
   the work through trailmix's Discuss→Build→Handoff workflow, sizes it, and names the feature.
-  Use at the start of a coding task, before diving into code. SKIP for read-only work
-  (questions, exploration, debugging investigation) and edits too small to outlive the session —
-  those need no trail.
+  Use at the start of a coding task, before diving into code. SKIP for read-only work and for
+  changes whose intent is already unambiguous — most small, localized work needs no trail.
 ---
 
 # trailhead — route the work
@@ -21,13 +20,20 @@ Pick a short kebab-case feature slug. Its artifacts live in `.trailmix/trail/<sl
 trail in a repo: add `.trailmix/` to `.gitignore` unless the human wants trails committed
 (shared across machines/teammates).
 
-## 2. Size it
-- **No trail** (read-only work, or an edit smaller than the ceremony — typo-class fix, config
-  tweak, rename): no slug, no artifacts. Just do it and note that the trail was skipped.
-- **Trail** (everything else): the brief scales to the work. A one-line change gets a
-  five-line brief and a one-bullet digest; a cross-cutting feature gets the full template. A
-  defect in existing behavior (not new behavior) is a **bug** brief: build writes a failing test
-  that reproduces it **before** any fix.
+## 2. Size it — default to no trail
+A trail pays off only when there's something to clarify, or enough work that an autonomous build
+beats doing it inline. Be aggressive about skipping it.
+
+- **No trail**: the intent is unambiguous and the change is localized. For example a small fix
+  with a clear cause, a rename, a config or dependency bump, docs, tests only, or a contained
+  refactor. No slug, no artifacts. Just do it: test changed behavior, run the relevant checks,
+  and say the trail was skipped. A bug fix still gets its failing test first.
+- **Trail**: open questions or edge cases to settle, a design choice, several modules or a public
+  contract, schema/data migrations, or security-sensitive code. The brief scales to the work. A
+  defect in existing behavior is a **bug** brief: build writes a failing test that reproduces it
+  **before** any fix.
+- **Unsure?** Ask in one line with a recommendation (`Trail or just do it? I'd just do it — one
+  file, clear fix.`). Don't guess.
 
 ## 3. Walk the waypoints
 Pull each waypoint skill when you reach it — don't preload them all.

@@ -112,8 +112,11 @@ machine. Human attention goes to two places: clearing uncertainty **before** bui
 reviewing the result **after** it (plus the PR review downstream). Build runs on its own in
 between.
 
-Sizing is binary: **no trail** (read-only work, or an edit smaller than the ceremony — just do
-it) or **trail**, where the brief scales to the work (a one-line change gets a five-line brief).
+Sizing is binary and defaults to **no trail**: read-only work, and localized changes with
+unambiguous intent (a clear fix, a rename, config, docs, tests), just get done. **Trail** is for
+open questions or edge cases, design choices, multi-module or public-contract changes,
+migrations, or security-sensitive code; the brief scales to the work. Unsure → ask the human in
+one line with a recommendation.
 A defect in existing behavior is a **bug** brief (`kind: bug`, repro steps, expected vs actual —
 `trailmix-discuss/refs/bug-template.md`); build's first task is the red test, failing before
 any fix exists.
@@ -127,12 +130,16 @@ Artifacts live in the target project at: `.trailmix/trail/<feature-slug>/`.
 | 2 | **trailmix-build** | Autonomous: plan tasks into the brief's `## Build notes`, implement TDD, self-review, fix, update docs | **trailmix-implementer**, **trailmix-reviewer** (read-only), **trailmix-documenter** | none, unless blocked | code + tests + docs (git diff) |
 | 3 | **trailmix-handoff** | Write the report, surface it in chat, run the follow-up loop until accepted | **trailmix-implementer** + **trailmix-reviewer** for follow-ups | reviews the diff, picks follow-ups, accepts | `report.md` |
 
-**Discuss.** Never ask what research can answer. The human answers a round in one line
+**Discuss** is the waypoint that matters most: build is autonomous, so anything left open
+becomes a guess, and nothing is briefed or built until nothing is left to clarify. Clarify ends
+with a deliberate edge-case sweep (inputs, failure, state, compatibility, access). Never ask what
+research can answer. The human answers a round in one line
 (`defaults, except 2: yes`). The brief records decisions, scope, constraints, acceptance
 criteria, edge cases, and research **Context** so build doesn't re-explore — no open questions,
 no TBDs. The checkpoint is a digest, not a document read: defaults taken, key assumptions, out of
 scope, riskiest part. If the human pre-authorized ("go ahead once it's clear") and nothing is
-open, discuss shows the digest and proceeds without pausing. The signed-off brief is the
+open, discuss shows the digest and proceeds without pausing; pre-authorization skips the pause,
+never the questions. The signed-off brief is the
 recommended point to clear/restart the session — it's the distilled context and resume lands
 exactly there. Host plan mode, when active, absorbs the discuss checkpoint (one ceremony).
 
