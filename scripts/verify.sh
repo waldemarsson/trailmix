@@ -70,11 +70,12 @@ check_context() { # $1=label $2=JS path under the parsed JSON output to the cont
   node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const s=$expr;if(typeof s!=='string'||!s.trim())throw new Error('missing');if(s.length>10000)throw new Error('over 10k')})" \
     || fail "$1: missing, malformed, or over 10,000 chars"
 }
+HOOK_OUT="$(mktemp)"
+trap 'rm -f "$HOOK_OUT"' EXIT
 run_hook() { # $1=shell $2=command $3=label $4=JS path to the context
-  "$1" -c "$2" > /tmp/trailmix-hook.$$ || fail "$3: command failed under $1"
-  check_context "$3 ($1)" "$4" < /tmp/trailmix-hook.$$
+  "$1" -c "$2" > "$HOOK_OUT" || fail "$3: command failed under $1"
+  check_context "$3 ($1)" "$4" < "$HOOK_OUT"
 }
-trap 'rm -f /tmp/trailmix-hook.$$' EXIT
 SHELLS="bash"
 # Also run under dash/POSIX sh if available: it interprets backslash escapes in `echo` by default
 # (bash doesn't), which previously corrupted the GHCP JSON — regression guard.

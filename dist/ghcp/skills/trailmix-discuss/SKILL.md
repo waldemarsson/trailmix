@@ -54,9 +54,9 @@ close is a question for the human.
 ## Checkpoint — the digest
 Don't ask the human to read the brief. Show a **digest** in chat, at most 5 bullets: the
 decisions you made without explicit input (defaults taken), key assumptions, what's out of scope,
-and the riskiest part. Then the brief's path. One sign-off: approve and build starts, or correct
-and you update the brief.
+and the riskiest part. Then the brief's path. One sign-off: on approval run `trail.mjs approve
+<brief.md>` and start build; on correction, update the brief and show the digest again.
 
 If the human pre-authorized ("go ahead once it's clear") and the last round left nothing open,
-show the digest and go straight to `trailmix-build` without pausing. Pre-authorization skips the
+show the digest, approve the brief, and go straight to `trailmix-build` without pausing. Pre-authorization skips the
 pause, never the questions.

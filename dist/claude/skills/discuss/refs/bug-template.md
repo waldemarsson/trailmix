@@ -1,13 +1,3 @@
----
-slug: bug-slug
-title: Bug title
-kind: bug
-created: YYYY-MM-DD
-updated: YYYY-MM-DD
-waypoint: discuss
-status: draft
----
-
 # &lt;Bug title&gt; — bug brief
 
 **Reported:** what users/monitoring observe — error text and symptoms verbatim, never
@@ -26,6 +16,12 @@ from, not a verdict.
 **Decisions:** anything settled in clarify, one line each.
 
 **Out of scope:** what this fix deliberately doesn't touch (adjacent cleanups, refactors).
+
+**Edge cases:** neighbouring inputs/states the fix must not break, and variants of the bug.
+- ...
+
+**Context:** what research found, so build doesn't re-explore.
+- `path` — how it's involved
 
 **Acceptance criteria:**
 - [ ] AC1: the repro no longer reproduces; the regression test stays in the suite

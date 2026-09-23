@@ -14,10 +14,10 @@
 //   node trail.mjs read <file.md> [...]            print each file's frontmatter block
 //   node trail.mjs new <slug> <template> [title]   scaffold a trail artifact (frontmatter only)
 //   node trail.mjs approve           <file.md>     status -> approved
-//   node trail.mjs supersede         <file.md>     status -> superseded
+//   node trail.mjs reopen            <brief.md>    status -> draft, clear tasks (discuss again)
 //   node trail.mjs tasks <brief.md> <T1> [T2 ...]  register the build's task ids (once)
 //   node trail.mjs task-done <brief.md> <id>       mark one task's gate green
-//   node trail.mjs findings <report.md> <H1 ...>   register the hand-off's open finding ids (once)
+//   node trail.mjs findings <report.md> <H1 ...>   register finding ids (new ones append as open)
 //   node trail.mjs finding <report.md> <id> <state>  open | fixed | wont-fix | disputed
 //   node trail.mjs check [file.md ...]             lint frontmatter (default: all trails)
 //   node trail.mjs status [dir ...]                one line per trail (default: all trails)
@@ -28,7 +28,6 @@ import { join, basename } from "node:path";
 // ---- the vocabulary, defined once ------------------------------------------------------------
 export const OPS = {
   approve: ["status", "approved"],
-  supersede: ["status", "superseded"],
 };
 // `brief` and `bug` both scaffold the anchor brief.md; they differ only in `kind`.
 export const TEMPLATES = {
@@ -36,7 +35,7 @@ export const TEMPLATES = {
   bug: { file: "brief.md", waypoint: "discuss", kind: "bug" },
   report: { file: "report.md", waypoint: "handoff" },
 };
-const STATUS = ["draft", "approved", "superseded"];
+const STATUS = ["draft", "approved"];
 const WAYPOINT = ["discuss", "handoff"]; // artifact-bearing waypoints (build has none)
 const KIND = ["feature", "bug"];
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -86,9 +85,9 @@ export function readFiles(files) {
 
 // ---- transitions (named ops) -----------------------------------------------------------------
 // Set one frontmatter field in place (replace the key line, else append), always bumping
-// `updated`. Errors rather than corrupt if the file has no frontmatter. Reached only through a
-// named op, so (field, value) is always from OPS.
-export function setField(file, field, value) {
+// `updated`, and optionally drop other fields. Errors rather than corrupt if the file has no
+// frontmatter. Reached only through a named op, so (field, value) is always from the vocabulary.
+export function setField(file, field, value, drop = []) {
   const text = readFileSync(file, "utf8");
   const m = text.match(FM);
   if (!m) throw new Error(`no frontmatter block in ${file}`);
@@ -98,17 +97,24 @@ export function setField(file, field, value) {
     [field, value],
     ["updated", today()],
   ]);
-  const lines = block.split(/\r?\n/);
+  const key = (l) => l.match(/^([A-Za-z_][\w-]*):/)?.[1];
+  const lines = block.split(/\r?\n/).filter((l) => !drop.includes(key(l)));
   const seen = new Set();
   for (let i = 0; i < lines.length; i++) {
-    const k = lines[i].match(/^([A-Za-z_][\w-]*):/);
-    if (k && updates.has(k[1])) {
-      lines[i] = `${k[1]}: ${updates.get(k[1])}`;
-      seen.add(k[1]);
+    const k = key(lines[i]);
+    if (k && updates.has(k)) {
+      lines[i] = `${k}: ${updates.get(k)}`;
+      seen.add(k);
     }
   }
   for (const [k, v] of updates) if (!seen.has(k)) lines.push(`${k}: ${v}`);
   writeFileSync(file, open + lines.join("\n") + close + body);
+}
+
+// Send an approved brief back to discuss: status -> draft and the build's task progress cleared,
+// so a revised brief re-plans from scratch instead of inheriting stale `:done` marks.
+export function reopen(file) {
+  setField(file, "status", "draft", ["tasks"]);
 }
 
 // ---- tasks (build progress) --------------------------------------------------------------------
@@ -147,7 +153,8 @@ export function taskDone(file, id) {
 // ---- findings (hand-off fix loop) --------------------------------------------------------------
 // The report's `findings:` field records the state of each finding left for the human, so the
 // hand-off fix loop survives a session. Bare id = open; otherwise `H1:fixed`. Same closed-
-// vocabulary rule: `findings` registers ids once, `finding` names an id + state — never hand-edited.
+// vocabulary rule: `findings` registers ids (appending new ones), `finding` names an id + state —
+// never hand-edited.
 export const FINDING_STATES = ["open", "fixed", "wont-fix", "disputed"];
 
 export function parseFindings(value) {
@@ -161,13 +168,18 @@ export function parseFindings(value) {
   });
 }
 
+// Registers ids as open. Already-registered ids keep their state, so a re-review's new findings
+// (or ones the human raises) append without resetting the loop's progress.
 export function setFindings(file, ids) {
   for (const id of ids) if (!/^[HML]\d+$/.test(id)) throw new Error(`bad finding id: ${id} (H1, M2, L3, …)`);
   if (new Set(ids).size !== ids.length) throw new Error("duplicate finding ids");
   const fm = frontmatter(readFileSync(file, "utf8"));
   if (!fm) throw new Error(`no frontmatter block in ${file}`);
-  if (fm.findings !== undefined) throw new Error(`findings already registered in ${file} — finding <id> <state> updates one`);
-  setField(file, "findings", ids.join(" "));
+  const have = fm.findings === undefined ? [] : parseFindings(fm.findings);
+  const added = ids.filter((id) => !have.some((f) => f.id === id));
+  const all = [...have.map((f) => (f.state === "open" ? f.id : `${f.id}:${f.state}`)), ...added];
+  setField(file, "findings", all.join(" "));
+  return added;
 }
 
 export function findingState(file, id, state) {
@@ -252,7 +264,6 @@ export function deriveTrail(dir) {
   };
 
   if (!brief) return { slug, state: "empty", next: "discuss" };
-  if (brief.status === "superseded") return { slug, state: "in-progress", next: "discuss (brief superseded)" };
   if (brief.status !== "approved") return { slug, state: "in-progress", next: "discuss (awaiting sign-off)" };
 
   if (report) {
@@ -305,6 +316,13 @@ export function run(argv) {
     process.stdout.write(`${file} ← ${field}=${value} (updated ${today()})\n`);
     return 0;
   }
+  if (cmd === "reopen") {
+    const [file] = rest;
+    if (!file) return usage("reopen <brief.md>");
+    reopen(file);
+    process.stdout.write(`${file} ← status=draft, tasks cleared (updated ${today()})\n`);
+    return 0;
+  }
   if (cmd === "tasks") {
     const [file, ...ids] = rest;
     if (!file || ids.length === 0) return usage("tasks <brief.md> <T1> [T2 ...]");
@@ -322,8 +340,8 @@ export function run(argv) {
   if (cmd === "findings") {
     const [file, ...ids] = rest;
     if (!file || ids.length === 0) return usage("findings <report.md> <H1> [M1 ...]");
-    setFindings(file, ids);
-    process.stdout.write(`${file} ← findings=${ids.join(" ")} (updated ${today()})\n`);
+    const added = setFindings(file, ids);
+    process.stdout.write(`${file} ← findings +${added.join(" ") || "(none new)"} (updated ${today()})\n`);
     return 0;
   }
   if (cmd === "finding") {
@@ -354,7 +372,7 @@ export function run(argv) {
     return 0;
   }
   return usage(
-    `read <file...> | new <slug> <template> [title] | ${Object.keys(OPS).join(" | ")} <file> | tasks <brief> <T1...> | task-done <brief> <id> | findings <report> <H1...> | finding <report> <id> <state> | check [file...] | status [dir...]`
+    `read <file...> | new <slug> <template> [title] | ${Object.keys(OPS).join(" | ")} <file> | reopen <brief> | tasks <brief> <T1...> | task-done <brief> <id> | findings <report> <H1...> | finding <report> <id> <state> | check [file...] | status [dir...]`
   );
 }
 

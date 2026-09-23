@@ -18,7 +18,7 @@ kind: feature               # feature | bug
 created: YYYY-MM-DD
 updated: YYYY-MM-DD
 waypoint: discuss
-status: draft               # draft | approved | superseded
+status: draft               # draft | approved
 tasks: T1:done T2 T3        # optional — build progress, one token per task
 ---
 ```
@@ -29,7 +29,7 @@ tasks: T1:done T2 T3        # optional — build progress, one token per task
 ---
 slug: feature-slug
 waypoint: handoff
-status: draft               # draft | approved | superseded
+status: draft               # draft | approved
 updated: YYYY-MM-DD
 findings: H1:fixed M1 L1:wont-fix  # optional — findings left for the human; bare id = open
 ---
@@ -42,18 +42,19 @@ and verdicts live in the body; never duplicate them into frontmatter.
 ## Status lifecycle
 
 - **draft**: artifact written, checkpoint not yet passed.
-- **approved**: the brief when build starts (the human signed off on the digest); the report
-  when the human accepts the result. An abandoned trail shows its last artifact still `draft`.
-- **superseded**: the brief was replaced because build proved the approach wrong and discuss
-  reopened. Rare.
+- **approved**: the brief when the human signs off on the digest; the report when the human
+  accepts the result. An abandoned trail shows its last artifact still `draft`.
+- **Reopen**: when build proves the brief wrong, `reopen` sends it back to `draft` and clears
+  `tasks`. Discuss revises the same `brief.md` in place (dropping the stale build notes) and
+  re-plans from scratch after the new sign-off. Rare.
 
 ## Deriving current position
 
 Order: `discuss (brief.md)` → `build (no artifact; brief tasks)` → `handoff (report.md)`. Bug
 briefs follow the same order; build starts with the red test.
 
-- No brief: `empty`, next discuss. Brief `draft`: `discuss (awaiting sign-off)`. Brief
-  `superseded`: back to discuss.
+- No brief: `empty`, next discuss. Brief `draft` (new or reopened): `discuss (awaiting
+  sign-off)`.
 - Brief `approved`, no report: build. With `tasks`, resume lands on the first open task, e.g.
   `build (1/3 done, next T2)`. Don't redo or re-read the diff of a `:done` task. All gates green:
   `build (tasks done, next self-review)`, so rerun self-review and docs, then hand off.
@@ -76,7 +77,7 @@ tool: it owns the closed vocabulary (statuses, waypoints, templates) but **no** 
 no gates, no enforced ordering, no state machine. Even `status`, which derives the resume point,
 only *reports* — it blocks nothing. You decide when to act.
 
-Command surface: `new` · `approve`/`supersede` · `tasks`/`task-done` · `findings`/`finding` ·
+Command surface: `new` · `approve`/`reopen` · `tasks`/`task-done` · `findings`/`finding` ·
 `read` · `check` · `status`.
 
 **Resolve the helper's path once, then reuse it.** The examples below write `"$TRAIL"` for the
@@ -116,8 +117,8 @@ can't be misspelled (a mistyped op exits non-zero instead of writing a bad value
 
 | Op | Effect | Use when |
 |---|---|---|
-| `approve <file>` | `status: approved` | build starts (brief) · the human accepts the result (report) |
-| `supersede <file>` | `status: superseded` | build proved the brief wrong; discuss reopens |
+| `approve <file>` | `status: approved` | the human signs off on the digest (brief) · accepts the result (report) |
+| `reopen <brief>` | `status: draft`, `tasks` removed | build proved the brief wrong; back to discuss |
 
 ```sh
 node "$TRAIL" approve .trailmix/trail/<slug>/brief.md
@@ -133,15 +134,15 @@ A bad or unknown id fails loudly instead of writing a bad value. `status` derive
 point from the marks (see "Deriving current position").
 
 **Track the handoff follow-up loop** — the same pattern for `report.md`'s `findings` field.
-Register the ids of the findings left for the human once when the report is written, then name
-an id + state as the loop runs (`open | fixed | wont-fix | disputed` — the vocabulary lives in
+Register the ids of the findings left for the human when the report is written, and any new ones
+as they come up (existing ids keep their state), then name an id + state as the loop runs (`open | fixed | wont-fix | disputed` — the vocabulary lives in
 the helper; `open` reopens a finding whose fix didn't hold):
 ```sh
 node "$TRAIL" findings .trailmix/trail/<slug>/report.md H1 M2
 node "$TRAIL" finding  .trailmix/trail/<slug>/report.md H1 fixed
 ```
 
-These are the *only* status writes — the vocabulary (`approved`/`superseded`)
+These are the *only* status writes — the vocabulary (`approved`/`draft`)
 lives once, inside the helper, never as a literal at the call site. The helper knows the
 vocabulary but **not** the transition rules: it will `approve` regardless of current state — it's
 you (the skill) who decides an approval is due. It refuses (non-zero) a file with no frontmatter

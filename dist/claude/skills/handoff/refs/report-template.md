@@ -1,11 +1,3 @@
----
-slug: feature-slug
-waypoint: handoff
-status: draft
-updated: YYYY-MM-DD
-findings: H1 M2
----
-
 # &lt;Feature title&gt; — report
 
 **Result:** 1–2 sentences on what now works. **Verdict:** ready | ready, N need your call | blocked — why.

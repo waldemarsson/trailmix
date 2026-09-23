@@ -24,6 +24,7 @@ import {
   parseFindings,
   setFindings,
   findingState,
+  reopen,
 } from "../src/skills/trailmix-trailhead/refs/trail.mjs";
 
 const today = new Date().toISOString().slice(0, 10);
@@ -79,10 +80,19 @@ test("approve sets status=approved and bumps updated", () => {
   });
 });
 
-test("supersede sets status=superseded", () => {
+test("reopen sends a brief back to draft and clears task progress", () => {
   withFile(BRIEF, (f) => {
-    assert.equal(run(["supersede", f]), 0);
-    assert.match(readFileSync(f, "utf8"), /^status: superseded$/m);
+    run(["approve", f]);
+    setTasks(f, ["T1", "T2"]);
+    taskDone(f, "T1");
+    assert.equal(run(["reopen", f]), 0);
+    const out = readFileSync(f, "utf8");
+    assert.match(out, /^status: draft$/m);
+    assert.doesNotMatch(out, /^tasks:/m);
+    assert.equal(out.split("\n---\n")[1], BRIEF.split("\n---\n")[1]); // body untouched
+    // the revised plan registers fresh, with no stale :done marks
+    setTasks(f, ["T1", "T2", "T3"]);
+    assert.match(readFileSync(f, "utf8"), /^tasks: T1 T2 T3$/m);
   });
 });
 
@@ -190,7 +200,17 @@ test("findings registers ids once; finding flips one state", () => {
     assert.match(readFileSync(f, "utf8"), /^findings: H1:fixed M1 L1:wont-fix$/m);
     findingState(f, "H1", "open"); // reopen after a bad fix
     assert.match(readFileSync(f, "utf8"), /^findings: H1 M1 L1:wont-fix$/m);
-    assert.throws(() => setFindings(f, ["H1"]), /already registered/);
+  });
+});
+
+test("findings appends new ids and keeps existing states", () => {
+  withFile(REPORT, (f) => {
+    setFindings(f, ["H1", "M1"]);
+    findingState(f, "H1", "fixed");
+    assert.deepEqual(setFindings(f, ["H1", "M3"]), ["M3"]); // re-review found M3
+    assert.match(readFileSync(f, "utf8"), /^findings: H1:fixed M1 M3$/m);
+    assert.deepEqual(setFindings(f, ["M1"]), []); // nothing new: no-op on states
+    assert.match(readFileSync(f, "utf8"), /^findings: H1:fixed M1 M3$/m);
   });
 });
 
@@ -326,8 +346,10 @@ test("derive: brief draft -> awaiting sign-off at discuss", () => {
   });
 });
 
-test("derive: brief superseded -> back to discuss", () => {
-  assert.equal(deriveTrail(trail({ "brief.md": brief("superseded") })).next, "discuss (brief superseded)");
+test("derive: a reopened brief lands back at discuss, with no stale build progress", () => {
+  const d = trail({ "brief.md": brief("approved", "\ntasks: T1:done T2") });
+  reopen(join(d, "brief.md"));
+  assert.equal(deriveTrail(d).next, "discuss (awaiting sign-off)");
 });
 
 test("derive: brief approved, no tasks -> build", () => {

@@ -1,13 +1,3 @@
----
-slug: feature-slug
-title: Feature title
-kind: feature
-created: YYYY-MM-DD
-updated: YYYY-MM-DD
-waypoint: discuss
-status: draft
----
-
 # &lt;Feature title&gt; — brief
 
 **Goal:** 1–2 sentences: what changes, and why.

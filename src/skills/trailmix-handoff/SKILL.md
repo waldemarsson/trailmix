@@ -35,8 +35,9 @@ acceptance.
 - **Fixes and changes:** dispatch `trailmix-implementer` with exactly those, then a delta
   re-review by `trailmix-reviewer`. Stamp each finding: `trail.mjs finding <report.md> <id> fixed`
   once the re-review confirms it held, `wont-fix` when declined, `disputed` when the implementer
-  shows it's wrong. Append a dated `## Follow-up (YYYY-MM-DD)` block to the report, and show the
-  delta in chat the same way.
+  shows it's wrong. Register any new finding (from the re-review or the human) with
+  `trail.mjs findings <report.md> <id>`; existing ids keep their state. Append a dated
+  `## Follow-up (YYYY-MM-DD)` block to the report, and show the delta in chat the same way.
 - **A request that changes the brief's goal or scope:** say so, and offer a new trail.
 - **Acceptance:** `trail.mjs approve <report.md>`. The trail is done. The human commits and
   opens the PR; don't do either unless asked.

@@ -33,8 +33,8 @@ summary; the full brief and report stay on disk.
 
 Each artifact carries small YAML frontmatter: the anchor `brief.md` holds the trail's identity
 and build progress (`tasks:`), `report.md` holds the findings left for you (`findings:`), and
-both have a `status:` (`draft` → `approved` — the brief when build starts, the report when you
-accept). Because that state lives on disk, a fresh session can pick up where you left off — just
+both have a `status:` (`draft` → `approved` — the brief when you sign off on the digest, the
+report when you accept). Because that state lives on disk, a fresh session can pick up where you left off — just
 ask:
 
 ```

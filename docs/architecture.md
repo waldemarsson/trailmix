@@ -155,14 +155,16 @@ conventions/gotchas into the repo's own `CLAUDE.md`/`AGENTS.md`; zero additions 
 The only pause is **stop-and-ask** for a real blocker (behavior-changing ambiguity, a brief
 decision the code proves wrong, a destructive step, missing access): one question with a
 recommended answer, resolution recorded as a dated line under the brief's `**Amendments:**`. If
-the approach no longer holds, `supersede` the brief and return to discuss. Calls build makes on
+the approach no longer holds, `reopen` the brief (back to draft, task progress cleared) and
+return to discuss, which revises it in place and shows a new digest. Calls build makes on
 its own go under **Deviations** in the report.
 
 **Handoff.** `report.md` holds result + verdict (`ready` / `ready, N need your call` /
 `blocked`), needs your call, try it, AC → proof, changes, deviations, self-review, docs, and
 verification. Chat shows the verdict line, needs-your-call items, try-it steps, and deviations;
 the rest stays in the report. Follow-up loop: the human names findings (`H1, M2`) or new
-changes → implementer applies exactly those → delta re-review → each finding stamped via named
+changes → implementer applies exactly those → delta re-review (new findings register as open,
+existing ones keep their state) → each finding stamped via named
 op (`open | fixed | wont-fix | disputed`, lifecycle on the report's `findings:`; `fixed` only
 after the re-review confirms it) → a dated `## Follow-up` block appended. A request that changes
 the brief's goal or scope becomes a new trail. Acceptance approves the report; the trail is
@@ -170,8 +172,8 @@ done. The human commits and opens the PR. All handoffs use **GORP** (§6).
 
 **Trail metadata & resume.** At most two artifacts, each with minimal YAML frontmatter.
 `brief.md` is the **anchor** (trail identity, `kind: feature | bug`, plus build's `tasks:`);
-`report.md` carries `findings:`. The non-derivable fields are `status: draft | approved |
-superseded` (brief approved when build starts, report approved on acceptance, so an abandoned
+`report.md` carries `findings:`. The non-derivable fields are `status: draft | approved` (brief
+approved at the digest sign-off, report approved on acceptance, so an abandoned
 trail shows its last artifact `draft`), `tasks:` (which task gates went green; resume lands on
 the first open task, e.g. `build (1/3 done, next T2)`), and `findings:` (the follow-up lifecycle
 above). Both mechanical operations — reading **frontmatter only** (never bodies) to *resume* or
@@ -179,16 +181,17 @@ above). Both mechanical operations — reading **frontmatter only** (never bodie
 (`trailmix-trailhead/refs/trail.mjs`), so the LLM never hand-parses or hand-edits YAML and never
 types a status value it could misspell — it names an intent and the helper owns the vocabulary
 (the correctness + token win). Commands: `new` (scaffold `brief | bug | report` frontmatter —
-dates and initial status correct by construction), the named transitions `approve`/`supersede`,
+dates and initial status correct by construction), the named transitions `approve`/`reopen`,
 `tasks`/`task-done` (register the brief's task ids, flip one gate green), `findings`/`finding`
-(register the report's finding ids, flip one state), `read`, `check` (lint all frontmatter
+(register the report's finding ids — new ones append — and flip one state), `read`, `check` (lint all frontmatter
 against the schema; also run in CI via `verify.sh`), and `status` (derive the resume line per
 trail). The helper is a **pure data tool** — it owns the closed vocabulary (statuses, waypoints,
 templates) but no workflow rules: no gates, no enforced ordering, no state machine; even `status`
 only reports. The skill decides when to call it. It ships inside the plugin and is invoked by
-its path inside the installed plugin — resolved from the loaded skill's stated base directory,
-since the plugin-root env vars (`$CLAUDE_PLUGIN_ROOT` / `$PLUGIN_ROOT`) are set for hook commands
-but not for the shell the model runs tools in — **not** installed on PATH, so it's not the
+its path inside the installed plugin — on CC the skills name it via `${CLAUDE_PLUGIN_ROOT}`,
+which the host substitutes into skill text; elsewhere it's resolved from the loaded skill's stated
+base directory, since plugin-root env vars aren't set for the shell the model runs tools in —
+**not** installed on PATH, so it's not the
 rejected `trailmix` CLI. Where the path can't be resolved or `node` is absent, it falls back to
 an awk read pass / hand-edit. Schema + invocation live in
 `trailmix-trailhead/refs/trail-metadata.md`. No sidecar `trail.json`, no state machine, no CLI.

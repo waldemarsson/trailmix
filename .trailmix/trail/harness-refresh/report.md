@@ -7,7 +7,7 @@ updated: 2026-09-22
 
 # Refresh the CC and GHCP harness integration — report
 
-**Result:** Items 1–3 and 5–8 shipped as 0.8.0 in f323617. Item 4 (the CC reviewer command allowlist)
+**Result:** Items 1–3 and 5–8 shipped in f323617 (released as 0.7.0; see 758a0ad). Item 4 (the CC reviewer command allowlist)
 was dropped. **Verdict:** ready.
 
 ## Not verifiable here

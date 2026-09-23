@@ -17,7 +17,7 @@ Helper: `${CLAUDE_PLUGIN_ROOT}/skills/trailmix-trailhead/refs/trail.mjs` — the
 path; use it for every `trail.mjs` call below.
 <!-- /only -->
 
-**On entry:** approve the brief (`trail.mjs approve .trailmix/trail/<slug>/brief.md`; see
+**On entry:** the brief is approved (discuss did it at sign-off; see
 `trailmix-trailhead/refs/trail-metadata.md`). Resuming? `trail.mjs status` names the step; tasks
 marked `:done` are done — don't redo them or re-read their diffs.
 
@@ -56,7 +56,9 @@ Stop only when you can't continue without guessing on something that matters: a 
 ambiguous in a way that changes behavior, a brief decision the code proves wrong, a destructive
 or irreversible step, or missing access. Ask one crisp question with a recommended answer. Record
 the resolution as a dated line under the brief's `**Amendments:**`. If the approach no longer
-holds, `trail.mjs supersede` the brief and go back to `trailmix-discuss`.
+holds, `trail.mjs reopen <brief.md>` (back to draft, task progress cleared) and return to
+`trailmix-discuss`: revise the brief in place, drop its stale `## Build notes`, and show a new
+digest.
 
 Don't stop for anything you can decide yourself. Note those calls under **Deviations** in the
 report instead.
