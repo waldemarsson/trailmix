@@ -28,7 +28,15 @@ Ask one numbered list per round. Each question gets a **recommended default** an
 2. Migrate existing rows? (default: no — the new column is nullable)
 ```
 
-The human answers in one line (`defaults, except 2: yes`). Run another round whenever the answers
+The human answers in one line (`defaults, except 2: yes`). The first round always ends with this
+question, even when nothing else is open:
+
+```
+N. Implementation preferences? E.g. names, where the change lives, patterns or libraries to use
+   or avoid. (default: none — build follows existing conventions)
+```
+
+Record each preference as a line under the brief's **Decisions**. Run another round whenever the answers
 open new unknowns. Stop only when nothing that changes behavior, scope, or a public contract is
 still open.
 

@@ -13,7 +13,8 @@ paraphrased.
 **Suspected surface:** the files/modules most likely involved and why — a hypothesis to start
 from, not a verdict.
 
-**Decisions:** anything settled in clarify, one line each.
+**Decisions:** anything settled in clarify, one line each, including the human's implementation
+preferences.
 
 **Out of scope:** what this fix deliberately doesn't touch (adjacent cleanups, refactors).
 
