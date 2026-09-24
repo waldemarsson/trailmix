@@ -10,6 +10,10 @@ GitHub Copilot CLI and Claude Code.
   **trailhead** skill when there's something to clarify or the work spans modules,
   contracts, or data. Unsure? Ask the human in one line with a recommendation. Read-only work
   never needs a trail.
+- Outside a trail (inside one, discuss and build cover this): if the request reads more than
+  one way, ask — don't pick silently. If a simpler approach exists, say so in one line and
+  proceed. After three failed fix attempts at the same problem, stop changing code; name the
+  assumption that might be wrong and ask one diagnostic question.
 - Pull a waypoint's skill (`discuss`, `build`, `handoff`) only when
   you reach that phase. Don't hold the whole workflow in context at once.
 - Artifacts go to `.trailmix/trail/<feature-slug>/` (`brief.md`, `report.md`). Write to disk;
@@ -27,14 +31,17 @@ On by default. This is the compact core; fuller guidance and examples live in th
 `terse`, `lean-code`, and `gorp` skills — pull them when you need
 detail.
 
-**Terse prose.** Answer first. Cut filler, hedging, and narration of code that already speaks
-for itself. Shortest response that fully answers.
+**Terse prose.** Answer first. Cut filler, empty hedging, and narration of code that already
+speaks for itself. Shortest response that fully answers. Keep a hedge that carries real
+uncertainty — cutting it manufactures confidence.
 Carve-out: code, commands, error text, file paths, and quoted content stay **verbatim** —
 never compress those.
 
 **Lean code.** YAGNI. Walk the ladder, stop at the first rung that works: does it need to
 exist? → stdlib → language-native → existing dependency → one line → minimum block. The
 cheapest line is the one you never write.
+Surgical: every changed line traces to the request. Match existing style; don't reformat or
+"improve" adjacent code. Remove what your change orphaned; mention, don't delete, older dead code.
 Carve-out: never trim input validation, error handling, auth, secrets handling, migrations,
 destructive ops, or anything the user explicitly asked for. Lazy ≠ broken.
 
@@ -50,7 +57,8 @@ otherwise fall back silently. Never refuse a task because a preferred tool is mi
 - File finding: `fd`, not `find`. Fallback: `find . -name`.
 - Read with line numbers: `bat -n`; plain `cat` for piping. Fallback: `cat -n`.
 - JSON: `jq -r`. Prefer native JSON output piped to `jq`.
-- Structural search/refactor: `sg` (ast-grep) when a match depends on syntax; fallback `rg`.
+- Structural search/refactor: `ast-grep` when a match depends on syntax; fallback `rg`. Never
+  `sg` — on Linux that's the group-switching command.
 
 `rg`/`fd` respect `.gitignore`; don't add redundant excludes. Use `-u` to search ignored files.
 

@@ -314,7 +314,7 @@ Contents:
    `report.md`) live in `.trailmix/trail/<slug>/`; two human checkpoints (brief sign-off,
    handoff review), build runs between them.
 2. **Style defaults** — terse prose + lean code with the §7 carve-outs.
-3. **Tool conventions** — prefer `rg`/`fd`/`bat`/`jq`/`sg` with silent fallbacks (from refs).
+3. **Tool conventions** — prefer `rg`/`fd`/`bat`/`jq`/`ast-grep` with silent fallbacks (from refs).
 4. **Security constraints** — never read `.env`; no bulk env-var reads; no HTTP POST without
    explicit per-request permission (from refs). These override everything.
 
