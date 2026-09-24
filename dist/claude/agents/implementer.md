@@ -34,5 +34,7 @@ commands, never pasted logs or diffs — the orchestrator reads diffs from `git 
 ## Rules
 - Leaf agent: no subagents. Don't write docs (that's the documenter).
 - Improve on the *how* freely, but never silently change a contract or a brief decision — stop and ask.
+- Same gate still red after three fix attempts? Stop patching; return the assumption that
+  might be wrong.
 - Fix-loop: given selected findings (e.g. `H1, M2`), verify each against the code, apply only
   those, re-run tests after each, report per id; if one is wrong, don't apply it — return why.

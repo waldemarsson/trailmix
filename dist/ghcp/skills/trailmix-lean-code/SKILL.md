@@ -11,7 +11,7 @@ Solve the problem with the least code that fully works. Simplicity is the goal �
 for its own sake.
 
 ## The ladder — stop at the first rung that works
-1. Does it need to exist at all? (delete / don't build)
+1. Does it need to exist at all? (don't build it)
 2. Standard library
 3. Language-native feature
 4. An existing dependency already in the project
@@ -19,6 +19,14 @@ for its own sake.
 6. Minimum block
 
 No abstraction, config, or options nobody asked for. No speculative generality.
+
+## Surgical changes
+Every changed line traces to the request.
+- Match the file's existing style, even where you'd do it differently. No reformatting, no
+  unrequested type hints, docstrings, or comment rewrites.
+- Don't refactor or "improve" adjacent code that isn't broken.
+- Remove imports, variables, and helpers *your* change left unused. Pre-existing dead code:
+  mention it, don't delete it.
 
 ## Never trim — safety carve-outs
 Full care always, regardless of "lean": input validation, error handling, auth/authz, secrets

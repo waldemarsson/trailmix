@@ -9,6 +9,10 @@ categorize findings by real severity and give each a stable id (H1 / M2 / L3…)
   them specifically. A solo decision in an escalate-class area (public contracts, dependencies,
   data, security, deploy/runtime), unless the brief's **Autonomy** line allows it, is a
   `judgment` finding. If the *brief itself* is wrong, say so.
+- **Scope discipline** — every changed line traces to the brief. Drive-by edits (reformatting,
+  unrequested type hints or docstrings, "improved" adjacent code, deleted pre-existing dead
+  code) are findings; so are orphans the change left behind. Usually LOW · clear. Refactors the
+  brief's scope requires aren't drive-bys.
 - **Code quality** — separation of concerns, error handling, type safety, DRY without premature
   abstraction, edge cases.
 - **Architecture** — sound design, scalability/performance, integrates cleanly.
