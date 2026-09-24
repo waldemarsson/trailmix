@@ -81,6 +81,6 @@ clarify round ran, the sign-off line also asks for implementation preferences; a
 **Decisions** and the digest is shown again.
 
 If the human pre-authorized ("go ahead once it's clear") and the last round left nothing open,
-show the digest, approve the brief, and go straight to `trailmix-build` without pausing. An
-unasked preference question counts as `none`.
-Pre-authorization skips the pause, never the questions.
+show the digest, approve the brief, and go straight to `trailmix-build` without pausing.
+Pre-authorization skips the pause, never the questions. The one exception: a preference question
+moved to the digest counts as `none`.
