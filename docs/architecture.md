@@ -139,7 +139,7 @@ operations). Before the digest, the reviewer challenges the brief in read-only *
 clarify round. Never ask what research can answer. The human answers a round in one line
 (`defaults, except 2: yes`). The first round always asks for implementation preferences (names,
 where the change lives, patterns to use or avoid); they land in the brief's decisions. With
-nothing else to clarify, that question moves to the digest sign-off instead of costing a round;
+nothing else to clarify, it waits for the next round or the digest sign-off instead of costing a round;
 pre-authorization takes it as `none`. The brief records decisions, design, scope, constraints, acceptance
 criteria, edge cases, and research **Context** so build doesn't re-explore — no open questions,
 no TBDs. The checkpoint is a digest, not a document read: about 5 bullets, but it must list every
@@ -180,7 +180,7 @@ return to discuss, which revises it in place and shows a new digest. Calls build
 its own go under **Deviations** in the report.
 
 **Handoff.** `report.md` holds result + verdict (`ready` / `ready, N need your call` /
-`blocked`, set by the worst open finding: any `stop` → `blocked`), needs your call, try it, AC → proof, changes, deviations, self-review, docs, and
+`blocked`, with open findings setting the floor: any `stop` → `blocked`), needs your call, try it, AC → proof, changes, deviations, self-review, docs, and
 verification. Chat shows the verdict line, needs-your-call items, try-it steps, and deviations;
 the rest stays in the report. Follow-up loop: the human names findings (`H1, M2`) or new
 changes → implementer applies exactly those → delta re-review (new findings register as open,

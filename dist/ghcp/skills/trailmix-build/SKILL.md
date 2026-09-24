@@ -34,7 +34,8 @@ It returns findings to you; there is no review artifact. Then:
 - **Fix every finding with a clear fix inside the brief's scope**, whatever its severity:
   dispatch the implementer with those ids. A LOW fix counts once its gate command is green. A
   HIGH or MEDIUM fix counts only after a **delta re-review** of those ids plus regression risk in
-  all code the round touched. Skip the re-review when a round fixed only LOWs.
+  all code the round touched; pass it the ids still open so its verdict counts them. Skip the
+  re-review when a round fixed only LOWs.
 - **`stop` findings:** fix a `clear` one like any other, but it's never done without a re-review
   that confirms the fix held. A `judgment` one is a stop-and-ask. Don't carry it to handoff.
 - **Keep going while it converges.** Run another round as long as the last one resolved at least
@@ -62,8 +63,8 @@ Default contract. The brief's **Autonomy** line, when present, overrides it.
 
 ## Stop and ask: the only pause
 Stop only when you can't continue without guessing on something that matters: an escalate-class
-decision the brief doesn't settle, a `judgment` finding marked `stop`, a requirement that's ambiguous in a way that changes behavior,
-a brief decision the code proves wrong, a destructive or irreversible step, or missing access.
+decision the brief doesn't settle, a `judgment` finding marked `stop`, a requirement that's
+ambiguous in a way that changes behavior, a brief decision the code proves wrong, a destructive or irreversible step, or missing access.
 Ask one crisp question with a recommended answer. Record
 the resolution as a dated line under the brief's `**Amendments:**`. If the approach no longer
 holds, `trail.mjs reopen <brief.md>` (back to draft, task progress cleared) and return to

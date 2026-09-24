@@ -28,7 +28,7 @@ Ask one numbered list per round. Each question gets a **recommended default** an
 2. Migrate existing rows? (default: no — the new column is nullable)
 ```
 
-The human answers in one line (`defaults, except 2: yes`). The first round always ends with this
+The human answers in one line (`defaults, except 2: yes`). The first round that runs ends with this
 question:
 
 ```
@@ -37,8 +37,8 @@ N. Implementation preferences? E.g. names, where the change lives, patterns or l
 ```
 
 Record each preference as a line under the brief's **Decisions**. If research left nothing else
-to ask, skip the round and ask it at the digest instead. Run another round whenever the answers
-open new unknowns. Stop only when nothing that changes behavior, scope, or a public contract is
+to ask, skip the round; the question waits for a later round or the digest. Run another round
+whenever the answers open new unknowns. Stop only when nothing that changes behavior, scope, or a public contract is
 still open.
 
 Cover goal, scope in/out, constraints, the design approach (and its trade-offs when there's a
@@ -76,8 +76,8 @@ it in chat, aiming for about 5 bullets. It **must** include every irreversible, 
 architecture, and public-contract decision, and every consequential default you took; group
 related ones rather than dropping any. Then key assumptions, what's out of scope, and the
 riskiest part. Then the brief's path. One sign-off: on approval run `trail.mjs approve
-<brief.md>` and start build; on correction, update the brief and show the digest again. If no
-clarify round ran, the sign-off line also asks for implementation preferences; any given become
+<brief.md>` and start build; on correction, update the brief and show the digest again. If the
+preference question is still unasked, the sign-off line asks it; any given become
 **Decisions** and the digest is shown again.
 
 If the human pre-authorized ("go ahead once it's clear") and the last round left nothing open,

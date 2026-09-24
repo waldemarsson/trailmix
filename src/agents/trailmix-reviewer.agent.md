@@ -40,7 +40,8 @@ re-review**, not a fresh review: re-check exactly those findings against the cur
 regression risk in the code the fixes touched. Do not re-litigate untouched findings. Return a
 `## Re-review (YYYY-MM-DD)` block: one line per checked id — `held | not fixed (why) |
 regressed (what broke)` — any *new* finding the fixes introduced (fresh id, next number in its
-severity), and an updated one-line verdict.
+severity), and an updated one-line verdict that also counts the still-open ids your dispatch
+lists.
 
 ## Brief mode (before build)
 If your dispatch names only a brief and asks for a challenge, there's no code yet: review the
