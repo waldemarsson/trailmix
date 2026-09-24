@@ -41,8 +41,8 @@ N. Implementation preferences? E.g. names, where the change lives, patterns or l
 
 Record each preference as a line under the brief's **Decisions**. If research left nothing else
 to ask, skip the round; the question waits for a later round or the digest. Run another round
-whenever the answers open new unknowns. Stop only when nothing that changes behavior, scope, or a public contract is
-still open.
+whenever the answers open new unknowns. Stop only when nothing that changes behavior, scope, or
+a public contract is still open.
 
 Cover goal, scope in/out, constraints, the design approach (and its trade-offs when there's a
 real choice), and how success is proven. Then sweep the edge cases deliberately, not just the

@@ -180,7 +180,8 @@ return to discuss, which revises it in place and shows a new digest. Calls build
 its own go under **Deviations** in the report.
 
 **Handoff.** `report.md` holds result + verdict (`ready` / `ready, N need your call` /
-`blocked`, with open findings setting the floor: any `stop` → `blocked`), needs your call, try it, AC → proof, changes, deviations, self-review, docs, and
+`blocked`, with open findings setting the floor: any `stop`, or a non-`judgment` HIGH, →
+`blocked`), needs your call, try it, AC → proof, changes, deviations, self-review, docs, and
 verification. Chat shows the verdict line, needs-your-call items, try-it steps, and deviations;
 the rest stays in the report. Follow-up loop: the human names findings (`H1, M2`) or new
 changes → implementer applies exactly those → delta re-review (new findings register as open,
