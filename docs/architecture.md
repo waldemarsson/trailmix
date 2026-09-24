@@ -138,7 +138,9 @@ operations). Before the digest, the reviewer challenges the brief in read-only *
 (missing callers and states, migration and rollback, unproven criteria); gaps become one more
 clarify round. Never ask what research can answer. The human answers a round in one line
 (`defaults, except 2: yes`). The first round always asks for implementation preferences (names,
-where the change lives, patterns to use or avoid); they land in the brief's decisions. The brief records decisions, design, scope, constraints, acceptance
+where the change lives, patterns to use or avoid); they land in the brief's decisions. With
+nothing else to clarify, that question moves to the digest sign-off instead of costing a round;
+pre-authorization takes it as `none`. The brief records decisions, design, scope, constraints, acceptance
 criteria, edge cases, and research **Context** so build doesn't re-explore — no open questions,
 no TBDs. The checkpoint is a digest, not a document read: about 5 bullets, but it must list every
 irreversible, security, data, architecture, and public-contract decision and every consequential
