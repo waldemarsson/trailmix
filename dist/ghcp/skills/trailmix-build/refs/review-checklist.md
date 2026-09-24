@@ -26,10 +26,16 @@ categorize findings by real severity and give each a stable id (H1 / M2 / L3…)
 - MEDIUM — architecture, missing features, poor error handling, test gaps (should fix).
 - LOW — style, formatting, optimization, doc polish (nice to have).
 
+Mark a HIGH `stop` when shipping it would cause harm: an exploitable security hole, data loss or
+corruption, or a broken public contract. A `stop` finding blocks handoff until a re-review
+confirms its fix.
+
 Acknowledge what was done well before listing issues — accurate praise helps the implementer
 trust the rest. (The leading one-line `Strengths:` entry is part of the report structure; GORP's
 "no preamble" bans greetings and waffle, not this.) Be specific (file:line), explain WHY each
 issue matters, give a clear verdict.
+**Verdict follows from the findings still open:** any HIGH → `No`; any other → `With fixes`;
+none → `Yes`. Don't soften it.
 Tag each finding `clear` (unambiguous fix inside the brief's scope) or `judgment` (scope change,
 trade-off, contradicts a brief decision). The orchestrator auto-fixes `clear` findings and hands
 `judgment` ones to the human.
@@ -42,7 +48,7 @@ report.
 ```
 Strengths: <specific, file:line>
 HIGH:
-- H1 · file:line · what → why → fix · clear | judgment
+- H1 · file:line · what → why → fix · clear | judgment [· stop]
 MEDIUM:
 - M1 · file:line · ...
 LOW:

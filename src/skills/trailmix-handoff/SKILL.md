@@ -24,6 +24,9 @@ registered.
 ## Surface it in chat
 Don't make the human open the report to learn what to look at. Show:
 1. One line: the result and verdict (`ready` / `ready, 2 need your call` / `blocked: …`).
+   Open findings set the floor: any `stop`, or a HIGH that isn't `judgment`, → `blocked`; any
+   other → `ready, N need your call`.
+   Anything that stopped the build (failing gate, unproven AC, missing access) is `blocked` too.
 2. **Needs your call**: each as `id · file:line — what it is, and the options`.
 3. **Try it**: the commands or steps.
 4. Anything in **Deviations**.
@@ -33,11 +36,13 @@ Don't make the human open the report to learn what to look at. Show:
 The human reviews the diff and replies with findings to fix (`H1, M2`), new change requests, or
 acceptance.
 - **Fixes and changes:** dispatch `trailmix-implementer` with exactly those, then a delta
-  re-review by `trailmix-reviewer`. Stamp each finding: `trail.mjs finding <report.md> <id> fixed`
-  once the re-review confirms it held, `wont-fix` when declined, `disputed` when the implementer
-  shows it's wrong. Register any new finding (from the re-review or the human) with
-  `trail.mjs findings <report.md> <id>`; existing ids keep their state. Append a dated
-  `## Follow-up (YYYY-MM-DD)` block to the report, and show the delta in chat the same way.
+  re-review by `trailmix-reviewer`, passing the ids still open (skip it when only LOWs were
+  fixed). Stamp each finding: `trail.mjs finding <report.md> <id> fixed` once the re-review
+  confirms it held (a LOW: once the brief's gate commands pass), `wont-fix` when declined,
+  `disputed` when the implementer shows it's wrong. Register any new finding (from the re-review
+  or the human) with `trail.mjs findings <report.md> <id>`; existing ids keep their state.
+  Append a dated `## Follow-up (YYYY-MM-DD)` block to the report, and show the delta in chat the
+  same way.
 - **A change beyond the brief that serves the same outcome:** add a dated line under the brief's
   `**Amendments:**` and run it through this loop. An independent goal gets a new trail.
 - **Acceptance:** `trail.mjs approve <report.md>`. The trail is done. The human commits and

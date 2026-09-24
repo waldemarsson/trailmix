@@ -32,8 +32,13 @@ the resolved `trail.mjs` path. It works the tasks in order, TDD where practical,
 Dispatch `trailmix-reviewer` (read-only) with the brief and the path to `refs/review-checklist.md`.
 It returns findings to you; there is no review artifact. Then:
 - **Fix every finding with a clear fix inside the brief's scope**, whatever its severity:
-  dispatch the implementer with those ids, then a **delta re-review** of only those ids plus
-  regression risk in the code they touched.
+  dispatch the implementer with those ids. A LOW fix counts once its gate command is green. A
+  HIGH or MEDIUM fix counts only after a **delta re-review** of those ids plus regression risk in
+  all code the round touched; pass it the ids still open so its verdict counts them. Skip the
+  re-review when a round fixed only LOWs.
+- **`stop` findings:** fix a `clear` one like any other, but it's never done without a re-review
+  that confirms the fix held. A `judgment` one is a stop-and-ask. One whose fix keeps failing
+  escalates like any other, and handoff reports `blocked`.
 - **Keep going while it converges.** Run another round as long as the last one resolved at least
   one finding. Escalate a finding to the report when its fix fails twice, when fixes conflict, or
   when it turns out to need a scope change. Hard ceiling: 4 rounds.
@@ -59,9 +64,9 @@ Default contract. The brief's **Autonomy** line, when present, overrides it.
 
 ## Stop and ask: the only pause
 Stop only when you can't continue without guessing on something that matters: an escalate-class
-decision the brief doesn't settle, a requirement that's ambiguous in a way that changes behavior,
-a brief decision the code proves wrong, a destructive or irreversible step, or missing access.
-Ask one crisp question with a recommended answer. Record
+decision the brief doesn't settle, a `judgment` finding marked `stop`, a requirement that's
+ambiguous in a way that changes behavior, a brief decision the code proves wrong, a destructive
+or irreversible step, or missing access. Ask one crisp question with a recommended answer. Record
 the resolution as a dated line under the brief's `**Amendments:**`. If the approach no longer
 holds, `trail.mjs reopen <brief.md>` (back to draft, task progress cleared) and return to
 `trailmix-discuss`: revise the brief in place, drop its stale `## Build notes`, and show a new

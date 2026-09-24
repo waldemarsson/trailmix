@@ -2,7 +2,8 @@
 
 **Goal:** 1–2 sentences: what changes, and why.
 
-**Decisions:** everything settled in clarify, one line each, including accepted defaults.
+**Decisions:** everything settled in clarify, one line each, including accepted defaults and
+the human's implementation preferences (`class named RateLimiter`, `fix stays in auth/session.ts`).
 - ...
 
 **Design:** the approach, and the trade-offs behind it when there was a real choice. No file or
