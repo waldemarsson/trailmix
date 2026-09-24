@@ -22,8 +22,9 @@ Calls build made on its own, and amendments. One line each, with the reason.
 - ...
 
 ## Self-review
-Counts first (`5 findings: 4 fixed in 1 round, 1 needs your call`), then one line per fixed finding.
-- H1 · fixed — what it was
+Counts first (`5 findings: 4 fixed in 1 round, 1 needs your call`), then one line per fixed
+finding, `stop` ones first.
+- H1 · stop · fixed, re-review held — what it was
 
 ## Docs
 Files changed with a one-line reason each, or `none — nothing had weight`. Include any agent-retro line.

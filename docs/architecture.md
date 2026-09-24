@@ -151,7 +151,12 @@ exactly there. Host plan mode, when active, absorbs the discuss checkpoint (one 
 contract, behaviors, gate command; every AC mapped to a task) are appended to the brief — no
 separate plan artifact, no re-approval. The reviewer returns findings to the orchestrator; there
 is no review artifact. Every `clear` finding with an in-scope fix is auto-fixed regardless of
-severity, followed by a **delta re-review** of only those ids + regression risk. Rounds continue while
+severity. HIGH and MEDIUM fixes need a **delta re-review** of only those ids + regression risk
+in all code the round touched; a LOW fix counts once its gate is green, and a LOW-only round skips
+the re-review. The reviewer marks harmful HIGHs (exploitable security hole, data loss, broken
+public contract) `stop`: a clear one is fixed and always re-reviewed, a judgment one is a
+stop-and-ask, and an open one makes the handoff verdict `blocked`. The reviewer's verdict follows
+from what's open (any HIGH → No, any other → With fixes, none → Yes). Rounds continue while
 each resolves at least one finding; a finding whose fix fails twice, conflicting fixes, or a
 needed scope change escalates; hard ceiling 4 rounds. `judgment` findings — judgment calls, scope changes, contradictions of a brief
 decision, disputed fixes — plus anything still open go to the human via the report. The
@@ -172,13 +177,13 @@ return to discuss, which revises it in place and shows a new digest. Calls build
 its own go under **Deviations** in the report.
 
 **Handoff.** `report.md` holds result + verdict (`ready` / `ready, N need your call` /
-`blocked`), needs your call, try it, AC → proof, changes, deviations, self-review, docs, and
+`blocked`, set by the worst open finding: any `stop` → `blocked`), needs your call, try it, AC → proof, changes, deviations, self-review, docs, and
 verification. Chat shows the verdict line, needs-your-call items, try-it steps, and deviations;
 the rest stays in the report. Follow-up loop: the human names findings (`H1, M2`) or new
 changes → implementer applies exactly those → delta re-review (new findings register as open,
 existing ones keep their state) → each finding stamped via named
 op (`open | fixed | wont-fix | disputed`, lifecycle on the report's `findings:`; `fixed` only
-after the re-review confirms it) → a dated `## Follow-up` block appended. A change beyond the brief
+after the re-review confirms it, or for a LOW, a green gate) → a dated `## Follow-up` block appended. A change beyond the brief
 that serves the same outcome is amended into the brief and handled in the loop; an independent
 goal becomes a new trail. Acceptance approves the report; the trail is
 done. The human commits and opens the PR. All handoffs use **GORP** (§6).

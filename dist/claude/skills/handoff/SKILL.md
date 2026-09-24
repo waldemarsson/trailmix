@@ -22,6 +22,7 @@ registered.
 ## Surface it in chat
 Don't make the human open the report to learn what to look at. Show:
 1. One line: the result and verdict (`ready` / `ready, 2 need your call` / `blocked: …`).
+   The worst open finding sets it: any `stop` → `blocked`; any other → `ready, N need your call`.
 2. **Needs your call**: each as `id · file:line — what it is, and the options`.
 3. **Try it**: the commands or steps.
 4. Anything in **Deviations**.
@@ -31,8 +32,9 @@ Don't make the human open the report to learn what to look at. Show:
 The human reviews the diff and replies with findings to fix (`H1, M2`), new change requests, or
 acceptance.
 - **Fixes and changes:** dispatch `implementer` with exactly those, then a delta
-  re-review by `reviewer`. Stamp each finding: `trail.mjs finding <report.md> <id> fixed`
-  once the re-review confirms it held, `wont-fix` when declined, `disputed` when the implementer
+  re-review by `reviewer` (skip it when only LOWs were fixed). Stamp each finding:
+  `trail.mjs finding <report.md> <id> fixed` once the re-review confirms it held (a LOW: once its
+  gate is green), `wont-fix` when declined, `disputed` when the implementer
   shows it's wrong. Register any new finding (from the re-review or the human) with
   `trail.mjs findings <report.md> <id>`; existing ids keep their state. Append a dated
   `## Follow-up (YYYY-MM-DD)` block to the report, and show the delta in chat the same way.

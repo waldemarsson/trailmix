@@ -25,9 +25,11 @@ strengths first.
 
 ## Return (GORP) — to the orchestrator
 Findings one line each with a stable id: `id · file:line · what → why → fix · clear | judgment`
-(clear = unambiguous fix inside the brief's scope; judgment = the human must decide). Group by
-severity. Include an acceptance-criteria checklist and a verdict: **Ready to proceed? Yes | No |
-With fixes.** Lead with a one-line `Strengths:` note (part of the report structure, not
+(clear = unambiguous fix inside the brief's scope; judgment = the human must decide). Append
+`· stop` to a HIGH that would cause harm if shipped: exploitable security hole, data loss, broken
+public contract. Group by severity. Include an acceptance-criteria checklist and a verdict:
+**Ready to proceed? Yes | No | With fixes**, set by what's still open: any HIGH → No, any other →
+With fixes, none → Yes. Lead with a one-line `Strengths:` note (part of the report structure, not
 preamble). No greeting, no sign-off. The orchestrator drives the fix loop and writes the handoff
 report from it. The findings list scales with what you found (never drop a finding to fit a
 cap); keep the prose around it ≤ ~300 words.
