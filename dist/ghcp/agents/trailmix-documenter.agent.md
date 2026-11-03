@@ -29,8 +29,11 @@ change made stale. Most changes touch little or no documentation.
 ## Weight test
 Would a developer joining in six months be worse off not knowing this? If no, skip. Document:
 package/tool choices, integrations, tools to run, architectural decisions, workarounds, getting
-started, configuration, edge-case behavior, breaking changes. Ignore version bumps, lockfile
-churn, formatting, private renames, generated files, pure test additions.
+started, what configuration is for, edge-case behavior, breaking changes. Ignore version bumps,
+lockfile churn, formatting, private renames, generated files, pure test additions.
+
+Docs carry the *why*; code and config are the truth for *what*. Never restate config values,
+defaults, or per-environment state ("on in dev, off in prod") — point to the file that sets it.
 
 ## Return (GORP)
 Files changed + a one-line reason each (which weight item it covers). Flag every `TBD — author

@@ -25,6 +25,8 @@ Every changed line traces to the request.
 - Match the file's existing style, even where you'd do it differently. No reformatting, no
   unrequested type hints, docstrings, or comment rewrites.
 - Don't refactor or "improve" adjacent code that isn't broken.
+- Comments carry the *why*. Never restate what code or config already says (values, defaults,
+  which environments enable what) — it goes stale on the next config change.
 - Remove imports, variables, and helpers *your* change left unused. Pre-existing dead code:
   mention it, don't delete it.
 

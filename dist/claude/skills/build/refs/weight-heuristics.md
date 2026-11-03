@@ -19,8 +19,9 @@ a correct outcome.**
 5. **Workarounds** — "does X unusual thing because of Y external constraint." Highest value —
    they decay silently. Always document the reason.
 6. **Getting started** — prerequisites, setup, run, test — the onboarding path.
-7. **Configuration** — env vars, config keys, defaults, precedence. Include defaults and whether
-   required for local dev.
+7. **Configuration** — what a key or env var is for, why it exists, precedence, and where it's
+   set. Point to the config file; never copy its values, defaults, or which environments enable
+   what — that drifts with every config change.
 8. **Edge-case behavior** — retries, fallbacks, idempotency, ordering, timeouts, rate limits,
    partial failure — anything surprising when reading the code.
 9. **Breaking changes** — removed/renamed public APIs, config keys, CLI flags, schemas, minimum
@@ -34,6 +35,7 @@ a correct outcome.**
 ## Noise — almost never document on its own
 Patch/minor version bumps, lockfile churn, formatting/whitespace/comment edits, private renames,
 generated files, pure test additions (unless a new testing pattern), IDE config, bug fixes that
-restore documented behavior, refactors with no external surface.
+restore documented behavior, refactors with no external surface, config values or per-environment
+state ("enabled in dev and test, off in prod") — code and config are the source of truth for *what*.
 
 If the whole change is noise, say "nothing needs documenting" and stop. Don't manufacture weight.

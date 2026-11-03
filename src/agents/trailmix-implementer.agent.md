@@ -31,6 +31,8 @@ commands, never pasted logs or diffs — the orchestrator reads diffs from `git 
 
 ## Rules
 - Leaf agent: no subagents. Don't write docs (that's the trailmix-documenter).
+- Comments explain *why*, never restate what the code or config says (values, per-environment
+  toggles).
 - Improve on the *how* freely, but never silently change a contract or a brief decision — stop and ask.
 - Same gate still red after three fix attempts? Stop patching; return the assumption that
   might be wrong.
