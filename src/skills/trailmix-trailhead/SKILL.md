@@ -46,9 +46,6 @@ Pull each waypoint skill when you reach it — don't preload them all.
 | Build | `trailmix-build` | nothing, unless the agent hits a blocker | code, tests, docs |
 | Handoff | `trailmix-handoff` | reviews the result, picks follow-ups, accepts | `report.md` |
 
-Human attention goes to two places: clearing up uncertainty before build, and reviewing the
-result after it. Everything in between runs on its own.
-
 ## Resume a trail
 A trail survives a fresh session. If a `.trailmix/trail/<slug>/` already exists for this work — or
 the human says "resume `<slug>`" — pick it up instead of starting over:
@@ -68,22 +65,12 @@ the human says "resume `<slug>`" — pick it up instead of starting over:
 ## Trail status
 To survey trails, run `trail.mjs status` (per `refs/trail-metadata.md`) — it reads frontmatter
 only and prints one derived line per open trail (`slug · state · next waypoint`); done and dropped
-ones collapse to a count line (`--all` lists them). A named trail always shows. Falls back to the awk read pass if the helper can't run. This is agent behavior, not a
-`trailmix` command; don't load artifact bodies.
+ones collapse to a count line (`--all` lists them). A named trail always shows. Don't load
+artifact bodies.
 
 To abandon a trail: `trail.mjs drop .trailmix/trail/<slug>/brief.md`. It marks the brief
 `dropped` and deletes nothing; undo with `approve` or `reopen`.
 
-## Rules
-- Two checkpoints: the discuss digest and the handoff. Pause at both. The human drives them;
-  build doesn't pause except for real blockers.
-- The signed-off brief is a good point to **clear or restart the session**: it *is* the
-  distilled context, and resume lands exactly there. Recommend it after a long discuss; never
-  require it.
-- Host modes: if the host CLI's own plan mode is active, fold the discuss checkpoint into it —
-  one ceremony, brief still written — don't run both rituals.
-- Write outputs to disk; keep chat for decisions and short summaries.
-- Signing off on the digest approves the brief; accepting the handoff approves the report (via
-  the `trail.mjs approve` helper — a named op, so the status is never typed by hand). Details in
-  `refs/trail-metadata.md`.
-- Terse prose, lean code, and GORP handoffs are always on (see `AGENTS.md`).
+## Clear after sign-off
+The signed-off brief is a good point to **clear or restart the session**: it *is* the distilled
+context, and resume lands exactly there. Recommend it after a long discuss; never require it.

@@ -130,114 +130,40 @@ Artifacts live in the target project at: `.trailmix/trail/<feature-slug>/`.
 | 2 | **trailmix-build** | Autonomous: plan tasks into the brief's `## Build notes`, implement TDD, self-review, fix, update docs | **trailmix-implementer**, **trailmix-reviewer** (read-only), **trailmix-documenter** | none, unless blocked | code + tests + docs (git diff) |
 | 3 | **trailmix-handoff** | Write the report, surface it in chat, run the follow-up loop until accepted | **trailmix-implementer** + **trailmix-reviewer** for follow-ups | reviews the diff, picks follow-ups, accepts | `report.md` |
 
-**Discuss** is the waypoint that matters most: build is autonomous, so anything left open
-becomes a guess, and nothing is briefed or built until nothing is left to clarify. Discuss
-settles the design approach and its trade-offs; file and task planning stay in build. Clarify
-ends with a deliberate edge-case sweep (inputs, failure, state, compatibility, access,
-operations). Before the digest, the reviewer challenges the brief in read-only **brief mode**
-(missing callers and states, migration and rollback, unproven criteria); gaps become one more
-clarify round. Never ask what research can answer. The human answers a round in one line
-(`defaults, except 2: yes`). The first round always asks for implementation preferences (names,
-where the change lives, patterns to use or avoid); they land in the brief's decisions. With
-nothing else to clarify, it waits for the next round or the digest sign-off instead of costing a round;
-pre-authorization takes it as `none`. The brief records decisions, design, scope, constraints, acceptance
-criteria, edge cases, and research **Context** so build doesn't re-explore — no open questions,
-no TBDs. The checkpoint is a digest, not a document read: about 5 bullets, but it must list every
-irreversible, security, data, architecture, and public-contract decision and every consequential
-default (grouped, never dropped), plus key assumptions, out of scope, and the riskiest part. If the human pre-authorized ("go ahead once it's clear") and nothing is
-open, discuss shows the digest and proceeds without pausing; pre-authorization skips the pause,
-never the questions. The signed-off brief is the
-recommended point to clear/restart the session — it's the distilled context and resume lands
-exactly there. Host plan mode, when active, absorbs the discuss checkpoint (one ceremony).
-Research may be skipped only when the affected code is already in context and every question's
-premise can be cited `file:line`. The digest also carries the git setup: a proposed branch (repo
-instructions → recent branch convention → `trail/<slug>`; sign-off creates it, "no branch" keeps
-the current one, none proposed when already on a non-default branch) and a dirty-tree flag. If
-the human proceeds on a dirty tree, those files are recorded in the brief as **Pre-existing
-changes** and are out of scope for reviewer and documenter (`.trailmix/` never counts; a file
-build also edits becomes wholly in scope, flagged `mixed` in the report). trailmix never stashes
-or commits on its own; the branch is recorded with `trail.mjs branch`. Not a git repo: all git
-steps are skipped.
+The skills are the spec; this section records why they're shaped this way. Read the skill for
+the rules.
 
-**Build.** The brief was approved at the digest sign-off. The file map and tasks (T1, T2…, each with
-contract, behaviors, gate command; every AC mapped to a task) are appended to the brief — no
-separate plan artifact, no re-approval. One implementer runs by default; with more than ~5
-tasks, or tasks spanning areas with little shared context, the plan splits into sequential
-chunks, one implementer each (never parallel: one working tree). An implementer may also stop
-early at a task boundary when its context is heavy, returning `Notes for next:` for a fresh
-one. Thresholds are first guesses, to tune. Build posts one chat
-line per milestone (plan done, each implementer return, each review round, docs done) and never
-pauses for it. The reviewer returns findings to the orchestrator; there
-is no review artifact. Every `clear` finding with an in-scope fix is auto-fixed regardless of
-severity. HIGH and MEDIUM fixes need a **delta re-review** of only those ids + regression risk
-in all code the round touched; a LOW fix counts once its gate is green, and a LOW-only round skips
-the re-review. The reviewer marks harmful HIGHs (exploitable security hole, data loss, broken
-public contract) `stop`: a clear one is fixed and always re-reviewed, a judgment one is a
-stop-and-ask, and an open one makes the handoff verdict `blocked`. The reviewer's verdict follows
-from what's open (any HIGH → No, any other → With fixes, none → Yes). Rounds continue while
-each resolves at least one finding; a finding whose fix fails twice, conflicting fixes, or a
-needed scope change escalates; hard ceiling 4 rounds. `judgment` findings — judgment calls, scope changes, contradictions of a brief
-decision, disputed fixes — plus anything still open go to the human via the report. The
-documenter updates docs by weight (zero edits is valid) and runs the **agent retro** (one-line
-conventions/gotchas into the repo's own `CLAUDE.md`/`AGENTS.md`; zero additions is the norm).
-**Decision rights** are a default contract in the build skill: build decides internal
-structure, naming, tests, and use of existing dependencies and conventions alone (preferring the
-most reversible option), and escalates public contracts, new or upgraded dependencies, data
-migrations or rewrites, auth/secrets/trust boundaries, and deploy or runtime changes. A brief's
-optional **Autonomy** line overrides the default when the human wants something different, and
-the reviewer flags a solo escalate-class decision as `judgment`. The only pause is
-**stop-and-ask** for a real blocker (an escalate-class decision the brief doesn't settle,
-behavior-changing ambiguity, a brief decision the code proves wrong, a destructive step, missing
-access): one question with a
-recommended answer, resolution recorded as a dated line under the brief's `**Amendments:**`. If
-the approach no longer holds, `reopen` the brief (back to draft, task progress cleared) and
-return to discuss, which revises it in place and shows a new digest. Calls build makes on
-its own go under **Deviations** in the report.
+**Discuss** carries the most weight because build is autonomous: anything left open becomes a
+guess, and a wrong guess costs a rebuild. So research runs first (never ask what code can
+answer), clarify rounds batch questions with recommended defaults so the human can answer in one
+line, and the reviewer challenges the brief in read-only brief mode before sign-off. The
+checkpoint is a short chat digest, not a document read, so it must surface every consequential
+decision. Git setup (branch, dirty tree) is settled at the same checkpoint so build never has to
+pause for it; trailmix never stashes or commits on its own.
 
-**Handoff.** `report.md` holds result + verdict (`ready` / `ready, N need your call` /
-`blocked`, with open findings setting the floor: any `stop`, or a non-`judgment` HIGH, →
-`blocked`), needs your call, try it, AC → proof, changes, deviations, self-review, docs, and
-verification. Chat shows the verdict line, needs-your-call items, try-it steps, and deviations;
-the rest stays in the report. Follow-up loop: the human names findings (`H1, M2`) or new
-changes → implementer applies exactly those → delta re-review (new findings register as open,
-existing ones keep their state) → each finding stamped via named
-op (`open | fixed | wont-fix | disputed`, lifecycle on the report's `findings:`; `fixed` only
-after the re-review confirms it, or for a LOW, a green gate) → a dated `## Follow-up` block appended. A change beyond the brief
-that serves the same outcome is amended into the brief and handled in the loop; an independent
-goal becomes a new trail. Acceptance approves the report; the trail is
-done. In a git repo it then asks one opt-in line (default no): commit, push, and open a draft
-PR. The commit covers only the trail's files (report Changes + Docs, never recorded
-pre-existing ones), warns first on the default branch, defers to the human's own commit/PR
-rules, and degrades to commit-only without a remote or authenticated `gh`. All handoffs use **GORP** (§6).
+**Build** runs without the human. Planning appends to the brief (no separate plan artifact, no
+re-approval). Implementers run sequentially in chunks (one working tree), each in a fresh
+context. Self-review findings are auto-fixed while fixes converge, with a hard round ceiling; what
+needs judgment goes to the human via the report. A default **decision-rights** contract (decide
+reversible, internal things; escalate contracts, dependencies, data, security, deploy) replaces
+per-decision pauses; a brief's **Autonomy** line overrides it. The only pause is stop-and-ask
+for a real blocker. Thresholds (chunk size, round ceiling) are first guesses, to tune.
 
-**Trail metadata & resume.** At most two artifacts, each with minimal YAML frontmatter.
-`brief.md` is the **anchor** (trail identity, `kind: feature | bug`, plus build's `tasks:` and
-the optional `branch:` recorded at sign-off); `report.md` carries `findings:`. The non-derivable
-fields are `status: draft | approved` (brief approved at the digest sign-off, report approved on
-acceptance; a brief may also be `dropped` — abandoned, nothing deleted, undone by `approve` or
-`reopen`, and it wins over any report), `branch:` (free-form; resume warns when the current
-branch differs), `tasks:` (which task gates went green; resume lands on
-the first open task, e.g. `build (1/3 done, next T2)`), and `findings:` (the follow-up lifecycle
-above). Both mechanical operations — reading **frontmatter only** (never bodies) to *resume* or
-*survey status*, and *transitioning* a status — run through a bundled zero-dep Node helper
-(`trailmix-trailhead/refs/trail.mjs`), so the LLM never hand-parses or hand-edits YAML and never
-types a status value it could misspell — it names an intent and the helper owns the vocabulary
-(the correctness + token win). Commands: `new` (scaffold `brief | bug | report` frontmatter —
-dates and initial status correct by construction), the named transitions `approve`/`reopen`/`drop`, `branch` (record the git branch),
-`tasks`/`task-done` (register the brief's task ids, flip one gate green), `findings`/`finding`
-(register the report's finding ids — new ones append — and flip one state), `read`, `check` (lint all frontmatter
-against the schema; also run in CI via `verify.sh`), and `status` (derive the resume line per
-trail; done and dropped trails collapse into a count line unless `--all`, a named dir always shows). The helper is a **pure data tool** — it owns the closed vocabulary (statuses, waypoints,
-templates) but no workflow rules: no gates, no enforced ordering, no state machine; even `status`
-only reports. The skill decides when to call it. It ships inside the plugin and is invoked by
-its path inside the installed plugin — on CC the skills name it via `${CLAUDE_PLUGIN_ROOT}`,
-which the host substitutes into skill text; elsewhere it's resolved from the loaded skill's stated
-base directory, since plugin-root env vars aren't set for the shell the model runs tools in —
-**not** installed on PATH, so it's not the
-rejected `trailmix` CLI. Where the path can't be resolved or `node` is absent, it falls back to
-an awk read pass / hand-edit. Schema + invocation live in
-`trailmix-trailhead/refs/trail-metadata.md`. No sidecar `trail.json`, no state machine, no CLI.
-Trails from the old five-waypoint layout are not supported.
+**Handoff** shows the human the result, not documents about it: verdict, what needs their call,
+how to try it. The follow-up loop reuses build's implementer and delta re-review. Acceptance
+optionally ends in commit/push/draft PR, opt-in and scoped to the trail's own files.
+
+**Trail metadata & resume.** At most two artifacts with minimal frontmatter; only the fields
+that can't be derived (`status`, `tasks`, `findings`, `branch`) are stored. Every read and
+transition goes through `trailmix-trailhead/refs/trail.mjs`, a zero-dep Node helper, so the LLM
+never hand-edits YAML or types a status it could misspell: it names an intent and the helper owns
+the vocabulary. The helper is a **pure data tool** — no gates, no enforced ordering, no state
+machine — and it's invoked by path inside the installed plugin, not put on PATH, so it isn't a
+`trailmix` CLI. On CC the skills name it via `${CLAUDE_PLUGIN_ROOT}`; elsewhere it resolves from
+the skill's base directory, since plugin-root env vars aren't set for the model's tool shell.
+Without `node` it falls back to an awk read and hand-edits. Schema, ops, and the resume
+derivation: `trailmix-trailhead/refs/trail-metadata.md`. Trails from the old five-waypoint
+layout are not supported.
 
 ---
 
@@ -280,12 +206,7 @@ tools: [read, search, shell]
 Purpose: shrink **agent→agent** handoffs (never user-facing prose) losslessly. Phase 1 is a
 **convention**, not a new parser — adopt a dense encoding later if measured worth it.
 
-Rules (enforced by the `trailmix-gorp` skill + each agent's return contract):
-- **Artifacts on disk, not in chat.** Return a pointer + a distilled summary; the human/orchestrator reads diffs and artifacts from the terminal.
-- **Evidence = counts + exact commands**, never pasted logs or diffs. (`npm test → 46/46`, not the log.)
-- **Findings one line each**: `id · file:line · what → why → fix` (stable ids `H1/M2/L3`).
-- **Hard word caps** per return (trailmix-implementer ≤ ~400 words, trailmix-documenter ≤ ~300).
-- **No preamble, no sign-off, no gratitude.**
+Rules live in the `trailmix-gorp` skill; each agent sets its own word cap.
 
 Optional later: a real columnar/keyed encoding (à la honey/ESON) for large structured returns,
 plus a lossy-but-recoverable sampler for huge uniform tool output.
@@ -328,15 +249,7 @@ injects the core's `## Security` section, verbatim, so the non-negotiable rules 
 that actually read files and run commands. Every hook context stays under CC's 10,000-char cap
 (beyond it Claude only gets a file path + preview); `verify.sh` checks it.
 
-Contents:
-1. **Bootstrap** — trailmix is active; consult **trailhead** for any build/change/fix/ship
-   request; pull each **waypoint** skill only on reaching it; artifacts (`brief.md`,
-   `report.md`) live in `.trailmix/trail/<slug>/`; two human checkpoints (brief sign-off,
-   handoff review), build runs between them.
-2. **Style defaults** — terse prose + lean code with the §7 carve-outs.
-3. **Tool conventions** — prefer `rg`/`fd`/`bat`/`jq`/`ast-grep` with silent fallbacks (from refs).
-4. **Security constraints** — never read `.env`; no bulk env-var reads; no HTTP POST without
-   explicit per-request permission (from refs). These override everything.
+Contents: bootstrap, style defaults, tool conventions, security (which overrides everything).
 
 ---
 

@@ -19,16 +19,13 @@ change made stale. Most changes touch little or no documentation.
    dictates (reachable from README or the index/sidebar), and stale docs corrected. Edit
    surgically; don't reflow untouched prose.
 4. Verify commands/flags/examples against real code before writing them.
-5. **Agent retro:** did this trail surface a convention, workaround, or gotcha the next trail's
-   *agent* should know (a rule it would otherwise re-learn the hard way)? If yes — same weight
-   test — append one tight line to the repo's existing agent instructions (`CLAUDE.md` /
-   `AGENTS.md`); zero additions is the common, correct outcome.
+5. **Agent retro:** a convention, workaround, or gotcha the next trail's *agent* would re-learn
+   the hard way? Append one tight line to the repo's existing `CLAUDE.md` / `AGENTS.md`. Zero
+   additions is the norm.
 
 ## Weight test
-Would a developer joining in six months be worse off not knowing this? If no, skip. Document:
-package/tool choices, integrations, tools to run, architectural decisions, workarounds, getting
-started, what configuration is for, edge-case behavior, breaking changes. Ignore version bumps,
-lockfile churn, formatting, private renames, generated files, pure test additions.
+Would a developer joining in six months be worse off not knowing this? If no, skip. Categories
+and noise: the weight heuristics in your dispatch.
 
 ## Write lean
 Every doc line is upkeep. Weight decides *whether*; this decides *how much*.

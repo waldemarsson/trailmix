@@ -43,8 +43,8 @@ resume the <feature-slug> trail
 ```
 
 trailhead reads the **frontmatter only** (not the full artifacts), reports where the trail stands,
-and continues from the right waypoint. Resume warns when the current git branch isn't the one the brief recorded. Ask for trail
-*status* the same way to survey trails: done and dropped ones collapse into a count line
+and continues from the right waypoint, warning when the current git branch isn't the one the
+brief recorded. Ask for trail *status* the same way to survey trails: done and dropped ones collapse into a count line
 (`status --all` lists them). To abandon a trail, ask to drop it — it's marked `dropped`, nothing
 is deleted, and `approve` or `reopen` undoes it. No `trail.json`, no CLI — just the frontmatter
 on disk.
@@ -62,13 +62,7 @@ by teammates.
 
 ## Install
 
-trailmix is installed only as a plugin, through each CLI's own marketplace/plugin system —
-there's no standalone installer script. `npm run build` emits the real per-platform plugins
-(`dist/claude/`, `dist/ghcp/`) plus two tiny root-level marketplace catalogs
-(`.claude-plugin/marketplace.json`, `.github/plugin/marketplace.json`) that each point at the
-matching `dist/` subdirectory via a relative `source`. `owner/repo`-style marketplace-add clones
-the whole repo, so those relative paths resolve — no branch or subdirectory support needed from
-either CLI:
+Install as a plugin through each CLI's marketplace:
 
 **Claude Code**:
 
@@ -78,7 +72,7 @@ either CLI:
 ```
 
 Skills and agents auto-namespace under the plugin name (`trailmix:discuss`,
-`trailmix:explorer`), and a `SessionStart` hook ships with it.
+`trailmix:explorer`).
 
 **Copilot CLI**:
 
@@ -99,96 +93,14 @@ Both also work from a local clone, pointing straight at the platform subdirector
 copilot plugin marketplace add ./dist/ghcp
 ```
 
-Both platforms' plugins ship a `SessionStart` hook that injects the full `AGENTS.md` always-on
-core (bootstrap, style, tool conventions, security) as context when a session starts or resumes
-(CC also on clear/compact/fork). This is the **only** always-on mechanism: neither CLI
-automatically reads a file named `AGENTS.md`/`CLAUDE.md` from inside an installed plugin, so the
-hook — not the bundled file — is what actually reaches a live session. Subagents don't see that
-context, so a `SubagentStart` hook gives trailmix's own agents the core's Security section.
-
-## How it stays portable
-
-Both CLIs implement the same Agent Skills open standard (`SKILL.md`) and the same plugin system
-shape (`.claude-plugin/`/root `plugin.json`, `skills/`, `agents/`, `hooks/hooks.json`). Only the
-mechanical bits differ — agent file shape, model/tool vocabulary, hook JSON schema, plugin
-manifest location. The generator hides those differences.
-
-| Asset | Source | Claude Code | Copilot CLI |
-|---|---|---|---|
-| SessionStart hook (always-on core) | `src/instructions/AGENTS.md` | `hooks/hooks.json` (`SessionStart`) | `hooks/hooks.json` (`sessionStart`) |
-| SubagentStart hook (Security section) | `src/instructions/AGENTS.md` | `hooks/hooks.json` (`SubagentStart`) | `hooks/hooks.json` (`subagentStart`) |
-| Skills | `src/skills/**/SKILL.md` (`trailmix-*`) | `skills/*` (bare name, auto-namespaced) | `skills/trailmix-*` |
-| Agents | `src/agents/*.agent.md` (`trailmix-*`) | `agents/*.md` (bare name, auto-namespaced) | `agents/trailmix-*.agent.md` |
-| Plugin manifest | `src/meta/plugin.meta.json` | `.claude-plugin/plugin.json` | root `plugin.json` |
-| Bundled copy (same content, not auto-loaded) | `src/instructions/AGENTS.md` | `AGENTS.md` | `AGENTS.md` |
-
-Agent frontmatter is transformed per platform: each agent's neutral name → model and reasoning
-effort (`build/maps/models.json`; GHCP gets an ordered model fallback list), neutral tool
-aliases → platform tool names (`build/maps/tools.json`), the tool-list format (comma string vs
-JSON array), and preloaded skills (`trailmix:gorp` on CC, `trailmix-gorp` on GHCP). Prose that
-only one CLI should see sits in `<!-- only:claude -->` / `<!-- only:ghcp -->` … `<!-- /only -->`
-blocks — e.g. CC skills name the helper path via `${CLAUDE_PLUGIN_ROOT}`, which CC fills in. CC's build also
-strips the manual `trailmix-` prefix from every skill/agent name (folder, frontmatter `name`, and
-cross-references in prose): CC auto-namespaces plugin components by the plugin's own name, so
-`discuss` ships as `discuss` and is invoked as `trailmix:discuss`.
-
-## Repo layout
-
-```
-src/
-  instructions/AGENTS.md      always-on core: bootstrap, style, tools, security
-  skills/                     trailhead router + style skills + 3 waypoint skills
-    <skill>/SKILL.md          tiny; detail lives in refs/ (loaded JIT)
-  agents/*.agent.md           neutral agent specs (trailmix-explorer/implementer/reviewer/documenter)
-  meta/plugin.meta.json       name/version/author → plugin manifests
-build/
-  generate.mjs                zero-dep generator: src/ → dist/{claude,ghcp}/
-  maps/{models,tools}.json    neutral → platform mapping tables
-  trail.test.mjs              trail.mjs unit tests
-dist/                         generated AND committed (published plugin; marketplace source)
-.claude-plugin/marketplace.json  generated: root catalog, source → ./dist/claude
-.github/plugin/marketplace.json  generated: root catalog, source → ./dist/ghcp
-docs/architecture.md          the full blueprint / design source of truth
-```
+A `SessionStart` hook injects trailmix's always-on core (bootstrap, style, tool conventions,
+security) into each session; trailmix's own subagents get its Security section.
 
 ## Develop
 
-```bash
-npm run build     # regenerate dist/ after editing anything in src/ or build/maps/
-npm run verify    # build + freshness check + trail.mjs tests + frontmatter lint + structure checks
-```
-
-Editing rules:
-
-- Change behavior in `src/` (never hand-edit `dist/`) — `dist/` is generated output, committed
-  as the published plugin.
-- Run `npm run build` and commit `dist/` with your change: CI runs `npm run verify`, which fails
-  on stale output. `.github/workflows/build-dist.yml` only backstops direct pushes to `main`.
-- Neutral agent `description` fields must stay single-line (the generator's frontmatter
-  parser expects it).
-- Pin exact model names in `build/maps/models.json` for your account.
-- `npm run verify` only reads/regenerates files in this repo (`dist/`, the root marketplace
-  stubs) — it doesn't install anything anywhere.
-- Requires Node ≥ 18 (`npm run verify` uses `node --test`; the generator alone needs ≥ 16.7 for `fs.cpSync`).
-
-## Token efficiency
-
-Baked in at every layer:
-
-- **JIT loading** — `SKILL.md` files are tiny; detail sits in `refs/*.md`, loaded only when a
-  skill needs it.
-- **Loaded once per session, not per turn** — the `SessionStart` hook injects the full
-  always-on core at session boundaries, not on every message; the fuller
-  worked examples in `trailmix-terse` / `trailmix-lean-code` / `trailmix-gorp` stay JIT-pulled
-  skills rather than part of the hook payload.
-- **Disk over chat** — artifacts go to `.trailmix/…`; the human reads them, the context stays
-  clean.
-- **Context isolation** — research, implementation, review, and docs run in subagents; the
-  orchestrator's context stays lean.
-- **Cheap-model routing** — the explorer (read/summarize/websearch) runs on a cheap model;
-  every other agent's model is pinned per agent in `build/maps/models.json` — adjust to taste.
-- **GORP handoffs** — agent-to-agent messages are counts + exact commands + one-line findings
-  with hard word caps, never pasted logs.
+`src/` is the single source; a zero-dep generator emits both plugins into `dist/`. Contributor
+rules and commands: [`AGENTS.md`](AGENTS.md). Design, portability, and token strategy:
+[`docs/architecture.md`](docs/architecture.md).
 
 ## License
 

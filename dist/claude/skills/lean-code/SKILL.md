@@ -33,14 +33,10 @@ Every changed line traces to the request.
 ## Never trim — safety carve-outs
 Full care always, regardless of "lean": input validation, error handling, auth/authz, secrets
 handling, migrations, destructive ops (deletes/drops), and anything the user explicitly asked
-for. **Lazy ≠ broken.**
+for. **Lazy ≠ broken**: if the lean version drops a guard, it isn't lean — it's wrong.
 
 ## Signals you over-built
 - A wrapper around a one-line call.
 - Params or options with a single caller.
 - A new dependency for something stdlib already does.
 - Defensive code for inputs that can't occur here.
-
-## When more code is right
-Correctness, safety, and the user's explicit request win over line count. If the lean version
-drops a guard, it isn't lean — it's wrong.

@@ -1,9 +1,6 @@
 # Trail metadata — frontmatter, status, resume/status extraction
 
-Loaded just-in-time. Defines the YAML frontmatter every trail artifact carries, how status
-moves, and the bundled helper that scaffolds, transitions, reads, lints, and surveys trails from
-frontmatter alone — without loading artifact bodies, and without the LLM ever hand-writing YAML
-or typing a status literal.
+Frontmatter schema, status lifecycle, and the helper that reads and writes it.
 
 ## Frontmatter schema
 
@@ -43,14 +40,10 @@ frontmatter.
 
 ## Status lifecycle
 
-- **draft**: artifact written, checkpoint not yet passed.
-- **approved**: the brief when the human signs off on the digest; the report when the human
-  accepts the result.
-- **dropped** (brief only): the human abandoned the trail. `drop` marks it and deletes nothing;
-  it wins over any report. Undo with `approve` (keeps `tasks`) or `reopen`.
-- **Reopen**: when build proves the brief wrong, `reopen` sends it back to `draft` and clears
-  `tasks`. Discuss revises the same `brief.md` in place (dropping the stale build notes) and
-  re-plans from scratch after the new sign-off. Rare.
+`draft` until its checkpoint passes; `approved` at the digest sign-off (brief) or acceptance
+(report); `dropped` (brief only) when the human abandons the trail — nothing is deleted, it wins
+over any report, and `approve` (keeps `tasks`) or `reopen` undoes it. After `reopen`, discuss
+revises the same `brief.md` in place, dropping the stale build notes.
 
 ## Deriving current position
 
@@ -106,9 +99,7 @@ node "$TRAIL" read .trailmix/trail/<slug>/*.md    # one trail; use trail/*/*.md 
 It prints `path: key: value` per line, skips paths that don't exist (an unexpanded `*` glob is
 harmless), and prints `no trails yet` when nothing readable was passed.
 
-**Transition** a status with a **named op**, never a free-text value — so the status vocabulary
-can't be misspelled (a mistyped op exits non-zero instead of writing a bad value). Each op bumps
-`updated` to today:
+**Transition** a status with a named op; each bumps `updated` to today:
 
 | Op | Effect | Use when |
 |---|---|---|
@@ -123,27 +114,20 @@ node "$TRAIL" approve .trailmix/trail/<slug>/brief.md
 ```sh
 node "$TRAIL" branch .trailmix/trail/<slug>/brief.md <branch-name>
 ```
-**Track build progress** — same named-op rule for the brief's `tasks` field, so a task id or
-`:done` mark is never hand-typed. Register the task ids once when build has planned them
-(refuses to re-register — progress survives), then flip each task as its gate goes green:
+**Track build progress** in the brief's `tasks`: register the ids once build has planned them
+(re-registering is refused, so progress survives), then flip each as its gate goes green:
 ```sh
 node "$TRAIL" tasks .trailmix/trail/<slug>/brief.md T1 T2 T3
 node "$TRAIL" task-done .trailmix/trail/<slug>/brief.md T1
 ```
-A bad or unknown id fails loudly instead of writing a bad value. `status` derives the resume
-point from the marks (see "Deriving current position").
 
-**Track the handoff follow-up loop** — the same pattern for `report.md`'s `findings` field.
-Register the ids of the findings left for the human when the report is written, and any new ones
-as they come up (existing ids keep their state), then name an id + state as the loop runs (`open | fixed | wont-fix | disputed` — the vocabulary lives in
-the helper; `open` reopens a finding whose fix didn't hold):
+**Track the follow-up loop** in the report's `findings`: register the ids left for the human,
+and new ones as they come up (existing ids keep their state), then set an id's state —
+`open | fixed | wont-fix | disputed` (`open` reopens a fix that didn't hold):
 ```sh
 node "$TRAIL" findings .trailmix/trail/<slug>/report.md H1 M2
 node "$TRAIL" finding  .trailmix/trail/<slug>/report.md H1 fixed
 ```
-
-The helper will `approve` regardless of current state — you decide when an approval is due. It
-refuses (non-zero) a file with no frontmatter and leaves bodies byte-for-byte unchanged.
 
 **Survey** trails — `status` derives one line per trail (`slug · state · next waypoint`) from
 frontmatter, the derivation in "Deriving current position" done for you. No args = all trails
@@ -153,10 +137,8 @@ always shows:
 node "$TRAIL" status .trailmix/trail/<slug>       # omit the path for all open trails
 ```
 
-**Lint** frontmatter — `check` validates every artifact against the schema (status/waypoint/
-kind in their closed sets, dates well-formed, anchor fields present) and exits non-zero on any
-problem. It's the retroactive guard against a bad value that slipped in via the hand-edit
-fallback. No args = all trails. Wired into `scripts/verify.sh` for this repo's own trail:
+**Lint** — `check` validates every artifact against the schema and exits non-zero on a problem;
+run it after a hand-edit fallback. No args = all trails:
 ```sh
 node "$TRAIL" check
 ```

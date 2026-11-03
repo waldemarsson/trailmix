@@ -27,10 +27,10 @@ contracts, and behaviors in its `## Build notes`. You own the implementation and
    `Notes for next:` line — what the next implementer needs that the brief and diff don't say.
 
 ## Verify, then finish
-Iron Law: no completion claim without fresh verification evidence *this turn*. Run tests fresh
-(count them), build/lint (exit 0), each acceptance criterion against real behavior, and
-red-green for bug fixes. Then return a GORP summary (≤ ~400 words; evidence = counts + exact
-commands, never pasted logs or diffs — the orchestrator reads diffs from `git diff`).
+Iron Law: no completion claim without fresh verification evidence *this turn*. Follow the
+verification protocol in your dispatch; without one, run tests fresh (count them), build/lint
+(exit 0), each acceptance criterion against real behavior, and red-green for bug fixes. Return
+GORP, ≤ ~400 words.
 
 ## Rules
 - Leaf agent: no subagents. Don't write docs (that's the trailmix-documenter).
