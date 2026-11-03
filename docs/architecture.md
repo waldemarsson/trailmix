@@ -149,10 +149,25 @@ open, discuss shows the digest and proceeds without pausing; pre-authorization s
 never the questions. The signed-off brief is the
 recommended point to clear/restart the session — it's the distilled context and resume lands
 exactly there. Host plan mode, when active, absorbs the discuss checkpoint (one ceremony).
+Research may be skipped only when the affected code is already in context and every question's
+premise can be cited `file:line`. The digest also carries the git setup: a proposed branch (repo
+instructions → recent branch convention → `trail/<slug>`; sign-off creates it, "no branch" keeps
+the current one, none proposed when already on a non-default branch) and a dirty-tree flag. If
+the human proceeds on a dirty tree, those files are recorded in the brief as **Pre-existing
+changes** and are out of scope for reviewer and documenter (`.trailmix/` never counts; a file
+build also edits becomes wholly in scope, flagged `mixed` in the report). trailmix never stashes
+or commits on its own; the branch is recorded with `trail.mjs branch`. Not a git repo: all git
+steps are skipped.
 
 **Build.** The brief was approved at the digest sign-off. The file map and tasks (T1, T2…, each with
 contract, behaviors, gate command; every AC mapped to a task) are appended to the brief — no
-separate plan artifact, no re-approval. The reviewer returns findings to the orchestrator; there
+separate plan artifact, no re-approval. One implementer runs by default; with more than ~5
+tasks, or tasks spanning areas with little shared context, the plan splits into sequential
+chunks, one implementer each (never parallel: one working tree). An implementer may also stop
+early at a task boundary when its context is heavy, returning `Notes for next:` for a fresh
+one. Thresholds are first guesses, to tune. Build posts one chat
+line per milestone (plan done, each implementer return, each review round, docs done) and never
+pauses for it. The reviewer returns findings to the orchestrator; there
 is no review artifact. Every `clear` finding with an in-scope fix is auto-fixed regardless of
 severity. HIGH and MEDIUM fixes need a **delta re-review** of only those ids + regression risk
 in all code the round touched; a LOW fix counts once its gate is green, and a LOW-only round skips
@@ -190,24 +205,29 @@ op (`open | fixed | wont-fix | disputed`, lifecycle on the report's `findings:`;
 after the re-review confirms it, or for a LOW, a green gate) → a dated `## Follow-up` block appended. A change beyond the brief
 that serves the same outcome is amended into the brief and handled in the loop; an independent
 goal becomes a new trail. Acceptance approves the report; the trail is
-done. The human commits and opens the PR. All handoffs use **GORP** (§6).
+done. In a git repo it then asks one opt-in line (default no): commit, push, and open a draft
+PR. The commit covers only the trail's files (report Changes + Docs, never recorded
+pre-existing ones), warns first on the default branch, defers to the human's own commit/PR
+rules, and degrades to commit-only without a remote or authenticated `gh`. All handoffs use **GORP** (§6).
 
 **Trail metadata & resume.** At most two artifacts, each with minimal YAML frontmatter.
-`brief.md` is the **anchor** (trail identity, `kind: feature | bug`, plus build's `tasks:`);
-`report.md` carries `findings:`. The non-derivable fields are `status: draft | approved` (brief
-approved at the digest sign-off, report approved on acceptance, so an abandoned
-trail shows its last artifact `draft`), `tasks:` (which task gates went green; resume lands on
+`brief.md` is the **anchor** (trail identity, `kind: feature | bug`, plus build's `tasks:` and
+the optional `branch:` recorded at sign-off); `report.md` carries `findings:`. The non-derivable
+fields are `status: draft | approved` (brief approved at the digest sign-off, report approved on
+acceptance; a brief may also be `dropped` — abandoned, nothing deleted, undone by `approve` or
+`reopen`, and it wins over any report), `branch:` (free-form; resume warns when the current
+branch differs), `tasks:` (which task gates went green; resume lands on
 the first open task, e.g. `build (1/3 done, next T2)`), and `findings:` (the follow-up lifecycle
 above). Both mechanical operations — reading **frontmatter only** (never bodies) to *resume* or
 *survey status*, and *transitioning* a status — run through a bundled zero-dep Node helper
 (`trailmix-trailhead/refs/trail.mjs`), so the LLM never hand-parses or hand-edits YAML and never
 types a status value it could misspell — it names an intent and the helper owns the vocabulary
 (the correctness + token win). Commands: `new` (scaffold `brief | bug | report` frontmatter —
-dates and initial status correct by construction), the named transitions `approve`/`reopen`,
+dates and initial status correct by construction), the named transitions `approve`/`reopen`/`drop`, `branch` (record the git branch),
 `tasks`/`task-done` (register the brief's task ids, flip one gate green), `findings`/`finding`
 (register the report's finding ids — new ones append — and flip one state), `read`, `check` (lint all frontmatter
 against the schema; also run in CI via `verify.sh`), and `status` (derive the resume line per
-trail). The helper is a **pure data tool** — it owns the closed vocabulary (statuses, waypoints,
+trail; done and dropped trails collapse into a count line unless `--all`, a named dir always shows). The helper is a **pure data tool** — it owns the closed vocabulary (statuses, waypoints,
 templates) but no workflow rules: no gates, no enforced ordering, no state machine; even `status`
 only reports. The skill decides when to call it. It ships inside the plugin and is invoked by
 its path inside the installed plugin — on CC the skills name it via `${CLAUDE_PLUGIN_ROOT}`,

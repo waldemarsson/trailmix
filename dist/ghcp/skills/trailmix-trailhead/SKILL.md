@@ -53,16 +53,21 @@ the human says "resume `<slug>`" — pick it up instead of starting over:
    helper can't run.)
 2. The reported `next` is where to land: `discuss` or `discuss (awaiting sign-off)` means discuss
    (write or finish the brief, then the digest); `build (…)` means continue building at the
-   named step; `handoff (awaiting review…)` means the follow-up loop; `—` (done) means nothing to do.
+   named step; `handoff (awaiting review…)` means the follow-up loop; `—` (done or dropped) means
+   nothing to do.
 3. Summarize state in one short block: title, what's approved, open findings if any, what's next.
+   If the brief's `branch:` (from `read`) differs from the current git branch, warn there.
 4. Load the skill of only the waypoint you're resuming into, and the artifact bodies it needs,
    then continue from that step.
 
 ## Trail status
 To survey trails, run `trail.mjs status` (per `refs/trail-metadata.md`) — it reads frontmatter
-only and prints one derived line per trail (`slug · state · next waypoint`), for all trails or a
-given one. Falls back to the awk read pass if the helper can't run. This is agent behavior, not a
+only and prints one derived line per open trail (`slug · state · next waypoint`); done and dropped
+ones collapse to a count line (`--all` lists them). A named trail always shows. Falls back to the awk read pass if the helper can't run. This is agent behavior, not a
 `trailmix` command; don't load artifact bodies.
+
+To abandon a trail: `trail.mjs drop .trailmix/trail/<slug>/brief.md`. It marks the brief
+`dropped` and deletes nothing; undo with `approve` or `reopen`.
 
 ## Rules
 - Two checkpoints: the discuss digest and the handoff. Pause at both. The human drives them;

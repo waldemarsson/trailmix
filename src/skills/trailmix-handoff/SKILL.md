@@ -45,5 +45,11 @@ acceptance.
   same way.
 - **A change beyond the brief that serves the same outcome:** add a dated line under the brief's
   `**Amendments:**` and run it through this loop. An independent goal gets a new trail.
-- **Acceptance:** `trail.mjs approve <report.md>`. The trail is done. The human commits and
-  opens the PR; don't do either unless asked.
+- **Acceptance:** `trail.mjs approve <report.md>`. The trail is done. In a git repo, ask one
+  line: "Commit, push, and open a draft PR? (default: no)" — warn first if on the default branch
+  (`origin/HEAD`, else `main`/`master`), and name any `mixed` files: committing them includes the
+  human's earlier edits. On yes, commit only the trail's files: the report's
+  **Changes** and **Docs**, never a recorded pre-existing file the report doesn't flag as mixed,
+  and `.trailmix/trail/<slug>/` only if the repo doesn't gitignore it. Message from the report's
+  **Result**, PR body from the report; the human's own commit/PR rules (signing, templates,
+  attribution) win. No remote, no `gh`, or `gh` unauthenticated → offer the commit only.

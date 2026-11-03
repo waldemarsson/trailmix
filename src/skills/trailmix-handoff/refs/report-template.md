@@ -15,7 +15,7 @@ The exact commands or steps that exercise the change by hand.
 - AC2 → manual: step 2 above
 
 ## Changes
-- `path` — what changed, one line
+- `path` — what changed, one line (`mixed` if it had pre-existing changes)
 
 ## Deviations from the brief
 Calls build made on its own, and amendments. One line each, with the reason.

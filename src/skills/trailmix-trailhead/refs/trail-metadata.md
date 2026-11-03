@@ -18,8 +18,9 @@ kind: feature               # feature | bug
 created: YYYY-MM-DD
 updated: YYYY-MM-DD
 waypoint: discuss
-status: draft               # draft | approved
+status: draft               # draft | approved | dropped
 tasks: T1:done T2 T3        # optional — build progress, one token per task
+branch: feature/x           # optional — git branch, recorded at sign-off
 ---
 ```
 
@@ -35,15 +36,18 @@ findings: H1:fixed M1 L1:wont-fix  # optional — findings left for the human; b
 ---
 ```
 
-Only `status`, `tasks`, and `findings` are non-derivable. They record whether a checkpoint
-passed, which task gates went green, and where each finding left for the human stands. Counts
-and verdicts live in the body; never duplicate them into frontmatter.
+Only `status`, `tasks`, `findings`, and `branch` are non-derivable. They record whether a
+checkpoint passed, which task gates went green, where each finding left for the human stands,
+and which branch holds the work. Counts and verdicts live in the body; never duplicate them into
+frontmatter.
 
 ## Status lifecycle
 
 - **draft**: artifact written, checkpoint not yet passed.
 - **approved**: the brief when the human signs off on the digest; the report when the human
-  accepts the result. An abandoned trail shows its last artifact still `draft`.
+  accepts the result.
+- **dropped** (brief only): the human abandoned the trail. `drop` marks it and deletes nothing;
+  it wins over any report. Undo with `approve` (keeps `tasks`) or `reopen`.
 - **Reopen**: when build proves the brief wrong, `reopen` sends it back to `draft` and clears
   `tasks`. Discuss revises the same `brief.md` in place (dropping the stale build notes) and
   re-plans from scratch after the new sign-off. Rare.
@@ -53,6 +57,7 @@ and verdicts live in the body; never duplicate them into frontmatter.
 Order: `discuss (brief.md)` → `build (no artifact; brief tasks)` → `handoff (report.md)`. Bug
 briefs follow the same order; build starts with the red test.
 
+- Brief `dropped`: `dropped`, next `—`, whatever else exists.
 - No brief: `empty`, next discuss. Brief `draft` (new or reopened): `discuss (awaiting
   sign-off)`.
 - Brief `approved`, no report: build. With `tasks`, resume lands on the first open task, e.g.
@@ -71,8 +76,8 @@ Every frontmatter operation goes through this zero-dependency Node helper, never
 you name an *intent* (`approve`, `new … brief`) and it owns the vocabulary. It enforces no
 workflow rules — even `status` only reports. You decide when to act.
 
-Command surface: `new` · `approve`/`reopen` · `tasks`/`task-done` · `findings`/`finding` ·
-`read` · `check` · `status`.
+Command surface: `new` · `approve`/`reopen`/`drop` · `branch` · `tasks`/`task-done` ·
+`findings`/`finding` · `read` · `check` · `status`.
 
 **Resolve the helper's path once, then reuse it.** The examples below write `"$TRAIL"` for the
 resolved script path — substitute the real path (shell state doesn't persist between tool
@@ -113,9 +118,14 @@ can't be misspelled (a mistyped op exits non-zero instead of writing a bad value
 |---|---|---|
 | `approve <file>` | `status: approved` | the human signs off on the digest (brief) · accepts the result (report) |
 | `reopen <brief>` | `status: draft`, `tasks` removed | build proved the brief wrong; back to discuss |
+| `drop <brief>` | `status: dropped` | the human abandons the trail |
 
 ```sh
 node "$TRAIL" approve .trailmix/trail/<slug>/brief.md
+```
+**Record the branch** at sign-off (re-run if it changes; `reopen` keeps it):
+```sh
+node "$TRAIL" branch .trailmix/trail/<slug>/brief.md <branch-name>
 ```
 **Track build progress** — same named-op rule for the brief's `tasks` field, so a task id or
 `:done` mark is never hand-typed. Register the task ids once when build has planned them
@@ -140,10 +150,11 @@ The helper will `approve` regardless of current state — you decide when an app
 refuses (non-zero) a file with no frontmatter and leaves bodies byte-for-byte unchanged.
 
 **Survey** trails — `status` derives one line per trail (`slug · state · next waypoint`) from
-frontmatter, the derivation in "Deriving current position" done for you. No args = all trails;
-pass a dir for one:
+frontmatter, the derivation in "Deriving current position" done for you. No args = all trails
+except done and dropped, which collapse into one count line; `--all` lists them; a named dir
+always shows:
 ```sh
-node "$TRAIL" status .trailmix/trail/<slug>       # omit the path for all trails
+node "$TRAIL" status .trailmix/trail/<slug>       # omit the path for all open trails
 ```
 
 **Lint** frontmatter — `check` validates every artifact against the schema (status/waypoint/
