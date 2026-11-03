@@ -22,8 +22,9 @@
 //   node trail.mjs check [file.md ...]             lint frontmatter (default: all trails)
 //   node trail.mjs status [dir ...]                one line per trail (default: all trails)
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, realpathSync } from "node:fs";
 import { join, basename } from "node:path";
+import { pathToFileURL } from "node:url";
 
 // ---- the vocabulary, defined once ------------------------------------------------------------
 export const OPS = {
@@ -382,7 +383,7 @@ function usage(s) {
 }
 
 // Only run the CLI when invoked directly, so tests can import the functions above.
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
   try {
     process.exit(run(process.argv.slice(2)));
   } catch (e) {

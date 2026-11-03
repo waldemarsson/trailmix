@@ -5,7 +5,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, writeFileSync, readFileSync, mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
+import { spawnSync } from "node:child_process";
 
 import {
   run,
@@ -412,4 +413,19 @@ test("read skips nonexistent paths (unexpanded globs) and reports emptiness", ()
 
 test("frontmatterLines returns null when there is no block", () => {
   assert.equal(frontmatterLines("# nope\n"), null);
+});
+
+// ---- CLI entry -------------------------------------------------------------------------------
+test("CLI runs when its path contains a space", () => {
+  const dir = join(tmp(), "with space");
+  mkdirSync(dir);
+  const script = join(dir, "trail.mjs");
+  writeFileSync(script, readFileSync(new URL("../src/skills/trailmix-trailhead/refs/trail.mjs", import.meta.url)));
+  try {
+    const r = spawnSync(process.execPath, [script, "bogus"], { encoding: "utf8" });
+    assert.equal(r.status, 2);
+    assert.match(r.stderr, /usage: trail\.mjs/);
+  } finally {
+    rmSync(dirname(dir), { recursive: true, force: true });
+  }
 });
