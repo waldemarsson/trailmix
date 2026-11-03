@@ -20,8 +20,9 @@ a correct outcome.**
    they decay silently. Always document the reason.
 6. **Getting started** — prerequisites, setup, run, test — the onboarding path.
 7. **Configuration** — what a key or env var is for, why it exists, precedence, and where it's
-   set. Point to the config file; never copy its values, defaults, or which environments enable
-   what — that drifts with every config change.
+   set, and which keys must be set to run locally (names, not values). Point to the config file;
+   never copy its values, defaults, or which environments enable what — that drifts with every
+   config change.
 8. **Edge-case behavior** — retries, fallbacks, idempotency, ordering, timeouts, rate limits,
    partial failure — anything surprising when reading the code.
 9. **Breaking changes** — removed/renamed public APIs, config keys, CLI flags, schemas, minimum
