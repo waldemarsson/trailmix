@@ -35,6 +35,9 @@ check "claude AGENTS"           "$C/AGENTS.md"
 valid_json "claude plugin.json"      "$C/.claude-plugin/plugin.json"
 valid_json "claude marketplace.json" "$C/.claude-plugin/marketplace.json"
 valid_json "claude hooks.json"       "$C/hooks/hooks.json"
+if grep -rn 'trailmix-' "$C" | grep -v 'trailmix-marketplace' >&2; then
+  fail "claude build: unstripped trailmix- prefix (above)"
+fi
 
 # --- dist/ghcp: plugin structure ---
 G="$SCRIPT_DIR/dist/ghcp"
