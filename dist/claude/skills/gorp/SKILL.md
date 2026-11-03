@@ -32,8 +32,3 @@ Findings:
 - <id · file:line · what → why → fix>
 Gaps / follow-ups: <none | ...>
 ```
-
-## Optional (later)
-For large structured returns, a columnar/keyed encoding can roughly halve size losslessly; for
-huge uniform tool output, a recoverable sampler. Not required to start — the rules above capture
-most of the win.

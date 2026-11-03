@@ -82,4 +82,3 @@ given one. Falls back to the awk read pass if the helper can't run. This is agen
   the `trail.mjs approve` helper — a named op, so the status is never typed by hand). Details in
   `refs/trail-metadata.md`.
 - Terse prose, lean code, and GORP handoffs are always on (see `AGENTS.md`).
-- If a waypoint skill isn't installed yet, follow the phase as described in the table above.

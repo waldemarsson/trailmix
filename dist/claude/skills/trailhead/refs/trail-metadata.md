@@ -67,15 +67,9 @@ hand; the rules here are the spec it implements.
 
 ## The helper — `refs/trail.mjs`
 
-Every mechanical frontmatter operation — scaffolding an artifact, transitioning a status,
-reading, linting, surveying — is done by a bundled zero-dependency Node helper, not by hand. This
-is the correctness/repeatability win: the LLM never parses or rewrites YAML itself (which drops
-fields, malforms quoting, or fills the wrong date), and never types a status value it could
-misspell — it names an *intent* (`approve`, `new … brief`) and the helper owns the vocabulary.
-It's also cheaper: one command instead of `Read` + reason + `Edit`. The helper is a pure data
-tool: it owns the closed vocabulary (statuses, waypoints, templates) but **no** workflow rules —
-no gates, no enforced ordering, no state machine. Even `status`, which derives the resume point,
-only *reports* — it blocks nothing. You decide when to act.
+Every frontmatter operation goes through this zero-dependency Node helper, never a hand edit:
+you name an *intent* (`approve`, `new … brief`) and it owns the vocabulary. It enforces no
+workflow rules — even `status` only reports. You decide when to act.
 
 Command surface: `new` · `approve`/`reopen` · `tasks`/`task-done` · `findings`/`finding` ·
 `read` · `check` · `status`.
@@ -140,11 +134,8 @@ node "$TRAIL" findings .trailmix/trail/<slug>/report.md H1 M2
 node "$TRAIL" finding  .trailmix/trail/<slug>/report.md H1 fixed
 ```
 
-These are the *only* status writes — the vocabulary (`approved`/`draft`)
-lives once, inside the helper, never as a literal at the call site. The helper knows the
-vocabulary but **not** the transition rules: it will `approve` regardless of current state — it's
-you (the skill) who decides an approval is due. It refuses (non-zero) a file with no frontmatter
-rather than corrupt it, and leaves the body byte-for-byte unchanged.
+The helper will `approve` regardless of current state — you decide when an approval is due. It
+refuses (non-zero) a file with no frontmatter and leaves bodies byte-for-byte unchanged.
 
 **Survey** trails — `status` derives one line per trail (`slug · state · next waypoint`) from
 frontmatter, the derivation in "Deriving current position" done for you. No args = all trails;
