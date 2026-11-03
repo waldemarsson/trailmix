@@ -158,10 +158,8 @@ Editing rules:
 
 - Change behavior in `src/` (never hand-edit `dist/`) — `dist/` is generated output, committed
   as the published plugin.
-- You don't need to run `npm run build` and commit `dist/` yourself before pushing to `main`:
-  `.github/workflows/build-dist.yml` regenerates it and pushes a follow-up commit if it drifted.
-  Running `npm run build` locally is still useful to preview output; `npm run verify` fails if
-  `dist/` is stale, as a local safety net.
+- Run `npm run build` and commit `dist/` with your change: CI runs `npm run verify`, which fails
+  on stale output. `.github/workflows/build-dist.yml` only backstops direct pushes to `main`.
 - Neutral agent `description` fields must stay single-line (the generator's frontmatter
   parser expects it).
 - Pin exact model names in `build/maps/models.json` for your account.

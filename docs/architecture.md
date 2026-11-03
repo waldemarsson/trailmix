@@ -4,7 +4,7 @@ A portable, token-efficient agentic coding framework. One workflow — **Discuss
 Handoff** — that runs on both **GitHub Copilot CLI (GHCP)** and
 **Claude Code (CC)** from a single source.
 
-Status: **implemented.** This document is the design source of truth; §11 tracks build progress.
+Status: **implemented.** This document is the design source of truth; history lives in git.
 
 Locked decisions: single neutral source + generator · soft rigidity (auto-trigger skills,
 two human checkpoints — before build and after it — no gate engine) · single adaptive flow · always-on SessionStart
@@ -228,19 +228,21 @@ Authored once as neutral `<name>.agent.md` (frontmatter + body); generator emits
 (`build/maps/models.json`) and neutral tools→platform tools; the markdown body carries over
 verbatim.
 
-| Agent | Role | Model (default map) | Tools (neutral) | Isolation |
-|---|---|---|---|---|
-| **trailmix-explorer** | Read codebase + web research, summarize | cheap: haiku / gpt-6-luna, effort high | read, search, web | read-only |
-| **trailmix-implementer** | Code + tests (TDD) + verification; applies fixes | opus / gpt-6.1-sol, effort high | read, edit, search, shell | read/write |
-| **trailmix-reviewer** | Senior self-review vs the brief; findings + verdict to the orchestrator. Brief mode: challenges the brief for gaps before the digest | opus / claude-opus-5.5, effort high | read, search, shell | **read-only (discipline)** |
-| **trailmix-documenter** | Update repo docs by weight + agent retro | sonnet / claude-sonnet-5.5, effort high | read, edit, search, shell | read/write |
+| Agent | Role | Tools (neutral) | Isolation |
+|---|---|---|---|
+| **trailmix-explorer** | Read codebase + web research, summarize | read, search, web | read-only |
+| **trailmix-implementer** | Code + tests (TDD) + verification; applies fixes | read, edit, search, shell | read/write |
+| **trailmix-reviewer** | Senior self-review vs the brief; findings + verdict to the orchestrator. Brief mode: challenges the brief for gaps before the digest | read, search, shell | **read-only (discipline)** |
+| **trailmix-documenter** | Update repo docs by weight + agent retro | read, edit, search, shell | read/write |
+
+Models and effort per agent: `build/maps/models.json`.
 
 Every agent preloads `trailmix-gorp` (`skills:`), so the return contract is in context from the
 first turn. The reviewer's read-only stays prompt discipline: CC documents no command-level
 allowlist for an agent's `tools` (a specifier in `disallowedTools` removes the whole tool), and
 GHCP agent `tools` take no patterns.
 
-Tier words in waypoint prose ("cheap", "reasoning-tier", "strong-tier") describe *intent*;
+Tier words in waypoint prose ("cheap") describe *intent*;
 `models.json` pins what each agent actually gets, keyed by agent name — adjust per account.
 
 Neutral agent spec (example shape — model comes from `models.json`, not frontmatter):
@@ -297,12 +299,9 @@ The **only** always-on mechanism is the `SessionStart` hook: the *same* `AGENTS.
 injected as `additionalContext` (CC: plain stdout; GHCP: `{"additionalContext": ...}` JSON) at
 session start/resume (CC also covers `clear`/`compact`/`fork`; GHCP fires on startup/resume/new
 and has nothing after compaction).
-This mirrors how Superpowers' `SessionStart` hook injects its full `using-superpowers` meta-skill
-rather than a short pointer (verified against the real repo) — trailmix initially shipped a
-one-line reminder here, then expanded to the full body once that comparison surfaced that the
-one-liner was the more conservative, unvalidated choice, not the pattern that's actually shown
-to work. Because `AGENTS.md` is kept intentionally small (§8 title), this stays cheap per
-session-boundary event; it is not resent on every turn.
+It injects the full core rather than a one-line pointer, the pattern Superpowers' `SessionStart`
+hook uses; a pointer depends on the agent choosing to load more. The core is kept small, and it's
+sent per session boundary, not per turn.
 
 Subagents don't inherit that context. A `SubagentStart` hook (matched to trailmix's own agents)
 injects the core's `## Security` section, verbatim, so the non-negotiable rules reach the agents
@@ -326,8 +325,8 @@ Contents:
 `build/generate.mjs` reads `src/` and writes `dist/claude/` + `dist/ghcp/`.
 
 **Skills:** copy `SKILL.md` near-verbatim to both; neutral frontmatter uses only the common
-subset (`name`, `description`, `allowed-tools`). Platform-only extras (CC `model`/`paths`/`hooks`)
-are emitted **only** into the CC copy from optional neutral hints. `refs/` copied as-is (JIT).
+subset (`name`, `description`, `allowed-tools`); there are no per-platform frontmatter keys.
+`refs/` copied as-is (JIT).
 
 **Agents:** neutral yaml → CC `<n>.md` and GHCP `<n>.agent.md`, mapping agent name→model +
 effort (`build/maps/models.json` — CC alias + `effort`; GHCP ordered fallback list +
@@ -379,41 +378,5 @@ CC's manifest doesn't need a `hooks` field (auto-discovered from the default `ho
 
 ---
 
-## 11. Build order (skills-first, plugin later)
-
-1. ✅ `AGENTS.md` + `trailmix-trailhead` + the three style skills (`trailmix-terse`,
-   `trailmix-lean-code`, `trailmix-gorp`) — instant value, fully portable.
-2. ✅ Waypoint skills with their `refs/` — now `trailmix-discuss` → `trailmix-build` →
-   `trailmix-handoff` (step 10).
-3. ✅ Neutral agent specs + `generate.mjs` + maps → `dist/`.
-4. ✅ `install.sh`/`install.ps1` (detect CLI, copy into target) — **removed**; marketplace-only
-   install now, no standalone installer maintained.
-5. ✅ `evals/` manual scenario checklists — **removed** in 0.7.0; they were never run.
-6. ✅ Package `dist/*` as plugins (`plugin.json` + `marketplace.json` per platform, plus root
-   marketplace stubs so `owner/repo` marketplace-add resolves); publish to CC + GHCP
-   marketplaces (publishing pending live verification).
-7. ✅ `SessionStart` hook — the always-on core, replacing the root `AGENTS.md`/`CLAUDE.md`
-   delivery `install.sh` used to provide.
-8. ✅ Resumable trails — artifact frontmatter (anchor `brief.md`) + `trailhead` resume/status
-   behavior, reading frontmatter only. Read + named status transitions go through a bundled
-   zero-dep helper (`trail.mjs`, resolved from the loaded skill's base dir, awk/hand-edit
-   fallback) so YAML is never
-   hand-edited and statuses are never typed by hand (can't be misspelled); it's a pure data tool
-   that owns the status vocabulary but no transition rules — not a state machine or a PATH CLI.
-   No `trail.json` (see §4).
-9. ✅ Agent-behavior features: task-level resume inside build (`tasks:`/`task-done`),
-   clear-after-sign-off as the recommended flow, finding lifecycle + delta re-review,
-   amendments, the bug brief, and the agent retro.
-10. ✅ Three-waypoint restructure (0.7.0): five waypoints with a checkpoint each became Discuss →
-   Build → Handoff. The human wasn't reading spec/plan, so checkpoints moved to where attention
-   goes: clearing uncertainty up front and reviewing the result. Old-layout trails are not
-   supported.
-11. ✅ Harness refresh (also 0.7.0): SubagentStart security injection, per-agent effort, GHCP model
-   fallback lists, GORP preload in agents, CC `${CLAUDE_PLUGIN_ROOT}` helper path, platform-only
-   prose blocks, `fork` matcher, GHCP `execute` alias, hook size guard.
-
----
-
 ## Open questions
-- None. (Model names: pinned per agent in `build/maps/models.json`. `dist/`: committed, kept
-  fresh by CI.)
+- None.

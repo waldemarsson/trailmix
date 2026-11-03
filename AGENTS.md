@@ -36,8 +36,8 @@ Nothing here installs to your machine or writes outside the repo.
 
 - Neutral agent `description` fields must stay **single-line** — the generator's frontmatter
   parser doesn't handle folded values.
-- Skill frontmatter uses only the common subset (`name`, `description`, `allowed-tools`).
-  Platform-only keys come from optional neutral hints, not raw frontmatter.
+- Skill frontmatter uses only the common subset (`name`, `description`, `allowed-tools`); skills
+  are copied verbatim, so there's no per-platform frontmatter.
 - Skill descriptions may wrap, but an unquoted value must not contain `: ` or ` #` — hosts parse
   frontmatter as real YAML and reject the skill. The build fails on it.
 - The Claude build **strips the `trailmix-` prefix** from skill/agent names, folders, and
