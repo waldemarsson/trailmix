@@ -78,12 +78,9 @@ function mapTools(neutral, platform) {
   return out;
 }
 
-// Note on read-only agents: neutral specs may carry `readonly: true` (explorer, reviewer). It is
-// deliberately NOT emitted — neither platform has a read-only-shell primitive. The explorer is
-// read-only by construction (its tools are read/search/web, no shell/edit); the reviewer keeps
-// `shell` because it needs `git diff`/`git status`, so its read-only is prompt discipline (spelled
-// out in the agent body), not an enforced flag. Emitting a `readonly` field would look meaningful
-// while doing nothing, and risks tripping a platform's frontmatter parser.
+// No read-only flag is emitted: neither platform has a read-only-shell primitive. The explorer is
+// read-only by its tools; the reviewer needs shell for `git diff`, so its read-only is prompt
+// discipline in the agent body.
 // Model + effort come from models.json. GHCP's `model` may be an ordered fallback list; CC's is
 // one alias. `skills` preloads full skill content into the agent at startup — CC resolves plugin
 // skills by their namespaced name (`trailmix:gorp`), GHCP by the plain folder name.
@@ -124,21 +121,14 @@ function json(obj) {
   return JSON.stringify(obj, null, 2) + "\n";
 }
 
-// Every trailmix-prefixed skill/agent name this repo defines, longest first so a name that's a
-// prefix of another replaces correctly instead of leaving a dangling suffix.
+// Every trailmix-prefixed skill/agent name, derived from src/ so a new one can't be missed;
+// longest first so a name that's a prefix of another replaces correctly.
 const NAMESPACED_NAMES = [
-  "trailmix-build",
-  "trailmix-discuss",
-  "trailmix-documenter",
-  "trailmix-explorer",
-  "trailmix-gorp",
-  "trailmix-handoff",
-  "trailmix-implementer",
-  "trailmix-lean-code",
-  "trailmix-reviewer",
-  "trailmix-terse",
-  "trailmix-trailhead",
-].sort((a, b) => b.length - a.length);
+  ...readdirSync(join(SRC, "skills")),
+  ...readdirSync(join(SRC, "agents")).map((f) => f.replace(/\.agent\.md$/, "")),
+]
+  .filter((n) => n.startsWith("trailmix-"))
+  .sort((a, b) => b.length - a.length);
 
 // Claude Code auto-prefixes every skill/agent in a plugin with the plugin's own name
 // (`trailmix:discuss`), so the manual `trailmix-` prefix baked into src/ for GHCP's benefit

@@ -26,21 +26,9 @@ categorize findings by real severity and give each a stable id (H1 / M2 / L3…)
 - MEDIUM — architecture, missing features, poor error handling, test gaps (should fix).
 - LOW — style, formatting, optimization, doc polish (nice to have).
 
-Mark a HIGH `stop` when shipping it would cause harm: an exploitable security hole, data loss or
-corruption, or a broken public contract. A `stop` finding blocks handoff until a re-review
-confirms its fix.
-
-Acknowledge what was done well before listing issues — accurate praise helps the implementer
-trust the rest. (The leading one-line `Strengths:` entry is part of the report structure; GORP's
-"no preamble" bans greetings and waffle, not this.) Be specific (file:line), explain WHY each
-issue matters, give a clear verdict.
-**Verdict follows from the findings still open:** any HIGH → `No`; any other → `With fixes`;
-none → `Yes`. Don't soften it.
-Tag each finding `clear` (unambiguous fix inside the brief's scope) or `judgment` (scope change,
-trade-off, contradicts a brief decision). The orchestrator auto-fixes `clear` findings and hands
-`judgment` ones to the human.
-Don't say "looks good" without checking, don't mark nitpicks HIGH, don't comment on code you
-didn't read, don't be vague, don't modify any file.
+Be specific (file:line) and explain WHY each issue matters. Tags, verdict, and the `Strengths:`
+line follow your agent's return contract. Don't say "looks good" without checking, don't mark
+nitpicks HIGH, don't comment on code you didn't read, don't be vague, don't modify any file.
 
 ## Report shape (GORP)
 Returned to the orchestrator; there's no review artifact. It feeds the fix loop and the handoff
@@ -56,15 +44,5 @@ LOW:
 Acceptance criteria:
 - [x] AC1
 - [ ] AC2 — not met because ...
-Verdict: Yes | No | With fixes — 1-line technical reasoning.
-```
-
-## Re-review block shape (delta mode)
-Returned after a fix round — scoped to the fixed findings + regression risk only:
-```
-## Re-review (YYYY-MM-DD)
-- H1 · held — fix verified at file:line
-- M2 · not fixed — why, what's still wrong
-- M3 (new) · file:line · introduced by the H1 fix → why → fix · clear | judgment
 Verdict: Yes | No | With fixes — 1-line technical reasoning.
 ```

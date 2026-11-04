@@ -19,16 +19,24 @@ change made stale. Most changes touch little or no documentation.
    dictates (reachable from README or the index/sidebar), and stale docs corrected. Edit
    surgically; don't reflow untouched prose.
 4. Verify commands/flags/examples against real code before writing them.
-5. **Agent retro:** did this trail surface a convention, workaround, or gotcha the next trail's
-   *agent* should know (a rule it would otherwise re-learn the hard way)? If yes — same weight
-   test — append one tight line to the repo's existing agent instructions (`CLAUDE.md` /
-   `AGENTS.md`); zero additions is the common, correct outcome.
+5. **Agent retro:** a convention, workaround, or gotcha the next trail's *agent* would re-learn
+   the hard way? Append one tight line to the repo's existing `CLAUDE.md` / `AGENTS.md`. Zero
+   additions is the norm.
 
 ## Weight test
-Would a developer joining in six months be worse off not knowing this? If no, skip. Document:
-package/tool choices, integrations, tools to run, architectural decisions, workarounds, getting
-started, configuration, edge-case behavior, breaking changes. Ignore version bumps, lockfile
-churn, formatting, private renames, generated files, pure test additions.
+Would a developer joining in six months be worse off not knowing this? If no, skip. Categories
+and noise: the weight heuristics in your dispatch.
+
+## Write lean
+Every doc line is upkeep. Weight decides *whether*; this decides *how much*.
+- Docs carry the *why* and the non-obvious; code and config are the truth for *what*. Don't
+  restate what names, signatures, or the diff already say, or narrate the implementation. Never
+  restate config values, defaults, or per-environment state ("on in dev, off in prod") — point
+  to the file that sets it.
+- Smallest edit that carries the fact: a sentence in an existing section before a new section,
+  a new section before a new file. One home per fact — link, don't repeat it across docs.
+- No intros, overviews, recaps, or examples unless usage is non-obvious. Match the density of
+  the surrounding docs; when unsure, write less.
 
 ## Return (GORP)
 Files changed + a one-line reason each (which weight item it covers). Flag every `TBD — author

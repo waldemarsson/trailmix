@@ -10,7 +10,9 @@ description: Waypoint 2 — autonomously turn an approved brief into verified, s
 
 Run the whole build without the human. They answer blockers only; their next checkpoint is
 `trailmix-handoff`. Keep the main context clean: subagents do the work and return GORP; read
-diffs from `git diff`, not from their messages.
+diffs from `git diff`, not from their messages. Post one chat line per milestone, never a pause:
+plan done (`6 tasks, 2 chunks`), each implementer return (`T1–T3 green`), each review round's
+result, docs done.
 
 **On entry:** the brief is approved (discuss did it at sign-off; see
 `trailmix-trailhead/refs/trail-metadata.md`). Resuming? `trail.mjs status` names the step; tasks
@@ -21,16 +23,22 @@ Fill the brief's `## Build notes`: file map, then tasks (T1, T2…), each an ind
 deliverable with the contract it exposes, the behaviors to test, and its gate command. Map every
 acceptance criterion to a task. Reuse the brief's **Context**; dispatch `trailmix-explorer` only
 for real gaps. Register the ids: `trail.mjs tasks <brief.md> T1 T2 …`. Bug brief: T1 is the red
-test, and it fails before any fix exists.
+test, and it fails before any fix exists. More than ~5 tasks, or tasks spanning areas with little
+shared context: split them into sequential chunks (note them in **Tasks**), one implementer each.
 
 ## 2. Implement
-Dispatch `trailmix-implementer` (or a general subagent if not installed) with the brief path and
-the resolved `trail.mjs` path. It works the tasks in order, TDD where practical, stamps
-`task-done` after each green gate, and verifies per `refs/verification.md` (pass it the path).
+Dispatch `trailmix-implementer` (or a general subagent if not installed) with the brief path,
+the resolved `trail.mjs` path, and its chunk if split. It works the tasks in order, TDD where
+practical, stamps `task-done` after each green gate, and verifies per `refs/verification.md`
+(pass it the path). Chunks run one after another, never in parallel (one working tree). An
+implementer may stop early at a task boundary with a `Notes for next:` line; dispatch a fresh
+one for the remaining tasks with those notes.
 
 ## 3. Self-review and fix
 Dispatch `trailmix-reviewer` (read-only) with the brief and the path to `refs/review-checklist.md`.
-It returns findings to you; there is no review artifact. Then:
+It returns findings to you; there is no review artifact. If the brief lists **Pre-existing
+changes**, tell the reviewer and the documenter those files are out of scope — except one an
+implementer also changed: that's wholly in scope, and the report flags it as mixed. Then:
 - **Fix every finding with a clear fix inside the brief's scope**, whatever its severity:
   dispatch the implementer with those ids. A LOW fix counts once its gate command is green. A
   HIGH or MEDIUM fix counts only after a **delta re-review** of those ids plus regression risk in
@@ -75,6 +83,5 @@ digest.
 Don't stop for anything you can decide yourself. Note those calls under **Deviations** in the
 report instead.
 
-Autopilot fits build: it runs without prompts, and parallel subagents (`/fleet`) can take
-independent tasks. Finishing build means handoff — write the report before signalling
-completion, and still stop for blockers.
+Autopilot fits build: it runs without prompts. Finishing build means handoff — write the report
+before signalling completion, and still stop for blockers.

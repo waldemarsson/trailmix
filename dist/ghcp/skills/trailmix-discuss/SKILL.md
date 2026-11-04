@@ -18,7 +18,9 @@ leave file and task planning to build, and don't write code.
 Before asking anything, dispatch `trailmix-explorer` agents (cheap, read-only; or general
 read-only subagents if not installed), **in parallel**, with one independent question each:
 affected code, existing patterns, constraints, prior art, and the web when useful. Each returns a
-GORP summary. Never ask the human something research can answer.
+GORP summary. Never ask the human something research can answer. Skip research only when the
+affected code is already in your context and you can cite `file:line` for everything your
+questions depend on; **Context** still lists those files.
 
 ## 2. Clarify, in batched rounds
 Ask one numbered list per round. Each question gets a **recommended default** and a one-line why:
@@ -75,12 +77,25 @@ Don't ask the human to read the brief, so the digest must not hide anything cons
 it in chat, aiming for about 5 bullets. It **must** include every irreversible, security, data,
 architecture, and public-contract decision, and every consequential default you took; group
 related ones rather than dropping any. Then key assumptions, what's out of scope, and the
-riskiest part. Then the brief's path. One sign-off: on approval run `trail.mjs approve
-<brief.md>` and start build; on correction, update the brief and show the digest again. If the
-preference question is still unasked, the sign-off line asks it; any given become
-**Decisions** and the digest is shown again.
+riskiest part. Then the git lines below, then the brief's path. One sign-off. On approval, in
+order: list any **Pre-existing changes** in the brief, run `trail.mjs approve <brief.md>`, create
+and record the branch, start build. On correction, update the brief and show the digest again.
+If no round asked the preference question, ask it on the sign-off line; record any preferences
+under **Decisions** and show the digest again.
+
+**Git lines** (not a git repo: skip every git step and say so). Default branch = `origin/HEAD`,
+else `main`/`master` if present, else the current branch.
+- **Branch:** on the default branch or a detached HEAD, propose one, named per the repo's
+  instructions, else its recent branches' convention, else `trail/<slug>`; if taken, propose
+  `<name>-2`. On any other branch, stay. Sign-off creates it (`git switch -c`); "no branch" keeps
+  the current one, even the default. Record the work's branch: `trail.mjs branch <brief.md> <name>`;
+  on a detached HEAD with no new branch, record nothing (never `HEAD` or a SHA).
+- **Dirty tree** (ignoring `.trailmix/`): flag it and recommend commit or stash first; never do
+  either yourself. If the human proceeds, those files go under the brief's **Pre-existing
+  changes** (sign-off order above); build treats them as out of scope.
 
 If the human pre-authorized ("go ahead once it's clear") and the last round left nothing open,
-show the digest, approve the brief, and go straight to `trailmix-build` without pausing.
-Pre-authorization skips the pause, never the questions. The one exception: a preference question
-moved to the digest counts as `none`.
+show the digest, approve the brief, create the proposed branch, and go straight to
+`trailmix-build` without pausing — but a dirty tree still stops for an answer. Pre-authorization
+skips the pause, never the questions — except an unasked preference question, which counts as
+`none`.

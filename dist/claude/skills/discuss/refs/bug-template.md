@@ -30,6 +30,10 @@ preferences.
 **Fix constraint (red → green):** a failing test reproducing the bug is written **before** the
 fix, passes after it, and stays in the suite. No repro, no fix.
 
+**Pre-existing changes:** only when the tree was dirty at sign-off and the human proceeded —
+files changed before this trail; build leaves them out of scope.
+- `path`
+
 <!-- Everything above is agreed at the discuss checkpoint. Build appends below; no re-approval. -->
 
 ## Build notes

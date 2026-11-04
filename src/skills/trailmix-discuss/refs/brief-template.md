@@ -32,6 +32,10 @@ naming/copy rules, platform/runtime limits).
 **Context:** what research found, so build doesn't re-explore.
 - `path` — how it's involved / the pattern to follow
 
+**Pre-existing changes:** only when the tree was dirty at sign-off and the human proceeded —
+files changed before this trail; build leaves them out of scope.
+- `path`
+
 <!-- Everything above is agreed at the discuss checkpoint. Build appends below; no re-approval. -->
 
 ## Build notes

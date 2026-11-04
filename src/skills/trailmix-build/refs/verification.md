@@ -1,8 +1,6 @@
 # Verification protocol (build)
 
-Loaded just-in-time when finishing implementation. **Iron Law: no completion claim without
-fresh verification evidence** — if you didn't run the command *this turn*, you cannot say it
-passes.
+The gates behind the Iron Law: if you didn't run it *this turn*, you can't say it passes.
 
 ## Run every gate fresh, in order
 1. **Tests** — run the full suite fresh; read the output, count failures. Claim "pass" only with
@@ -18,16 +16,4 @@ Red flags that mean you are NOT done: "should" / "probably" / "seems to", expres
 satisfaction before running verification, implying success without fresh output. If a gate
 fails, fix it or stop and report the real status — never paper over it.
 
-## GORP return format
-Keep the whole return ≤ ~400 words. Evidence = counts + the exact command, never pasted logs or
-diffs (the human reads those from the terminal / `git diff`).
-
-```
-Changed: src/foo.ts (new parser), src/foo.test.ts (12 tests)
-Tests: `npm test` → 46/46 passed
-Build/lint: `npm run build` → exit 0 · `npm run lint` → exit 0
-Acceptance criteria:
-- AC1 rejects empty input → met (test: "throws on empty")
-- AC2 preserves order → met
-Gaps / follow-ups: none
-```
+Return per `trailmix-gorp`, plus one `ACn → met | gap` line per acceptance criterion.

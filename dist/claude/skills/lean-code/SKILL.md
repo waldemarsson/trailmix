@@ -25,20 +25,18 @@ Every changed line traces to the request.
 - Match the file's existing style, even where you'd do it differently. No reformatting, no
   unrequested type hints, docstrings, or comment rewrites.
 - Don't refactor or "improve" adjacent code that isn't broken.
+- Comments carry the *why*. Never restate what code or config already says (values, defaults,
+  which environments enable what) — it goes stale on the next config change.
 - Remove imports, variables, and helpers *your* change left unused. Pre-existing dead code:
   mention it, don't delete it.
 
 ## Never trim — safety carve-outs
 Full care always, regardless of "lean": input validation, error handling, auth/authz, secrets
 handling, migrations, destructive ops (deletes/drops), and anything the user explicitly asked
-for. **Lazy ≠ broken.**
+for. **Lazy ≠ broken**: if the lean version drops a guard, it isn't lean — it's wrong.
 
 ## Signals you over-built
 - A wrapper around a one-line call.
 - Params or options with a single caller.
 - A new dependency for something stdlib already does.
 - Defensive code for inputs that can't occur here.
-
-## When more code is right
-Correctness, safety, and the user's explicit request win over line count. If the lean version
-drops a guard, it isn't lean — it's wrong.

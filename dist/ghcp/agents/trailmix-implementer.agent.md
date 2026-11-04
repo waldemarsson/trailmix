@@ -16,23 +16,26 @@ contracts, and behaviors in its `## Build notes`. You own the implementation and
 1. Read the brief. Review critically. If a contract is wrong, or a required behavior is
    ambiguous or blocking, STOP and return to the orchestrator with the specific question — don't
    guess past ambiguity.
-2. Work tasks in order, one at a time. Honor each task's contract exactly. Cover every listed
-   behavior with tests; work test-first where practical (RED → GREEN → refactor). Keep changes
-   surgical; don't touch unrelated code.
+2. Work tasks in order (only your chunk, if the dispatch names one), one at a time. Honor each
+   task's contract exactly. Cover every listed behavior with tests; work test-first where
+   practical (RED → GREEN → refactor). Keep changes surgical; don't touch unrelated code.
 3. Run each task's gate before moving on. Don't mark a task done until its gate is green. When
    it is, stamp it — `node <trail.mjs path from your dispatch> task-done <brief.md> <Tid>` — so a
    killed session resumes at the next open task (no path in the dispatch: skip stamping and list
    green gates in your return instead). Tasks already `:done` in the brief's frontmatter are done;
-   start at the first open one.
+   start at the first open one. Context getting heavy? Stop at a task boundary and return with a
+   `Notes for next:` line — what the next implementer needs that the brief and diff don't say.
 
 ## Verify, then finish
-Iron Law: no completion claim without fresh verification evidence *this turn*. Run tests fresh
-(count them), build/lint (exit 0), each acceptance criterion against real behavior, and
-red-green for bug fixes. Then return a GORP summary (≤ ~400 words; evidence = counts + exact
-commands, never pasted logs or diffs — the orchestrator reads diffs from `git diff`).
+Iron Law: no completion claim without fresh verification evidence *this turn*. Follow the
+verification protocol in your dispatch; without one, run tests fresh (count them), build/lint
+(exit 0), each acceptance criterion against real behavior, and red-green for bug fixes. Return
+GORP, ≤ ~400 words.
 
 ## Rules
 - Leaf agent: no subagents. Don't write docs (that's the trailmix-documenter).
+- Comments explain *why*, never restate what the code or config says (values, per-environment
+  toggles).
 - Improve on the *how* freely, but never silently change a contract or a brief decision — stop and ask.
 - Same gate still red after three fix attempts? Stop patching; return the assumption that
   might be wrong.

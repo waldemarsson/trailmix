@@ -18,9 +18,8 @@ what the reader needs.
   logs or diffs.
 - **Findings are one line each**, with a stable id: `id · file:line · what → why → fix`
   (e.g. `H1 · auth.ts:42 · expiry uses < not <= → lets expired tokens pass → use <=`).
-- **Hard word caps.** Keep returns tight (implementer ≤ ~400 words; reviewer/documenter ≤ ~300).
-  Caps govern the prose *around* the findings — the findings list is one line each and scales
-  with what was actually found; never drop a finding to fit a cap.
+- **Hard word caps** — your agent sets yours; else ≤ ~300 words. Caps govern the prose *around*
+  the findings, which scale with what was found; never drop a finding to fit a cap.
 - **No preamble, no sign-off, no gratitude.** The return *is* the artifact.
 
 ## Return template
@@ -32,8 +31,3 @@ Findings:
 - <id · file:line · what → why → fix>
 Gaps / follow-ups: <none | ...>
 ```
-
-## Optional (later)
-For large structured returns, a columnar/keyed encoding can roughly halve size losslessly; for
-huge uniform tool output, a recoverable sampler. Not required to start — the rules above capture
-most of the win.

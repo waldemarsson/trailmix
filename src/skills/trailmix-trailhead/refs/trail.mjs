@@ -14,20 +14,24 @@
 //   node trail.mjs read <file.md> [...]            print each file's frontmatter block
 //   node trail.mjs new <slug> <template> [title]   scaffold a trail artifact (frontmatter only)
 //   node trail.mjs approve           <file.md>     status -> approved
+//   node trail.mjs drop              <brief.md>    status -> dropped (abandon; deletes nothing)
 //   node trail.mjs reopen            <brief.md>    status -> draft, clear tasks (discuss again)
+//   node trail.mjs branch <brief.md> <name>        record the trail's git branch
 //   node trail.mjs tasks <brief.md> <T1> [T2 ...]  register the build's task ids (once)
 //   node trail.mjs task-done <brief.md> <id>       mark one task's gate green
 //   node trail.mjs findings <report.md> <H1 ...>   register finding ids (new ones append as open)
 //   node trail.mjs finding <report.md> <id> <state>  open | fixed | wont-fix | disputed
 //   node trail.mjs check [file.md ...]             lint frontmatter (default: all trails)
-//   node trail.mjs status [dir ...]                one line per trail (default: all trails)
+//   node trail.mjs status [--all | dir ...]        one line per trail (default: hides done/dropped)
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, realpathSync } from "node:fs";
 import { join, basename } from "node:path";
+import { pathToFileURL } from "node:url";
 
 // ---- the vocabulary, defined once ------------------------------------------------------------
 export const OPS = {
   approve: ["status", "approved"],
+  drop: ["status", "dropped"],
 };
 // `brief` and `bug` both scaffold the anchor brief.md; they differ only in `kind`.
 export const TEMPLATES = {
@@ -36,6 +40,7 @@ export const TEMPLATES = {
   report: { file: "report.md", waypoint: "handoff" },
 };
 const STATUS = ["draft", "approved"];
+const BRIEF_STATUS = [...STATUS, "dropped"]; // only the anchor can be dropped
 const WAYPOINT = ["discuss", "handoff"]; // artifact-bearing waypoints (build has none)
 const KIND = ["feature", "bug"];
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -115,6 +120,12 @@ export function setField(file, field, value, drop = []) {
 // so a revised brief re-plans from scratch instead of inheriting stale `:done` marks.
 export function reopen(file) {
   setField(file, "status", "draft", ["tasks"]);
+}
+
+// Record the trail's git branch (free-form, like `title`). Re-runnable; survives `reopen`.
+export function setBranch(file, name) {
+  if (!/^\S+$/.test(name || "")) throw new Error(`bad branch: ${name || "(empty)"} (one token, no spaces)`);
+  setField(file, "branch", name);
 }
 
 // ---- tasks (build progress) --------------------------------------------------------------------
@@ -223,13 +234,14 @@ export function checkFile(file) {
   const probs = [];
   const bad = (label, val, ok) => { if (!ok) probs.push(`${label}: ${val ?? "(missing)"}`); };
   bad("missing slug", fm.slug, !!fm.slug);
-  bad("bad status", fm.status, STATUS.includes(fm.status));
+  bad("bad status", fm.status, (fm.waypoint === "discuss" ? BRIEF_STATUS : STATUS).includes(fm.status));
   bad("bad waypoint", fm.waypoint, WAYPOINT.includes(fm.waypoint));
   bad("bad updated", fm.updated, DATE.test(fm.updated || ""));
   if (fm.waypoint === "discuss") {
     bad("missing title", fm.title, !!fm.title);
     bad("bad kind", fm.kind, KIND.includes(fm.kind));
     bad("bad created", fm.created, DATE.test(fm.created || ""));
+    if (fm.branch !== undefined) bad("bad branch", fm.branch || undefined, /^\S+$/.test(fm.branch));
   }
   if (fm.tasks !== undefined) {
     try {
@@ -264,6 +276,7 @@ export function deriveTrail(dir) {
   };
 
   if (!brief) return { slug, state: "empty", next: "discuss" };
+  if (brief.status === "dropped") return { slug, state: "dropped", next: "—" }; // wins over any report
   if (brief.status !== "approved") return { slug, state: "in-progress", next: "discuss (awaiting sign-off)" };
 
   if (report) {
@@ -279,12 +292,18 @@ export function deriveTrail(dir) {
   return { slug, state: "in-progress", next: `build (${tasks.length - open.length}/${tasks.length} done, next ${open[0].id})` };
 }
 
-export function summarize(dirs) {
+// `hide`: drop done/dropped trails and add a count line when any were hidden (filter only).
+export function summarize(dirs, { hide = false } = {}) {
   if (dirs.length === 0) return "no trails yet";
-  return dirs
-    .map((d) => deriveTrail(d))
-    .map((t) => `${t.slug} · ${t.state} · next: ${t.next}`)
-    .join("\n");
+  const all = dirs.map((d) => deriveTrail(d));
+  const hidden = (s) => hide && (s === "done" || s === "dropped");
+  const lines = all.filter((t) => !hidden(t.state)).map((t) => `${t.slug} · ${t.state} · next: ${t.next}`);
+  const counts = ["done", "dropped"]
+    .map((s) => [all.filter((t) => hidden(t.state) && t.state === s).length, s])
+    .filter(([n]) => n)
+    .map(([n, s]) => `${n} ${s}`);
+  if (counts.length) lines.push(`${counts.join(", ")} hidden — status --all`);
+  return lines.join("\n");
 }
 
 // Trail dirs under .trailmix/trail (cwd-relative), sorted. [] if none.
@@ -314,6 +333,13 @@ export function run(argv) {
     const [field, value] = OPS[cmd];
     setField(file, field, value);
     process.stdout.write(`${file} ← ${field}=${value} (updated ${today()})\n`);
+    return 0;
+  }
+  if (cmd === "branch") {
+    const [file, name] = rest;
+    if (!file || !name) return usage("branch <brief.md> <name>");
+    setBranch(file, name);
+    process.stdout.write(`${file} ← branch=${name} (updated ${today()})\n`);
     return 0;
   }
   if (cmd === "reopen") {
@@ -368,11 +394,19 @@ export function run(argv) {
     return 0;
   }
   if (cmd === "status") {
-    process.stdout.write(summarize(rest.length ? rest : trailDirs()) + "\n");
+    const flags = rest.filter((a) => a.startsWith("-"));
+    const dirs = rest.filter((a) => !a.startsWith("-"));
+    const bad = flags.find((f) => f !== "--all");
+    if (bad) return usage(`status [--all | dir ...] (unknown flag: ${bad})`);
+    const missing = dirs.find((d) => !existsSync(d));
+    if (missing) return usage(`status [--all | dir ...] (no such trail: ${missing})`);
+    const all = flags.length > 0;
+    const out = dirs.length ? summarize(dirs) : summarize(trailDirs(), { hide: !all });
+    process.stdout.write(out + "\n");
     return 0;
   }
   return usage(
-    `read <file...> | new <slug> <template> [title] | ${Object.keys(OPS).join(" | ")} <file> | reopen <brief> | tasks <brief> <T1...> | task-done <brief> <id> | findings <report> <H1...> | finding <report> <id> <state> | check [file...] | status [dir...]`
+    `read <file...> | new <slug> <template> [title] | ${Object.keys(OPS).join(" | ")} <file> | reopen <brief> | branch <brief> <name> | tasks <brief> <T1...> | task-done <brief> <id> | findings <report> <H1...> | finding <report> <id> <state> | check [file...] | status [--all | dir...]`
   );
 }
 
@@ -382,7 +416,7 @@ function usage(s) {
 }
 
 // Only run the CLI when invoked directly, so tests can import the functions above.
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
   try {
     process.exit(run(process.argv.slice(2)));
   } catch (e) {
