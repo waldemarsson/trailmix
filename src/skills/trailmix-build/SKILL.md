@@ -9,14 +9,16 @@ description: Waypoint 2 — autonomously turn an approved brief into verified, s
 # build — brief in, verified change out
 
 Run the whole build without the human. They answer blockers only; their next checkpoint is
-`trailmix-handoff`. Keep the main context clean: subagents do the work and return GORP; read
-diffs from `git diff`, not from their messages. Post one chat line per milestone, never a pause:
-plan done (`6 tasks, 2 chunks`), each implementer return (`T1–T3 green`), each review round's
-result, docs done.
+`trailmix-handoff`. Implement, fix findings, and write docs yourself; a fresh-context reviewer
+verifies. Post a one-line progress note per milestone, never pause.
 
 <!-- only:claude -->
 Helper: `${CLAUDE_PLUGIN_ROOT}/skills/trailmix-trailhead/refs/trail.mjs` — the host fills in the
 path; use it for every `trail.mjs` call below.
+<!-- /only -->
+<!-- only:ghcp -->
+**After a compaction:** re-read `<this skill's base dir>/../../AGENTS.md` before continuing —
+Copilot CLI doesn't re-inject the always-on core (Security included) after compaction.
 <!-- /only -->
 
 **On entry:** the brief is approved (discuss did it at sign-off; see
@@ -28,41 +30,48 @@ Fill the brief's `## Build notes`: file map, then tasks (T1, T2…), each an ind
 deliverable with the contract it exposes, the behaviors to test, and its gate command. Map every
 acceptance criterion to a task. Reuse the brief's **Context**; dispatch `trailmix-explorer` only
 for real gaps. Register the ids: `trail.mjs tasks <brief.md> T1 T2 …`. Bug brief: T1 is the red
-test, and it fails before any fix exists. More than ~5 tasks, or tasks spanning areas with little
-shared context: split them into sequential chunks (note them in **Tasks**), one implementer each.
+test, and it fails before any fix exists.
+
+Keep **Evidence:** under `## Build notes` current. It's your notes on disk: a compacted or
+resumed build continues from it, and handoff summarizes it. One terse line each: gate results
+(counts + command), `ACn → met | gap`, review findings (`id · clear|judgment [· stop] ·
+file:line · what → fixed | escalated | disputed`, with options when not fixed), deviations,
+docs touched + why, and anything unverified, `TBD`, or mixed.
+
+**Pre-existing changes:** preserve earlier edits during implementation and docs. A listed
+pre-existing file you also change is mixed: record it in **Evidence**; it's wholly in scope.
+Other listed pre-existing files stay outside review and the trail's commit scope.
 
 ## 2. Implement
-Dispatch `trailmix-implementer` (or a general subagent if not installed) with the brief path,
-the resolved `trail.mjs` path, and its chunk if split. It works the tasks in order, TDD where
-practical, stamps `task-done` after each green gate, and verifies per `refs/verification.md`
-(pass it the path). Chunks run one after another, never in parallel (one working tree). An
-implementer may stop early at a task boundary with a `Notes for next:` line; dispatch a fresh
-one for the remaining tasks with those notes.
+Work tasks yourself in order, one at a time; cover every listed behavior with tests, TDD where
+practical. Run each task's gate before moving on; only after it is green, stamp
+`trail.mjs task-done <brief.md> <Tid>`. Verify per `refs/verification.md` and record **Evidence**.
+- Keep changes surgical; don't touch unrelated code. Comments explain *why*, not what code or
+  config already says.
+- Improve the how freely; never silently change a contract or brief decision — stop and ask.
+- Same gate still red after three fix attempts? Stop patching and name the assumption that
+  might be wrong.
 
 ## 3. Self-review and fix
-Dispatch `trailmix-reviewer` (read-only) with the brief and the path to `refs/review-checklist.md`.
-It returns findings to you; there is no review artifact. If the brief lists **Pre-existing
-changes**, tell the reviewer and the documenter those files are out of scope — except one an
-implementer also changed: that's wholly in scope, and the report flags it as mixed. Then:
-- **Fix every finding with a clear fix inside the brief's scope**, whatever its severity:
-  dispatch the implementer with those ids. A LOW fix counts once its gate command is green. A
-  HIGH or MEDIUM fix counts only after a **delta re-review** of those ids plus regression risk in
-  all code the round touched; pass it the ids still open so its verdict counts them. Skip the
-  re-review when a round fixed only LOWs.
-- **`stop` findings:** fix a `clear` one like any other, but it's never done without a re-review
-  that confirms the fix held. A `judgment` one is a stop-and-ask. One whose fix keeps failing
-  escalates like any other, and handoff reports `blocked`.
-- **Keep going while it converges.** Run another round as long as the last one resolved at least
-  one finding. Escalate a finding to the report when its fix fails twice, when fixes conflict, or
-  when it turns out to need a scope change. Hard ceiling: 4 rounds.
-- **Leave for the human:** judgment calls, scope changes, anything that contradicts a brief
-  decision, and fixes the implementer disputed with a technical reason.
+Dispatch `trailmix-reviewer` (read-only) with the brief and the path to `refs/review-checklist.md`;
+name any **Pre-existing changes** as out of scope, except mixed files. Findings come back to you;
+there is no review artifact.
+- **Fix** every finding with a clear fix inside the brief's scope, any severity: check it
+  against the code first, re-run the gate after. Dispute one with a technical reason instead of
+  applying it.
+- **Re-review:** a fixed HIGH, MEDIUM, or `stop` finding counts only after a delta re-review of
+  those ids, the ids still open, and regression risk in code the round touched. A LOW counts
+  once its gate is green.
+- **Rounds:** another one while the last resolved something; hard ceiling 4. Escalate a fix
+  that fails twice, fixes that conflict, or one that needs a scope change.
+- **To the human** (report → needs your call): judgment calls, scope changes, anything that
+  contradicts a brief decision, disputes, and escalations. A `judgment` `stop` finding is a
+  stop-and-ask.
 
 ## 4. Docs
-Dispatch `trailmix-documenter` with the brief and the diff, plus the paths to
-`refs/weight-heuristics.md` and `refs/doc-conventions.md`. It edits the repo's docs by weight,
-where zero edits is a valid result, and runs the agent retro. Its edits stay in the diff for the
-human to review.
+Load both `refs/doc-conventions.md` and `refs/weight-heuristics.md` every time and run their
+procedure yourself against the brief and fresh diff. Zero edits is valid; edits stay in the diff
+for the human.
 
 Then go straight to `trailmix-handoff`.
 
@@ -85,8 +94,8 @@ holds, `trail.mjs reopen <brief.md>` (back to draft, task progress cleared) and 
 `trailmix-discuss`: revise the brief in place, drop its stale `## Build notes`, and show a new
 digest.
 
-Don't stop for anything you can decide yourself. Note those calls under **Deviations** in the
-report instead.
+Don't stop for anything you can decide yourself. Record those calls as deviations in
+**Evidence**; the report lists them under **Deviations**.
 <!-- only:ghcp -->
 
 Autopilot fits build: it runs without prompts. Finishing build means handoff — write the report

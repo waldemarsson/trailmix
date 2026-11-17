@@ -445,14 +445,58 @@ test("derive: tasks on a draft brief don't preempt the discuss checkpoint", () =
   assert.equal(deriveTrail(d).next, "discuss (awaiting sign-off)");
 });
 
-test("derive: draft report -> handoff, with open finding count when any", () => {
-  const plain = trail({ "brief.md": brief("approved", "\ntasks: T1:done"), "report.md": report("draft") });
-  assert.equal(deriveTrail(plain).next, "handoff (awaiting review)");
-  const open = trail({
+test("derive: draft report without findings -> handoff awaiting review", () => {
+  // Arrange
+  const d = trail({ "brief.md": brief("approved", "\ntasks: T1:done"), "report.md": report("draft") });
+
+  // Act
+  const result = deriveTrail(d);
+
+  // Assert
+  assert.equal(result.next, "handoff (awaiting review)");
+});
+
+test("derive: draft report counts open and disputed findings as pending", () => {
+  // Arrange
+  const d = trail({
     "brief.md": brief("approved"),
-    "report.md": report("draft", "\nfindings: H1:fixed M1 M2 L1:wont-fix"),
+    "report.md": report("draft", "\nfindings: H1:fixed H2:disputed M1 M2:open L1:wont-fix"),
   });
-  assert.equal(deriveTrail(open).next, "handoff (awaiting review, 2 open)");
+
+  // Act
+  const result = deriveTrail(d);
+
+  // Assert
+  assert.equal(result.next, "handoff (awaiting review, 3 pending)");
+});
+
+test("derive: disputing a finding keeps the human decision pending", () => {
+  // Arrange
+  const d = trail({
+    "brief.md": brief("approved"),
+    "report.md": report("draft", "\nfindings: H1"),
+  });
+  findingState(join(d, "report.md"), "H1", "disputed");
+
+  // Act
+  const result = deriveTrail(d);
+
+  // Assert
+  assert.deepEqual(result, { slug: "feat", state: "in-progress", next: "handoff (awaiting review, 1 pending)" });
+});
+
+test("derive: resolved findings leave no pending count", () => {
+  // Arrange
+  const d = trail({
+    "brief.md": brief("approved"),
+    "report.md": report("draft", "\nfindings: H1:fixed M1:wont-fix"),
+  });
+
+  // Act
+  const result = deriveTrail(d);
+
+  // Assert
+  assert.equal(result.next, "handoff (awaiting review)");
 });
 
 test("derive: approved report -> done", () => {

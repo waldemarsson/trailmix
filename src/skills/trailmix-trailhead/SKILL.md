@@ -57,7 +57,7 @@ the human says "resume `<slug>`" — pick it up instead of starting over:
    (write or finish the brief, then the digest); `build (…)` means continue building at the
    named step; `handoff (awaiting review…)` means the follow-up loop; `—` (done or dropped) means
    nothing to do.
-3. Summarize state in one short block: title, what's approved, open findings if any, what's next.
+3. Summarize state in one short block: title, what's approved, pending findings if any, what's next.
    If the brief's `branch:` (from `read`) differs from the current git branch, warn there.
 4. Load the skill of only the waypoint you're resuming into, and the artifact bodies it needs,
    then continue from that step.

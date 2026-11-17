@@ -1,6 +1,6 @@
 # Weight heuristics (build · docs step)
 
-Loaded when unsure whether a change is worth documenting.
+Loaded at every docs step with `doc-conventions.md`; use its procedure and write-lean rules.
 
 ## The core test
 > Would a developer joining this project in six months be worse off not knowing this?

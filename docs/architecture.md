@@ -77,9 +77,7 @@ trailmix/                              # framework SOURCE repo (produces install
 │   │   └── trailmix-gorp/SKILL.md       # agent→agent dense handoff
 │   ├── agents/                        # neutral agent specs (one file each)
 │   │   ├── trailmix-explorer.agent.md
-│   │   ├── trailmix-implementer.agent.md
-│   │   ├── trailmix-reviewer.agent.md
-│   │   └── trailmix-documenter.agent.md
+│   │   └── trailmix-reviewer.agent.md
 │   ├── instructions/
 │   │   └── AGENTS.md                  # source of the SessionStart hook's injected content;
 │   │                                   # bundled as-is too, but NOT auto-loaded from a plugin
@@ -127,8 +125,8 @@ Artifacts live in the target project at: `.trailmix/trail/<feature-slug>/`.
 |---|---|---|---|---|---|
 | 0 | **trailmix-trailhead** | Detect "we're building something", size it, name the slug, route; resume/status | main | — | — |
 | 1 | **trailmix-discuss** | Parallel research first, then batched numbered clarify rounds (each question with a recommended default) until nothing that changes behavior, scope, or a contract is open | **trailmix-explorer** (cheap), in parallel | answers rounds; signs off on a short digest in chat that lists every consequential decision | `brief.md` |
-| 2 | **trailmix-build** | Autonomous: plan tasks into the brief's `## Build notes`, implement TDD, self-review, fix, update docs | **trailmix-implementer**, **trailmix-reviewer** (read-only), **trailmix-documenter** | none, unless blocked | code + tests + docs (git diff) |
-| 3 | **trailmix-handoff** | Write the report, surface it in chat, run the follow-up loop until accepted | **trailmix-implementer** + **trailmix-reviewer** for follow-ups | reviews the diff, picks follow-ups, accepts | `report.md` |
+| 2 | **trailmix-build** | Autonomous: plan tasks into the brief's `## Build notes`, implement TDD, self-review, fix, update docs — all inline except review | main; **trailmix-reviewer** (read-only) | none, unless blocked | code + tests + docs (git diff) |
+| 3 | **trailmix-handoff** | Write the report, surface it in chat, run the follow-up loop until accepted | main; **trailmix-reviewer** for delta re-review | reviews the diff, picks follow-ups, accepts | `report.md` |
 
 The skills are the spec; this section records why they're shaped this way. Read the skill for
 the rules.
@@ -142,15 +140,27 @@ decision. Git setup (branch, dirty tree) is settled at the same checkpoint so bu
 pause for it; trailmix never stashes or commits on its own.
 
 **Build** runs without the human. Planning appends to the brief (no separate plan artifact, no
-re-approval). Implementers run sequentially in chunks (one working tree), each in a fresh
-context. Self-review findings are auto-fixed while fixes converge, with a hard round ceiling; what
-needs judgment goes to the human via the report. A default **decision-rights** contract (decide
+re-approval). The model that writes the plan carries it out: build implements, fixes findings,
+and writes docs in its own loop, so nothing is lost in plan→executor or
+reviewer→orchestrator→implementer handoffs ([when to fold subagents into the main loop](https://claude.com/resources/articles/building-agents-when-to-fold-subagents-into-your-main-agent-loop)).
+Implementation therefore runs on the session's model, not a pinned one. The implementer and
+documenter agents were folded in; the documenter's input was just the brief and the diff. Build
+keeps its notes in an **Evidence** entry in the brief's build notes, which survives compaction
+and resume; the report summarizes it. Self-review findings are auto-fixed while fixes converge,
+with a hard round ceiling; what needs judgment, or a finding build disputes about its own code,
+goes to the human via the report. A default **decision-rights** contract (decide
 reversible, internal things; escalate contracts, dependencies, data, security, deploy) replaces
 per-decision pauses; a brief's **Autonomy** line overrides it. The only pause is stop-and-ask
-for a real blocker. Thresholds (chunk size, round ceiling) are first guesses, to tune.
+for a real blocker. The round ceiling is a first guess, to tune.
+
+**Compaction.** A long build fills the main context and the host compacts it. Task progress
+(`task-done` stamps) and **Evidence** are on disk, so the loop continues from the brief. GHCP
+fires no hook after compaction, so the always-on core (Security included) drops out; build and
+handoff re-read the bundled `AGENTS.md` after one. A fallback implementer subagent was rejected:
+"context is heavy" isn't measurable, and its handoff is as lossy as a compaction.
 
 **Handoff** shows the human the result, not documents about it: verdict, what needs their call,
-how to try it. The follow-up loop reuses build's implementer and delta re-review. Acceptance
+how to try it. Follow-ups run inline with build's delta re-review. Acceptance
 optionally ends in commit/push/draft PR, opt-in and scoped to the trail's own files.
 
 **Trail metadata & resume.** At most two artifacts with minimal frontmatter; only the fields
@@ -177,9 +187,11 @@ verbatim.
 | Agent | Role | Tools (neutral) | Isolation |
 |---|---|---|---|
 | **trailmix-explorer** | Read codebase + web research, summarize | read, search, web | read-only |
-| **trailmix-implementer** | Code + tests (TDD) + verification; applies fixes | read, edit, search, shell | read/write |
 | **trailmix-reviewer** | Senior self-review vs the brief; findings + verdict to the orchestrator. Brief mode: challenges the brief for gaps before the digest | read, search, shell | **read-only (discipline)** |
-| **trailmix-documenter** | Update repo docs by weight + agent retro | read, edit, search, shell | read/write |
+
+Dispatch a subagent only when its work is split by context: independent research paths in
+parallel (explorer) or fresh-context verification (reviewer). Everything else stays in the main
+loop; add an agent back only when a measured run shows the single loop degrading.
 
 Models and effort per agent: `build/maps/models.json`.
 
@@ -239,7 +251,7 @@ the bundled `AGENTS.md` file itself never reaches a live session.
 The **only** always-on mechanism is the `SessionStart` hook: the *same* `AGENTS.md` content is
 injected as `additionalContext` (CC: plain stdout; GHCP: `{"additionalContext": ...}` JSON) at
 session start/resume (CC also covers `clear`/`compact`/`fork`; GHCP fires on startup/resume/new
-and has nothing after compaction).
+and has nothing after compaction, so build and handoff re-read the bundled copy after one).
 It injects the full core rather than a one-line pointer, the pattern Superpowers' `SessionStart`
 hook uses; a pointer depends on the agent choosing to load more. The core is kept small, and it's
 sent per session boundary, not per turn.
@@ -302,7 +314,7 @@ CC's manifest doesn't need a `hooks` field (auto-discovered from the default `ho
 | Lever | Mechanism |
 |---|---|
 | JIT loading | tiny `SKILL.md`; detail in `refs/*.md` loaded only when the skill needs it |
-| Context isolation | research, implementation, review, and docs run in subagents; the orchestrator's context stays clean |
+| Subagents by context only | parallel research and fresh-context review run in subagents; implementation, fixes, and docs stay in the main loop |
 | Disk over chat | artifacts (`brief.md`, `report.md`) written to `.trailmix/…`; chat gets only the digest and the handoff summary |
 | Cheap-model routing | explorer (read/summarize/websearch) on a cheap model; the rest pinned per agent in `build/maps/models.json` |
 | Evidence not logs | GORP: counts + exact commands + one-line findings, hard word caps |
