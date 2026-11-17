@@ -22,8 +22,8 @@ registered.
 ## Surface it in chat
 Don't make the human open the report to learn what to look at. Show:
 1. One line: the result and verdict (`ready` / `ready, 2 need your call` / `blocked: …`).
-   Open findings set the floor: any `stop`, or a HIGH that isn't `judgment`, → `blocked`; any
-   other → `ready, N need your call`.
+   Pending findings (`open` or `disputed`) set the floor: any `stop`, or a HIGH that isn't
+   `judgment`, → `blocked`; any other → `ready, N need your call`.
    Anything that stopped the build (failing gate, unproven AC, missing access) is `blocked` too.
 2. **Needs your call**: each as `id · file:line — what it is, and the options`.
 3. **Try it**: the commands or steps.

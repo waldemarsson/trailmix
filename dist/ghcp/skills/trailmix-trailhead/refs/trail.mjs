@@ -281,8 +281,8 @@ export function deriveTrail(dir) {
 
   if (report) {
     if (report.status === "approved") return { slug, state: "done", next: "—" };
-    const open = (parse(parseFindings, report.findings) || []).filter((f) => f.state === "open").length;
-    return { slug, state: "in-progress", next: `handoff (awaiting review${open ? `, ${open} open` : ""})` };
+    const pending = (parse(parseFindings, report.findings) || []).filter((f) => f.state === "open" || f.state === "disputed").length;
+    return { slug, state: "in-progress", next: `handoff (awaiting review${pending ? `, ${pending} pending` : ""})` };
   }
 
   const tasks = parse(parseTasks, brief.tasks);

@@ -56,8 +56,8 @@ briefs follow the same order; build starts with the red test.
 - Brief `approved`, no report: build. With `tasks`, resume lands on the first open task, e.g.
   `build (1/3 done, next T2)`. Don't redo or re-read the diff of a `:done` task. All gates green:
   `build (tasks done, next self-review)`, so rerun self-review and docs, then hand off.
-- Report `draft`: `handoff (awaiting review)`, plus the open count when findings are registered,
-  e.g. `handoff (awaiting review, 2 open)`. Resume lands in the follow-up loop.
+- Report `draft`: `handoff (awaiting review)`, plus the pending count (`open` or `disputed`),
+  e.g. `handoff (awaiting review, 2 pending)`. Resume lands in the follow-up loop.
 - Report `approved`: `done`.
 
 `trail.mjs status` does exactly this derivation for you (see below) — prefer it over deriving by
@@ -125,7 +125,8 @@ node "$TRAIL" task-done .trailmix/trail/<slug>/brief.md T1
 
 **Track the follow-up loop** in the report's `findings`: register the ids left for the human,
 and new ones as they come up (existing ids keep their state), then set an id's state —
-`open | fixed | wont-fix | disputed` (`open` reopens a fix that didn't hold):
+`open | fixed | wont-fix | disputed` (`open` reopens a fix that didn't hold). A `disputed`
+finding stays pending until the human decides; use `wont-fix` once they accept the dispute:
 ```sh
 node "$TRAIL" findings .trailmix/trail/<slug>/report.md H1 M2
 node "$TRAIL" finding  .trailmix/trail/<slug>/report.md H1 fixed
