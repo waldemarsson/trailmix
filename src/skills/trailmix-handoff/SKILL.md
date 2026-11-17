@@ -13,12 +13,17 @@ This is the human's main checkpoint: they judge the actual change, not documents
 Helper: `${CLAUDE_PLUGIN_ROOT}/skills/trailmix-trailhead/refs/trail.mjs` — the host fills in the
 path; use it for every `trail.mjs` call below.
 <!-- /only -->
+<!-- only:ghcp -->
+**After a compaction:** re-read `<this skill's base dir>/../../AGENTS.md` before continuing —
+Copilot CLI doesn't re-inject the always-on core (Security included) after compaction.
+<!-- /only -->
 
 ## Write the report — `.trailmix/trail/<slug>/report.md`
 Scaffold with `trail.mjs new <slug> report` (see `trailmix-trailhead/refs/trail-metadata.md`) and
-fill the body from `refs/report-template.md`, using what build returned and fresh `git diff`
-facts. Leave empty sections out. Register only the findings that need the human's call:
-`trail.mjs findings <report.md> H1 M2 …`. Auto-fixed findings are listed in the body, not
+fill the body from `refs/report-template.md` and fresh `git diff` facts. Summarize the brief's
+`## Build notes` → **Evidence**; don't copy it — per-finding and per-gate detail stays there.
+Leave empty sections out. Register only the findings that need the human's call:
+`trail.mjs findings <report.md> H1 M2 …`. Auto-fixed findings are counted in the body, not
 registered.
 
 ## Surface it in chat
@@ -35,14 +40,14 @@ Don't make the human open the report to learn what to look at. Show:
 ## Follow-up loop
 The human reviews the diff and replies with findings to fix (`H1, M2`), new change requests, or
 acceptance.
-- **Fixes and changes:** dispatch `trailmix-implementer` with exactly those, then a delta
-  re-review by `trailmix-reviewer`, passing the ids still open (skip it when only LOWs were
-  fixed). Stamp each finding: `trail.mjs finding <report.md> <id> fixed` once the re-review
-  confirms it held (a LOW: once the brief's gate commands pass), `wont-fix` when declined,
-  `disputed` when the implementer shows it's wrong. Register any new finding (from the re-review
-  or the human) with `trail.mjs findings <report.md> <id>`; existing ids keep their state.
-  Append a dated `## Follow-up (YYYY-MM-DD)` block to the report, and show the delta in chat the
-  same way.
+- **Fixes and changes:** apply exactly those yourself per build §2–§3 (craft, scope,
+  verification, delta re-review). Stamp each finding: `trail.mjs finding <report.md> <id> fixed`
+  once the re-review confirms it held (a LOW: once the brief's gate commands pass), `wont-fix`
+  when declined, `disputed` only alongside sending it back as **needs your call** with a
+  technical reason. Register any new finding (from re-review or the human) with
+  `trail.mjs findings <report.md> <id>`; existing ids keep their state. Update the brief's
+  **Evidence**, append a dated `## Follow-up (YYYY-MM-DD)` block to the report, and show the
+  delta in chat the same way.
 - **A change beyond the brief that serves the same outcome:** add a dated line under the brief's
   `**Amendments:**` and run it through this loop. An independent goal gets a new trail.
 - **Acceptance:** `trail.mjs approve <report.md>`. The trail is done. In a git repo, ask one
