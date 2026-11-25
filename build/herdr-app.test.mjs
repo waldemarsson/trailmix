@@ -162,13 +162,14 @@ test("execError: no sh on the machine (Windows) points at the node setting", () 
   assert.equal(execError(e, { machine: "win", node: "node" }), "node not found on win — set the `node` setting");
 });
 
-const fakeHome = (nodes) => {
-  const home = mkdtempSync(join(tmpdir(), "tm-home-"));
-  for (const v of nodes) {
-    const bin = join(home, ".nvm/versions/node", v, "bin");
-    mkdirSync(bin, { recursive: true });
-    writeFileSync(join(bin, "node"), `#!/bin/sh\necho ${v} "$@"\n`, { mode: 0o755 });
-  }
+const fakeNode = (path, label) => {
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, `#!/bin/sh\necho ${label} "$@"\n`, { mode: 0o755 });
+};
+const fakeHome = (nodes, { prefix = "tm-home-", volta = false } = {}) => {
+  const home = mkdtempSync(join(tmpdir(), prefix));
+  for (const v of nodes) fakeNode(join(home, ".nvm/versions/node", v, "bin/node"), v);
+  if (volta) fakeNode(join(home, ".volta/bin/node"), "volta");
   // PATH holds only the tools the finder uses, so a system node can't leak in.
   const tools = join(home, "tools");
   mkdirSync(tools);
@@ -178,14 +179,36 @@ const fakeHome = (nodes) => {
 const runShell = (home, args) => spawnSync("/bin/sh", viaShell(args), { encoding: "utf8", env: { HOME: home, PATH: join(home, "tools") } });
 
 test("viaShell: with node off PATH, runs the highest nvm version with the args", () => {
-  const home = fakeHome(["v9.0.0", "v24.1.0", "v18.2.0"]);
+  const home = fakeHome(["v9.0.0", "v24.10.0", "v24.9.3", "v18.2.0"]);
   try {
     const r = runShell(home, ["status", "--json"]);
-    assert.equal(r.stdout, "v24.1.0 status --json\n");
+    assert.equal(r.stdout, "v24.10.0 status --json\n");
     assert.equal(r.status, 0);
   } finally {
     rmSync(home, { recursive: true, force: true });
   }
+});
+
+test("viaShell: finds nvm under a HOME with spaces", () => {
+  const home = fakeHome(["v20.0.0"], { prefix: "tm home " });
+  try {
+    assert.equal(runShell(home, ["a b"]).stdout, "v20.0.0 a b\n");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("viaShell: a version manager's shim wins over nvm", () => {
+  const home = fakeHome(["v24.1.0"], { volta: true });
+  try {
+    assert.equal(runShell(home, ["status"]).stdout, "volta status\n");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("parseShellStatus: a 127 from trail.mjs itself is not the node hint", () => {
+  assert.deepEqual(parseShellStatus({ code: 127, stdout: "", stderr: "boom" }, "vm"), { error: "trail.mjs exited 127: boom" });
 });
 
 test("viaShell: no node anywhere reads as the node-setting hint", () => {

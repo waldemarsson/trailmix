@@ -52,7 +52,8 @@ const missingNode = (machine, node = "node") => `${node} not found on ${machineL
 // exec runs without a login shell, so a node from a version manager isn't on its PATH. With no
 // `node` setting, the mod retries through sh, which looks where the common managers put it.
 const NOT_FOUND = "trailmix: node not found";
-const FIND_NODE = `n=$(command -v node) || for c in "$HOME/.volta/bin/node" "$HOME/.local/share/mise/shims/node" "$HOME/.asdf/shims/node" "$HOME/.local/share/fnm/aliases/default/bin/node" $(ls -d "$HOME"/.nvm/versions/node/v*/bin/node 2>/dev/null | sort -V -r); do [ -x "$c" ] && n=$c && break; done; [ -n "$n" ] || { echo "${NOT_FOUND}" >&2; exit 127; }; exec "$n" "$@"`;
+// Only version names are word-split, never HOME; they sort numerically with POSIX sort.
+const FIND_NODE = `d="$HOME/.nvm/versions/node"; n=$(command -v node) || for c in "$HOME/.volta/bin/node" "$HOME/.local/share/mise/shims/node" "$HOME/.asdf/shims/node" "$HOME/.local/share/fnm/aliases/default/bin/node"; do [ -x "$c" ] && n=$c && break; done; [ -n "$n" ] || for v in $(ls "$d" 2>/dev/null | sort -t. -k1.2,1nr -k2,2nr -k3,3nr); do [ -x "$d/$v/bin/node" ] && n="$d/$v/bin/node" && break; done; [ -n "$n" ] || { echo "${NOT_FOUND}" >&2; exit 127; }; exec "$n" "$@"`;
 
 export const viaShell = (args) => ["-c", FIND_NODE, "sh", ...args];
 

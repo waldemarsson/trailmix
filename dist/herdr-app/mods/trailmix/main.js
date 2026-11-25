@@ -18,6 +18,9 @@ export default class Trails extends View {
     if (doc) return this.initDoc(doc, cx);
     this.folders = new Map(); // machine+folder -> { machine, folder, trails?, error?, busy, again, watch, gone }
     this.notifier = createNotifier();
+    // The palette's overlay is a second copy in front of you: leave toasts and watchers to the docked one.
+    this.overlay = Boolean(props()?.overlay);
+    this.viaSh = new Set(); // machines whose node is only found through sh
     this.refreshed = 0;
     if (checking()) return;
     // Each poll spawns node per folder, so skip it while the window is hidden; render catches up.
@@ -55,13 +58,16 @@ export default class Trails extends View {
     cx.spawn(async (cx) => {
       const node = nodeFor(props()?.node, e.machine);
       const opts = { on: e.machine, cwd: e.folder, timeout: TIMEOUT_MS };
+      const label = machineLabel(e.machine);
+      const viaSh = async () => parseShellStatus(await exec("sh", viaShell(statusArgs(SOURCE)), opts), e.machine);
       let res;
       try {
-        res = parseStatus(await exec(node, statusArgs(SOURCE), opts));
+        res = this.viaSh.has(label) ? await viaSh() : parseStatus(await exec(node, statusArgs(SOURCE), opts));
       } catch (err) {
         try {
-          if (node !== "node" || !cannotStart(err, node)) throw err;
-          res = parseShellStatus(await exec("sh", viaShell(statusArgs(SOURCE)), opts), e.machine);
+          if (node !== "node" || this.viaSh.has(label) || !cannotStart(err, node)) throw err;
+          res = await viaSh();
+          if (res.trails) this.viaSh.add(label);
         } catch (err) {
           res = { error: execError(err, { machine: e.machine, node }) };
         }
@@ -70,7 +76,7 @@ export default class Trails extends View {
       if (e.gone) return;
       e.trails = res.trails;
       e.error = res.error;
-      if (e.trails) {
+      if (e.trails && !this.overlay) {
         this.toast(e);
         this.watch(e, cx);
       }

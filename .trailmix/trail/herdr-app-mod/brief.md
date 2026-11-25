@@ -230,3 +230,10 @@ AC map: AC1→T1 · AC2→T3 · AC3→T2 · AC4→T3/T4 · AC5→T5 · AC6→han
 - Docs · RECIPE.md loader note now lists `?` (r2 fix made it stale) · README / architecture / AGENTS.md / trail-metadata.md already current from T5 · no agent-retro line (the hc exec PATH and base64 quirks are user-side and already in RECIPE)
 - Follow-up · mod.json palette + overlay size · README/RECIPE notes · `node --test build/herdr-app.test.mjs` 25/25 · palette/overlay sizing unverified until the human tries it
 - Follow-up · sh node fallback · `node --test build/herdr-app.test.mjs` 29/29 (finder run under real sh with a fake HOME and PATH isolated to ls/sort; removing `sort -V` → red) · real `hc exec -- sh …` on the VM → exit 0, this repo's trails · RECIPE + README updated
+- Follow-up review · M1 · clear · main.js · palette overlay toasted/watched a second time → fixed (overlay copy skips both)
+- Follow-up review · L1 · clear · logic.js FIND_NODE · HOME with spaces split the nvm list → fixed (list version names only, paths quoted; test)
+- Follow-up review · L2 · judgment · logic.js · `sort -V` not portable → fixed (POSIX numeric sort; lexical-sort mutation → red)
+- Follow-up review · L3 · judgment · nvm default alias / NVM_DIR / fnm macOS / stale shim not handled → documented in RECIPE, for the human
+- Follow-up review · L4 · judgment · main.js · two execs per refresh on sh machines → fixed (per-machine memo after a successful sh run)
+- Follow-up review · L5 · clear · tests · 127 without marker + order → added
+- Gate · `node --test build/herdr-app.test.mjs` 32/32 · real `hc exec -- sh …` on the VM → exit 0

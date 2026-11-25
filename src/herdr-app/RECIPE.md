@@ -25,7 +25,7 @@ panel says "No trails in any space".
 - Refreshes every 15 s; local spaces also refresh as soon as `.trailmix/trail` changes. Hover
   highlights a row. Read-only: it never changes a trail.
 - The command palette's "Trails" opens the same list as a 360 × 520 overlay, for layouts
-  without the docked column.
+  without the docked column. It doesn't toast or watch folders; the docked copy does.
 
 **Built from:** one mod, `mods/trailmix/`, docked by `mod.json` and reused as its own dialog
 (`openOverlay({ mod: "trailmix", props: { doc } })`). For each distinct space folder it runs
@@ -41,7 +41,9 @@ the pure parts (loader, `node` lookup, parsing, errors, grouping, notifications)
 - Needs Node ≥ 16 on every machine with trails. `exec` doesn't start a login shell, so a node
   from a version manager is often not on its `PATH`. With no `node` setting, the mod then retries
   through `sh`, which takes the first of `command -v node`, volta, mise, asdf, fnm's default, and
-  the highest nvm version. Only when that finds nothing (or the machine has no `sh`, e.g.
+  the highest nvm version (not nvm's `default` alias; a custom `NVM_DIR` or fnm's macOS folder
+  isn't searched, and a stale shim wins over nvm). A machine that needed `sh` goes straight to it
+  on later refreshes. Only when that finds nothing (or the machine has no `sh`, e.g.
   Windows) does the row read "node not found on <machine> — set the `node` setting". The setting
   is the `node` prop on the mod's block in `layouts/<name>.json`:
   `{ "mod": "trailmix", "props": { "node": "/abs/path/to/node" } }`, or per machine
