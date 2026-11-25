@@ -43,7 +43,7 @@ the pure parts (loader, `node` lookup, parsing, errors, grouping, notifications)
   `layouts/<name>.json`: `{ "mod": "trailmix", "props": { "node": "/abs/path/to/node" } }`, or
   per machine `{ "node": { "local": "/usr/bin/node", "my-vm": "/home/me/.nvm/versions/node/v24.0.0/bin/node" } }`
   (unlisted machines use `node`).
-- The command line carries trail.mjs (~22 KB, only `%#` and line breaks escaped for the `data:`
+- The command line carries trail.mjs (~22 KB, only `%#?` and line breaks escaped for the `data:`
   URL) per folder per refresh; a test keeps it under Windows' 32,767-character limit.
 - Embedded HTML in a brief or report shows as text (`raw_html(false)`).
 - `watchFolder` is local only; remote spaces update on the 15 s poll, which pauses while the

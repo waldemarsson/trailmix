@@ -224,3 +224,5 @@ AC map: AC1→T1 · AC2→T3 · AC3→T2 · AC4→T3/T4 · AC5→T5 · AC6→han
 - Review r2 · L1 · judgment · main.js render · catch-up refresh ran while hidden → fixed (also requires `window()?.visible !== false`)
 - Review r2 · L2 · clear · brief · stale loader notes → fixed via Amendments
 - Gate · `node --test build/trail.test.mjs build/herdr-app.test.mjs` 89/89 · real `hc exec` on VM with r1 loader (unicode titles) ok
+- Review r3 · H1, L1, L2 held · no new findings · verdict ready
+- Docs · RECIPE.md loader note now lists `?` (r2 fix made it stale) · README / architecture / AGENTS.md / trail-metadata.md already current from T5 · no agent-retro line (the hc exec PATH and base64 quirks are user-side and already in RECIPE)
