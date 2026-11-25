@@ -384,10 +384,11 @@ test("relocate: sidebar moves the block under Agents and drops the right column"
   assert.equal(root.children.length, 3, "input layout is not mutated");
 });
 
-test("relocate: right moves it back out of the sidebar", () => {
-  const back = relocate(relocate(mainShape(), "trailmix", "sidebar"), "trailmix", "right");
-  assert.deepEqual(back.children.map((n) => n.id), ["sidebar", "work", "trailmix"]);
-  assert.deepEqual(back.children[0].children[0].children.map((n) => n.id), ["spaces", "agents"]);
+test("relocate: null removes the block, wherever it is", () => {
+  const gone = relocate(relocate(mainShape(), "trailmix", "sidebar"), "trailmix", null);
+  assert.deepEqual(gone.children.map((n) => n.id), ["sidebar", "work"]);
+  assert.deepEqual(gone.children[0].children[0].children.map((n) => n.id), ["spaces", "agents"]);
+  assert.equal(findDock(gone, "trailmix"), null);
 });
 
 test("relocate: a layout without Herdr's sidebar gives null", () => {

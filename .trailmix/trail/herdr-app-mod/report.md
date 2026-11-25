@@ -9,7 +9,7 @@ updated: 2026-11-25
 **Result:** `npm run build` now emits `dist/herdr-app/`, a herdr-app mod. It docks a "Trails" panel listing each space's trails (local or remote, via `exec` on the space's machine with trail.mjs inlined), opens the brief or report in a dialog, and toasts when a trail waits on you. `trail.mjs status --json` backs it. **Verdict:** ready. AC6 (real herdr-app UI) is your manual check.
 
 ## Try it
-0. On the host, clone the shipped layout so Herdr can dock the mod: `herdr-app do layout.clone '{"name":"main","as":"trailmix"}'`.
+0. On the host, clone the shipped layout so the mod can pin itself there: `herdr-app do layout.clone '{"name":"main","as":"trailmix"}'`.
 1. On the host, copy the mod into its own folder: `mkdir -p ~/.config/herdr-app/mods && limactl shell agentbox sh -c 'tar -C ~/workspace/trailmix/dist/herdr-app/mods -cf - trailmix' | tar -C ~/.config/herdr-app/mods -xf -`. That gives `mods/trailmix/{main.js,logic.js,mod.json,trail-source.js}`. (`limactl copy -r` flattens the files into `mods/` when that folder doesn't exist yet.)
 2. Make node reachable for `exec` on the VM. Check with `hc exec -- node -v`; if it isn't found, either run `ln -s "$(command -v node)" ~/.local/bin/node` on the VM (if that's on exec's PATH), or set the prop in your layout: `{ "mod": "trailmix", "props": { "node": { "<vm machine>": "/home/marwal/.nvm/versions/node/v24.22.2/bin/node" } } }`.
 3. Run `herdr-app check`, then open the app. The panel should list this repo's trails (`herdr-app-mod` at handoff, awaiting review). Click it to open the dialog; Esc closes it.
@@ -61,3 +61,4 @@ updated: 2026-11-25
 - Close: `✕` in the Trails header hides the docked column. While it's hidden, palette → Trails shows "Show panel" to bring it back. A tab-bar button was skipped because the shipped `tabs` mod hardcodes Files/Changes (`tabs/main.js:151-152`), so it would need a cloned `tabs` mod.
 - Rail, replacing `✕`: `»` folds the column to a slim always-visible rail with the trailmix icon and counts of trails waiting on you and building. Click the rail to expand. A floating peek drawer would need a hand-edited layout, so it wasn't used.
 - Sidebar placement: `⇤` in the Trails header moves the panel under Spaces/Agents in the left sidebar; `⇥` moves it back. Each rewrites your personal layout through `layout.set`. Herdr's status bar and tab bar hardcode their items, so neither can host it without a clone.
+- Sidebar only: no right column anymore. Palette → Trails → **Pin to sidebar** adds a section under Agents. Click "▾ Trails" to collapse it to its header (counts still showing) and "▸ Trails" to expand it; `✕` removes it. This supersedes `»`/`⇥`.

@@ -121,8 +121,8 @@ const findId = (node, id) => {
   return null;
 };
 
-// The layout with the mod's block moved under Spaces/Agents ("sidebar") or to a right-hand
-// column ("right"); null when the layout has no such place (e.g. not Herdr's main shape).
+// The layout with the mod's block moved under Spaces/Agents ("sidebar") or removed (null);
+// null when there's no sidebar to pin to (not Herdr's main shape).
 export function relocate(root, mod, where) {
   if (!root || typeof root !== "object") return null;
   const tree = JSON.parse(JSON.stringify(root));
@@ -134,15 +134,10 @@ export function relocate(root, mod, where) {
     }
   };
   strip(tree);
-  const block = { id: "trailmix", type: "block", content: { mod } };
-  if (where === "sidebar") {
-    const lists = findId(tree, "sidebar-lists");
-    if (!Array.isArray(lists?.children)) return null;
-    lists.children.push({ ...block, size: { weight: 1 } });
-  } else {
-    if (tree.type !== "row" || !Array.isArray(tree.children)) return null;
-    tree.children.push({ ...block, size: { px: 280 } });
-  }
+  if (where !== "sidebar") return tree;
+  const lists = findId(tree, "sidebar-lists");
+  if (!Array.isArray(lists?.children)) return null;
+  lists.children.push({ id: "trailmix", type: "block", content: { mod }, size: { weight: 1 } });
   return tree;
 }
 

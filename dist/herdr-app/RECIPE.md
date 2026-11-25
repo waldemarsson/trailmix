@@ -1,10 +1,11 @@
 # Trails
 
-A panel docked on the right that lists the [trailmix](https://github.com/waldemarsson/trailmix)
+A section in the sidebar, under Spaces and Agents, that lists the [trailmix](https://github.com/waldemarsson/trailmix)
 trails in every space, local or on another machine, with where each one stands. Click a trail to
 read its brief or report. A toast tells you when a trail is waiting on you.
 
-**What you see:** a 280px column on the right. A 36px header reads "Trails". Below it, one card
+**What you see:** a section under Agents, sharing the sidebar's height. A 36px header reads
+"▾ Trails". Below it, one card
 per space with open trails (surface background, 1px border, 8px radius, 6px apart). The card's
 header has the space name in bold 12px, a `2 done · 1 dropped` count in dim type when there are
 any, and, for a remote space, the machine as a small chip. Under it, one row per open trail: the
@@ -30,29 +31,29 @@ don't appear. With none anywhere the panel says "No trails in any space".
   An agent that's `working` holds the toast until it stops (checked at the next refresh).
 - Refreshes every 15 s; local spaces also refresh as soon as `.trailmix/trail` changes. Hover
   highlights a row. Read-only: it never changes a trail.
-- Herdr docks the column only into a personal layout (Herdr's own are replaced on every start),
-  the first time it sees the folder. Clone first: `herdr-app do layout.clone
-  '{"name":"main","as":"trailmix"}'`, then copy the mod in.
-- The header's `⇤` moves the panel into the sidebar, under Spaces and Agents; `⇥` moves it back
-  to a right column. Both rewrite the shown personal layout with `layout.set` and need Herdr's
-  `main` shape (`sidebar-lists`, a root row). In a folded sidebar it shows the rail, and a click
-  opens the list as the overlay.
-- The header's `»` folds the docked column to a 44 px rail: the trailmix icon, then a count of
-  trails waiting on you (`blocked` color) and building (`working`). Click the rail to expand it to
-  its last width. Dragging the column narrower than 160 px also shows the rail. A column hidden
-  some other way comes back with "Show panel" in the palette's "Trails". A button beside
-  Files/Changes would need a clone of Herdr's `tabs` mod, which hardcodes those two.
+- Install: the palette's "Trails" opens the list as an overlay with **Pin to sidebar**, which adds
+  the section under Agents by rewriting the shown layout with `layout.set`. That needs a personal
+  layout with Herdr's `main` shape (`sidebar-lists`); on Herdr's own layouts, which are replaced
+  on every start, the overlay says "Clone the layout to pin" instead
+  (`herdr-app do layout.clone '{"name":"main","as":"trailmix"}'`). `mod.json` has
+  `"place": "none"`, so Herdr never docks it anywhere by itself.
+- Clicking "▾ Trails" collapses the section to its header, which then shows a count of trails
+  waiting on you (`blocked` color) and building (`working`); "▸ Trails" expands it to an equal
+  share again. `✕` removes it from the sidebar. In a folded sidebar (narrower than 160 px) it
+  shows a rail instead: the trailmix icon and the same counts; a click opens the overlay.
+- An older right-hand column shows `⇤` to move it into the sidebar. Herdr's tab bar and status
+  bar hardcode their items, so neither can host it without a clone.
 - The command palette's "Trails" opens the same list as a 360 × 520 overlay, for layouts
-  without the docked column. It doesn't toast or watch folders; the docked copy does.
+  without the section. It doesn't toast or watch folders; the pinned copy does.
 
-**Built from:** one mod, `mods/trailmix/`, docked by `mod.json` and reused as its own dialog
+**Built from:** one mod, `mods/trailmix/`, pinned into the sidebar by `layout.set` and reused as its own dialog
 (`openOverlay({ mod: "trailmix", props: { doc } })`). For each distinct space folder it runs
 trailmix's `trail.mjs status --json` *on that space's machine*:
 `exec(node, ["--input-type=module", "-e", <loader>, "status", "--json"], { on: space.machine, cwd: space.folder, timeout: 10000 })`.
 The loader imports `trail.mjs` from a `data:` URL built from `trail-source.js` (trail.mjs
 embedded as a string), so nothing is installed on the machine. Uses `spaces`, `agents`, `exec`,
 `readTextFile`, `watchFolder`, `notify`, `openOverlay`, `closeOverlay`, `props`, `theme`,
-`checking`; `TextView.markdown` for the reader; `space.select` from the toast. `logic.js` holds
+`checking`, `shared`/`setShared`, `layout` and `run` (`layout.set`, `layout.resize`, `mod.open`); `TextView.markdown` for the reader; `space.select` from the toast. `logic.js` holds
 the pure parts (loader, `node` lookup, parsing, errors, grouping, notifications).
 
 **Watch out:**

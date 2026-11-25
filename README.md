@@ -99,15 +99,13 @@ security) into each session; trailmix's own subagents get its Security section.
 
 ### Herdr app
 
-`dist/herdr-app/` is a mod for the [Herdr](https://herdr.dev) desktop app: a right-hand
-**Trails** panel listing each space's trails (local and remote) with their next step, a reader
-for a trail's brief/report, and a toast when a trail waits on you. Herdr docks a
-mod only into a personal layout, so first clone the shipped one:
-`herdr-app do layout.clone '{"name":"main","as":"trailmix"}'` (palette: Duplicate layout). Then
-copy `dist/herdr-app/mods/trailmix/` to `~/.config/herdr-app/mods/trailmix/` in whole (Herdr
-docks a mod only the first time it sees its folder) and run
-`herdr-app check ~/.config/herdr-app/mods/trailmix`. On any other layout, the palette's
-**Trails** opens it.
+`dist/herdr-app/` is a mod for the [Herdr](https://herdr.dev) desktop app: a collapsible
+**Trails** section in the sidebar, under Spaces and Agents, listing each space's trails (local and
+remote) with their next step, a reader for a trail's brief/report, and a toast when a trail waits
+on you. Copy `dist/herdr-app/mods/trailmix/` to `~/.config/herdr-app/mods/trailmix/`, run
+`herdr-app check ~/.config/herdr-app/mods/trailmix`, then open the palette's **Trails** and click
+**Pin to sidebar**. Pinning needs a personal layout; on Herdr's own, clone it first:
+`herdr-app do layout.clone '{"name":"main","as":"trailmix"}'` (palette: Duplicate layout).
 It runs `node` on each space's machine and finds one under nvm, volta, fnm, mise, or asdf
 itself; otherwise see the `node` setting in [`dist/herdr-app/RECIPE.md`](dist/herdr-app/RECIPE.md).
 

@@ -9,9 +9,9 @@ import SOURCE from "./trail-source.js";
 import { nodeFor, statusArgs, parseStatus, parseShellStatus, viaShell, cannotStart, execError, groupTrails, statusPill, trailRank, spaceRank, tally, findDock, relocate, stripFrontmatter, createNotifier, toastFor, machineLabel } from "./logic.js";
 
 const POLL_MS = 15000;
-const RAIL = 44; // collapsed width, like Herdr's sidebar rail
-const NARROW = 160; // narrower than this, draw the rail (Herdr's sidebar threshold)
-const WIDE = 280; // mod.json size; expand target when no width was remembered
+const NARROW = 160; // narrower than this (a folded sidebar), draw the rail: Herdr's sidebar threshold
+const HEADER = 36; // a collapsed sidebar section is just its header
+const SHIPPED = ["main", "terminals", "win98"]; // Herdr's own layouts; layout.set can't add blocks there
 const SORT_KEY = "trailmix.sort"; // "space" (sidebar order) or "priority"; shared so every copy follows
 const TIMEOUT_MS = 10000;
 const keyOf = (s) => `${machineLabel(s.machine)}\0${s.folder}`;
@@ -214,56 +214,54 @@ export default class Trails extends View {
     return out;
   }
 
-  // Docked: move between the sidebar and a right column; » folds the right column to a rail.
-  // Palette overlay: "Show panel" brings a hidden column back.
-  dockButtons(t) {
-    const root = layout(), dock = findDock(root, "trailmix");
-    if (!dock || dock.hidden !== this.overlay) return [];
-    const btn = (id, label, tip, click) => h_flex().id(id).ml(4).px(6).py(1).rounded(4).cursor_pointer().text_size(11).text_color(t.muted)
-      .hover((st) => st.bg(t.hover).text_color(t.foreground)).when(Boolean(tip), (el) => el.tooltip(tip)).on_click(click).child(label);
-    if (this.overlay) return [btn("trailmix-show", "Show panel", null, () => { run("layout.show", { id: dock.id }); closeOverlay(props().overlay); })];
-    const where = dock.inSidebar ? "right" : "sidebar";
-    const moved = relocate(root, "trailmix", where);
-    const out = [];
-    if (moved) {
-      out.push(btn("trailmix-move", dock.inSidebar ? "⇥" : "⇤", dock.inSidebar ? "Move to a column on the right" : "Move to the sidebar, under Agents",
-        () => run("layout.set", { layout: moved })));
-    }
-    if (!dock.inSidebar) {
-      out.push(btn("trailmix-fold", "»", "Fold to a rail", () => {
-        if (this.width >= NARROW) localStorage.setItem("width", String(Math.round(this.width)));
-        run("layout.resize", { id: dock.id, px: RAIL });
-      }));
-    }
-    return out;
-  }
-
-  renderRail(t) {
+  open() {
     const open = [];
     for (const s of spaces()) {
       const e = s.folder ? this.folders.get(keyOf(s)) : undefined;
       if (e?.trails) open.push(...groupTrails(e.trails).open);
     }
-    const { waiting, building } = tally(open);
-    const badge = (n, c, tip) => h_flex().id(`rail-${tip}`).min_w(22).h(18).px(4).justify_center().items_center().rounded(9)
+    return open;
+  }
+
+  badges(t, ids) {
+    const { waiting, building } = tally(this.open());
+    const badge = (n, c, tip) => h_flex().id(`${ids}-${tip}`).min_w(22).h(18).px(4).flex_none().justify_center().items_center().rounded(9)
       .border_1().border_color(c).text_color(c).text_size(11).tooltip(`${n} ${tip}`).child(String(n));
-    const dock = findDock(layout(), "trailmix");
+    return [waiting > 0 && badge(waiting, t.blocked, "waiting on you"), building > 0 && badge(building, t.working, "building")].filter(Boolean);
+  }
+
+  button(t, id, label, tip, click) {
+    return h_flex().id(id).ml(4).px(6).py(1).flex_none().rounded(4).cursor_pointer().text_size(11).text_color(t.muted)
+      .hover((st) => st.bg(t.hover).text_color(t.foreground)).when(Boolean(tip), (el) => el.tooltip(tip)).on_click(click).child(label);
+  }
+
+  // Outside the sidebar (palette overlay, an old right column): offer to pin it under Agents.
+  pinButton(t, root, dock) {
+    if (dock?.inSidebar && !dock.hidden) return null;
+    if (SHIPPED.includes(shared("layout"))) {
+      return this.overlay ? div().ml(4).flex_none().text_size(11).text_color(t.dim).child("Clone the layout to pin") : null;
+    }
+    const pinned = relocate(root, "trailmix", "sidebar");
+    if (!pinned) return null;
+    return this.button(t, "trailmix-pin", this.overlay ? "Pin to sidebar" : "⇤", "Show under Spaces and Agents", () => {
+      run("layout.set", { layout: pinned });
+      if (this.overlay) closeOverlay(props().overlay);
+    });
+  }
+
+  // A folded sidebar: icon and counts; a click opens the list as the palette overlay.
+  renderRail(t) {
     return v_flex().id("trailmix").on_size_change((size, cx) => this.sized(size, cx))
-      .size_full().items_center().pt(10).gap(8).bg(t.background).cursor_pointer().hover((st) => st.bg(t.hover))
-      .tooltip(dock?.inSidebar ? "Trails — click to open" : "Trails — click to expand")
-      // In a folded sidebar the rail can't widen itself; open the list as the palette overlay.
-      .on_click(() => {
-        if (!dock || dock.inSidebar) run("mod.open", { name: "trailmix" });
-        else run("layout.resize", { id: dock.id, px: Number(localStorage.getItem("width")) || WIDE });
-      })
+      .size_full().items_center().pt(10).gap(8).cursor_pointer().hover((st) => st.bg(t.hover))
+      .tooltip("Trails — click to open").on_click(() => run("mod.open", { name: "trailmix" }))
       .child(svg("mods/trailmix/trail.svg").size(18).text_color(t.muted))
-      .when(waiting > 0, (el) => el.child(badge(waiting, t.blocked, "waiting on you")))
-      .when(building > 0, (el) => el.child(badge(building, t.working, "building")));
+      .children(this.badges(t, "rail"));
   }
 
   sized(size, cx) {
-    if (size.width === this.width) return;
+    if (size.width === this.width && size.height === this.height) return;
     this.width = size.width;
+    this.height = size.height;
     cx.notify();
   }
 
@@ -272,20 +270,36 @@ export default class Trails extends View {
     if (this.doc) return this.renderDoc(t);
     if (!this.overlay && this.width < NARROW) return this.renderRail(t);
     if (!checking() && window()?.visible !== false && Date.now() - this.refreshed > POLL_MS) this.refresh(cx);
+    const root = layout(), dock = findDock(root, "trailmix");
+    const side = !this.overlay && dock?.inSidebar === true;
+    const collapsed = side && this.height < HEADER + 12;
     const priority = shared(SORT_KEY) === "priority";
+    const sort = div().id("trailmix-sort").px(6).py(1).flex_none().rounded(4).cursor_pointer().text_size(11).text_color(t.muted)
+      .hover((st) => st.bg(t.hover).text_color(t.foreground))
+      .on_click(() => setShared(SORT_KEY, priority ? "space" : "priority"))
+      .child(priority ? "↓ Priority" : "↓ Space order");
+    const pin = this.pinButton(t, root, dock);
+    const title = side
+      ? h_flex().id("trailmix-fold").flex_1().min_w(0).gap(6).items_center().cursor_pointer()
+        .tooltip(collapsed ? "Expand" : "Collapse")
+        .on_click(() => run("layout.resize", collapsed ? { id: dock.id, weight: 1 } : { id: dock.id, px: HEADER }))
+        .child(div().w(10).flex_none().text_color(t.muted).child(collapsed ? "▸" : "▾"))
+        .child(div().font_semibold().child("Trails"))
+        .children(collapsed ? this.badges(t, "head") : [])
+      : div().flex_1().font_semibold().child("Trails");
+    const header = h_flex().h(HEADER).flex_none().px(12).items_center().when(!collapsed, (el) => el.border_b(1).border_color(t.border))
+      .child(title)
+      .when(!collapsed, (el) => el.child(sort))
+      .when(side && !collapsed, (el) => el.child(this.button(t, "trailmix-remove", "✕", "Remove from the sidebar",
+        () => { const out = relocate(root, "trailmix", null); if (out) run("layout.set", { layout: out }); })))
+      .when(Boolean(pin), (el) => el.child(pin));
+    const view = v_flex().id("trailmix").on_size_change((size, cx) => this.sized(size, cx)).size_full().min_h(0)
+      .when(!side, (el) => el.bg(t.background)).text_color(t.foreground).text_size(13).child(header);
+    if (collapsed) return view;
     const rows = this.rows(t, priority);
-    const dockBtns = this.dockButtons(t);
     const loading = [...this.folders.values()].some((e) => !e.trails && !e.error);
-    return v_flex().id("trailmix").on_size_change((size, cx) => this.sized(size, cx)).size_full().min_h(0).bg(t.background).text_color(t.foreground).text_size(13)
-      .child(h_flex().h(36).flex_none().px(12).items_center().border_b(1).border_color(t.border)
-        .child(div().flex_1().font_semibold().child("Trails"))
-        .child(div().id("trailmix-sort").px(6).py(1).rounded(4).cursor_pointer().text_size(11).text_color(t.muted)
-          .hover((st) => st.bg(t.hover).text_color(t.foreground))
-          .on_click(() => setShared(SORT_KEY, priority ? "space" : "priority"))
-          .child(priority ? "↓ Priority" : "↓ Space order"))
-        .children(dockBtns))
-      .child(v_flex().id("trailmix-list").flex_1().min_h(0).overflow_y_scrollbar().p(6).gap(6)
-        .children(rows)
-        .when(!rows.length, (el) => el.child(div().p(6).text_size(12).text_color(t.dim).child(loading ? "Loading trails…" : "No trails in any space"))));
+    return view.child(v_flex().id("trailmix-list").flex_1().min_h(0).overflow_y_scrollbar().p(6).gap(6)
+      .children(rows)
+      .when(!rows.length, (el) => el.child(div().p(6).text_size(12).text_color(t.dim).child(loading ? "Loading trails…" : "No trails in any space"))));
   }
 }
