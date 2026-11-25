@@ -24,6 +24,8 @@ panel says "No trails in any space".
   An agent that's `working` holds the toast until it stops (checked at the next refresh).
 - Refreshes every 15 s; local spaces also refresh as soon as `.trailmix/trail` changes. Hover
   highlights a row. Read-only: it never changes a trail.
+- The command palette's "Trails" opens the same list as a 360 × 520 overlay, for layouts
+  without the docked column.
 
 **Built from:** one mod, `mods/trailmix/`, docked by `mod.json` and reused as its own dialog
 (`openOverlay({ mod: "trailmix", props: { doc } })`). For each distinct space folder it runs

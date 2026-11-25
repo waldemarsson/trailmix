@@ -176,6 +176,7 @@ machine.
 
 **Amendments:**
 - 2026-11-25 · Loader escapes only `[%#?\r\n\t]` (not full encodeURIComponent): ~22 KB command line, under Windows' cap; Node ≥16 contract unchanged (verified on 20, 22, 24). Supersedes the encodeURIComponent/≈32 KB notes above.
+- 2026-11-25 · Handoff: herdr didn't auto-dock on the human's host (folder likely seen empty mid-install). Added a palette entry "Trails" (`mod.open`) and an overlay size (360×520) to mod.json so a plain folder copy is enough; README says to move the folder in whole.
 
 ## Build notes
 **Files:**
@@ -226,3 +227,4 @@ AC map: AC1→T1 · AC2→T3 · AC3→T2 · AC4→T3/T4 · AC5→T5 · AC6→han
 - Gate · `node --test build/trail.test.mjs build/herdr-app.test.mjs` 89/89 · real `hc exec` on VM with r1 loader (unicode titles) ok
 - Review r3 · H1, L1, L2 held · no new findings · verdict ready
 - Docs · RECIPE.md loader note now lists `?` (r2 fix made it stale) · README / architecture / AGENTS.md / trail-metadata.md already current from T5 · no agent-retro line (the hc exec PATH and base64 quirks are user-side and already in RECIPE)
+- Follow-up · mod.json palette + overlay size · README/RECIPE notes · `node --test build/herdr-app.test.mjs` 25/25 · palette/overlay sizing unverified until the human tries it
