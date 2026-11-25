@@ -104,9 +104,9 @@ security) into each session; trailmix's own subagents get its Security section.
 for a trail's brief/report, and a toast when a trail waits on you. Copy
 `dist/herdr-app/mods/trailmix/` to `~/.config/herdr-app/mods/trailmix/`, then
 `herdr-app check ~/.config/herdr-app/mods/trailmix`. Move the folder in whole: Herdr docks a mod
-only the first time it sees its folder. Without the column, the palette's **Trails** opens it. It runs `node` on each space's machine;
-if `node` lives under nvm/volta, see the `node` setting in
-[`dist/herdr-app/RECIPE.md`](dist/herdr-app/RECIPE.md).
+only the first time it sees its folder. Without the column, the palette's **Trails** opens it.
+It runs `node` on each space's machine and finds one under nvm, volta, fnm, mise, or asdf
+itself; otherwise see the `node` setting in [`dist/herdr-app/RECIPE.md`](dist/herdr-app/RECIPE.md).
 
 ## Develop
 

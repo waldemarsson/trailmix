@@ -6,7 +6,7 @@ import { View, div } from "gpui-kit";
 import { v_flex, h_flex, TextView } from "gpui-base";
 import { spaces, agents, exec, readTextFile, watchFolder, notify, openOverlay, closeOverlay, props, theme, checking, window } from "herdr";
 import SOURCE from "./trail-source.js";
-import { nodeFor, statusArgs, parseStatus, execError, groupTrails, isCheckpoint, stripFrontmatter, createNotifier, toastFor, machineLabel } from "./logic.js";
+import { nodeFor, statusArgs, parseStatus, parseShellStatus, viaShell, cannotStart, execError, groupTrails, isCheckpoint, stripFrontmatter, createNotifier, toastFor, machineLabel } from "./logic.js";
 
 const POLL_MS = 15000;
 const TIMEOUT_MS = 10000;
@@ -54,11 +54,17 @@ export default class Trails extends View {
     e.busy = true;
     cx.spawn(async (cx) => {
       const node = nodeFor(props()?.node, e.machine);
+      const opts = { on: e.machine, cwd: e.folder, timeout: TIMEOUT_MS };
       let res;
       try {
-        res = parseStatus(await exec(node, statusArgs(SOURCE), { on: e.machine, cwd: e.folder, timeout: TIMEOUT_MS }));
+        res = parseStatus(await exec(node, statusArgs(SOURCE), opts));
       } catch (err) {
-        res = { error: execError(err, { machine: e.machine, node }) };
+        try {
+          if (node !== "node" || !cannotStart(err, node)) throw err;
+          res = parseShellStatus(await exec("sh", viaShell(statusArgs(SOURCE)), opts), e.machine);
+        } catch (err) {
+          res = { error: execError(err, { machine: e.machine, node }) };
+        }
       }
       e.busy = false;
       if (e.gone) return;

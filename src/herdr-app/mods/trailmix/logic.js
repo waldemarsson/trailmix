@@ -39,10 +39,26 @@ export function parseStatus(result) {
 
 // exec rejected (can't start, no such folder, unreachable machine, timeout). A missing program
 // reads "cannot start <program>: …"; a missing cwd reads "cannot start folder <path>: …".
+export const cannotStart = (err, program) => firstLine(err?.message ?? err).includes(`cannot start ${program}:`);
+
 export function execError(err, { machine, node }) {
-  const msg = firstLine(err?.message ?? err);
-  if (msg.includes(`cannot start ${node}:`)) return `${node} not found on ${machineLabel(machine)} — set the \`node\` setting`;
-  return `${machineLabel(machine)}: ${msg || "exec failed"}`;
+  if (cannotStart(err, node)) return missingNode(machine, node);
+  if (cannotStart(err, "sh")) return missingNode(machine);
+  return `${machineLabel(machine)}: ${firstLine(err?.message ?? err) || "exec failed"}`;
+}
+
+const missingNode = (machine, node = "node") => `${node} not found on ${machineLabel(machine)} — set the \`node\` setting`;
+
+// exec runs without a login shell, so a node from a version manager isn't on its PATH. With no
+// `node` setting, the mod retries through sh, which looks where the common managers put it.
+const NOT_FOUND = "trailmix: node not found";
+const FIND_NODE = `n=$(command -v node) || for c in "$HOME/.volta/bin/node" "$HOME/.local/share/mise/shims/node" "$HOME/.asdf/shims/node" "$HOME/.local/share/fnm/aliases/default/bin/node" $(ls -d "$HOME"/.nvm/versions/node/v*/bin/node 2>/dev/null | sort -V -r); do [ -x "$c" ] && n=$c && break; done; [ -n "$n" ] || { echo "${NOT_FOUND}" >&2; exit 127; }; exec "$n" "$@"`;
+
+export const viaShell = (args) => ["-c", FIND_NODE, "sh", ...args];
+
+export function parseShellStatus(result, machine) {
+  if (result.code === 127 && String(result.stderr ?? "").includes(NOT_FOUND)) return { error: missingNode(machine) };
+  return parseStatus(result);
 }
 
 export function groupTrails(trails) {

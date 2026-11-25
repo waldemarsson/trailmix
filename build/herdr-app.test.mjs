@@ -2,13 +2,13 @@
 // generated trail-source.js loader. Not shipped. Run: node --test build/herdr-app.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, symlinkSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { tmpdir } from "node:os";
 import { execFileSync, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import {
-  nodeFor, loaderFor, statusArgs, parseStatus, execError, groupTrails, isCheckpoint, stripFrontmatter, createNotifier, toastFor,
+  nodeFor, loaderFor, statusArgs, parseStatus, parseShellStatus, viaShell, execError, groupTrails, isCheckpoint, stripFrontmatter, createNotifier, toastFor,
 } from "../src/herdr-app/mods/trailmix/logic.js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -96,6 +96,7 @@ test("loader's data: URL keeps the whole source in its path (Node ≤20 reads on
 test("status command line stays under Windows' 32,767-character cap with room to grow", () => {
   const args = statusArgs(readFileSync(TRAIL, "utf8"));
   assert.ok(["node", ...args].join(" ").length < 28000);
+  assert.ok(["sh", ...viaShell(args)].join(" ").length < 28000);
 });
 
 // ---- cross-test: real trail.mjs output through the matcher ------------------------------------
@@ -154,6 +155,51 @@ test("execError: the app's missing-program message points at the node setting", 
 test("execError: a missing folder is not a node problem", () => {
   const e = new Error("cannot start folder /w: No such file or directory (os error 2)");
   assert.equal(execError(e, { machine: "vm", node: "node" }), "vm: cannot start folder /w: No such file or directory (os error 2)");
+});
+
+test("execError: no sh on the machine (Windows) points at the node setting", () => {
+  const e = new Error("cannot start sh: program not found");
+  assert.equal(execError(e, { machine: "win", node: "node" }), "node not found on win — set the `node` setting");
+});
+
+const fakeHome = (nodes) => {
+  const home = mkdtempSync(join(tmpdir(), "tm-home-"));
+  for (const v of nodes) {
+    const bin = join(home, ".nvm/versions/node", v, "bin");
+    mkdirSync(bin, { recursive: true });
+    writeFileSync(join(bin, "node"), `#!/bin/sh\necho ${v} "$@"\n`, { mode: 0o755 });
+  }
+  // PATH holds only the tools the finder uses, so a system node can't leak in.
+  const tools = join(home, "tools");
+  mkdirSync(tools);
+  for (const t of ["ls", "sort"]) symlinkSync(execFileSync("/bin/sh", ["-c", `command -v ${t}`], { encoding: "utf8" }).trim(), join(tools, t));
+  return home;
+};
+const runShell = (home, args) => spawnSync("/bin/sh", viaShell(args), { encoding: "utf8", env: { HOME: home, PATH: join(home, "tools") } });
+
+test("viaShell: with node off PATH, runs the highest nvm version with the args", () => {
+  const home = fakeHome(["v9.0.0", "v24.1.0", "v18.2.0"]);
+  try {
+    const r = runShell(home, ["status", "--json"]);
+    assert.equal(r.stdout, "v24.1.0 status --json\n");
+    assert.equal(r.status, 0);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("viaShell: no node anywhere reads as the node-setting hint", () => {
+  const home = fakeHome([]);
+  try {
+    const r = runShell(home, ["status"]);
+    assert.equal(parseShellStatus({ code: r.status, stdout: r.stdout, stderr: r.stderr }, "vm").error, "node not found on vm — set the `node` setting");
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("parseShellStatus: a found node's output parses like a direct run", () => {
+  assert.deepEqual(parseShellStatus({ code: 0, stdout: '{"trails":[]}', stderr: "" }, "vm"), { trails: [] });
 });
 
 test("execError: other rejections name the machine", () => {

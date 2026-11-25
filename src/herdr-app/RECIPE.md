@@ -39,12 +39,14 @@ the pure parts (loader, `node` lookup, parsing, errors, grouping, notifications)
 
 **Watch out:**
 - Needs Node ≥ 16 on every machine with trails. `exec` doesn't start a login shell, so a node
-  from nvm/volta/fnm is often not on its `PATH` ("node not found on <machine> — set the `node`
-  setting"). Either link it onto the default `PATH` on that machine:
-  `ln -s "$(command -v node)" ~/.local/bin/node`, or set the `node` prop on the mod's block in
-  `layouts/<name>.json`: `{ "mod": "trailmix", "props": { "node": "/abs/path/to/node" } }`, or
-  per machine `{ "node": { "local": "/usr/bin/node", "my-vm": "/home/me/.nvm/versions/node/v24.0.0/bin/node" } }`
-  (unlisted machines use `node`).
+  from a version manager is often not on its `PATH`. With no `node` setting, the mod then retries
+  through `sh`, which takes the first of `command -v node`, volta, mise, asdf, fnm's default, and
+  the highest nvm version. Only when that finds nothing (or the machine has no `sh`, e.g.
+  Windows) does the row read "node not found on <machine> — set the `node` setting". The setting
+  is the `node` prop on the mod's block in `layouts/<name>.json`:
+  `{ "mod": "trailmix", "props": { "node": "/abs/path/to/node" } }`, or per machine
+  `{ "node": { "local": "/usr/bin/node", "my-vm": "/home/me/.nvm/versions/node/v24.0.0/bin/node" } }`
+  (unlisted machines use `node`). A set path is used as-is, with no fallback.
 - The command line carries trail.mjs (~22 KB, only `%#?` and line breaks escaped for the `data:`
   URL) per folder per refresh; a test keeps it under Windows' 32,767-character limit.
 - Embedded HTML in a brief or report shows as text (`raw_html(false)`).
