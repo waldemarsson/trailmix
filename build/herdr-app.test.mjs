@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { tmpdir } from "node:os";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import {
   nodeFor, statusArgs, parseStatus, execError, groupTrails, isCheckpoint, stripFrontmatter, createNotifier, toastFor,
@@ -70,6 +70,26 @@ test("loader in a folder with no trails yields an empty list", () => {
   }
 });
 
+test("loader reports a thrown error as one line and exit 1, like a direct run", () => {
+  const cwd = mkdtempSync(join(tmpdir(), "trailmix-herdr-"));
+  try {
+    mkdirSync(join(cwd, ".trailmix"));
+    writeFileSync(join(cwd, ".trailmix/trail"), "not a dir");
+    const r = spawnSync(process.execPath, statusArgs(readFileSync(TRAIL, "utf8")), { cwd, encoding: "utf8" });
+    const d = spawnSync(process.execPath, [TRAIL, "status", "--json"], { cwd, encoding: "utf8" });
+    assert.equal(r.status, 1);
+    assert.equal(r.stderr, d.stderr);
+    assert.match(r.stderr, /^error: \S/);
+  } finally {
+    rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test("status command line stays under Windows' 32,767-character cap with room to grow", () => {
+  const args = statusArgs(readFileSync(TRAIL, "utf8"));
+  assert.ok(["node", ...args].join(" ").length < 28000);
+});
+
 // ---- cross-test: real trail.mjs output through the matcher ------------------------------------
 
 test("checkpoint matcher agrees with real trail.mjs output at every phase", () => {
@@ -113,9 +133,19 @@ test("parseStatus maps unparsable or wrong-shape stdout to an error", () => {
   assert.deepEqual(parseStatus({ code: 0, stdout: "{}", stderr: "" }), { error: "unexpected trail.mjs output: {}" });
 });
 
-test("execError: node that cannot start points at the node setting", () => {
-  const e = new Error("cannot start node: program not found");
+test("execError: hc's missing-program message points at the node setting", () => {
+  const e = new Error("cannot start node: No such file or directory (os error 2)");
   assert.equal(execError(e, { machine: "vm", node: "node" }), "node not found on vm — set the `node` setting");
+});
+
+test("execError: the app's missing-program message points at the node setting", () => {
+  const e = new Error("cannot start /opt/node: program not found");
+  assert.equal(execError(e, { machine: null, node: "/opt/node" }), "/opt/node not found on local — set the `node` setting");
+});
+
+test("execError: a missing folder is not a node problem", () => {
+  const e = new Error("cannot start folder /w: No such file or directory (os error 2)");
+  assert.equal(execError(e, { machine: "vm", node: "node" }), "vm: cannot start folder /w: No such file or directory (os error 2)");
 });
 
 test("execError: other rejections name the machine", () => {

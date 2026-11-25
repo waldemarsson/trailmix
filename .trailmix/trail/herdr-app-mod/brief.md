@@ -7,7 +7,7 @@ updated: 2026-11-25
 waypoint: discuss
 status: approved
 branch: feature/NO-JIRA_herdr-app-mod
-tasks: T1:done T2:done T3 T4 T5
+tasks: T1:done T2:done T3:done T4:done T5:done
 ---
 
 # Herdr app mod showing trail status — brief
@@ -201,3 +201,10 @@ AC map: AC1→T1 · AC2→T3 · AC3→T2 · AC4→T3/T4 · AC5→T5 · AC6→han
 **Evidence:**
 - T1 · `node --test build/trail.test.mjs` 64/64 pass (4 new --json tests, red first) · AC1 → met
 - T2 · `node --test build/herdr-app.test.mjs` 20/20 (19 red-free logic + AC2 loader test red until T3 emitter, then green) · AC3 → met
+- T3 · emitter `writeHerdrApp()` + verify section · `npm run verify` OK after signed commit a588ba7 · mutation-checked verify guard: disallowed import, `setTimeout`, stale trail-source each fail · AC2 → met (loader from dist trail-source.js == direct run) · AC4 → met
+- T4 · `node --check main.js` ok · smoke-ran dist main.js under Node with stubbed `herdr`/gpui modules (ad hoc, not committed): panel lists this repo's trails, remote "cannot start" → node-setting hint, row click → overlay props, overlay renders brief markdown · UI against real herdr-app unverified (no herdr-app on VM) → AC6
+- T5 · README (intro, Install → Herdr app, Develop), architecture §3/§9, repo AGENTS.md, generate.mjs + verify.sh headers, trail-metadata.md · 0.15.0 both files · AC5 → met
+- Deviation · `working` check spans every space sharing the folder (not just one space), since status is fetched once per machine+folder · notifier at module scope so two docked copies toast once
+- Deviation · spaces with no trails are hidden (not "no trails" per space); panel shows "No trails in any space" when all empty — less clutter with many spaces
+- Deviation · verify import check scans static imports only: logic.js's loader string contains a dynamic `import(` (data: URL) for node, not the mod
+- Unverified · `TextView.markdown` inside scroll container, docked `size`/`title` honored, `props()` null for docked copy — needs herdr-app (AC6)

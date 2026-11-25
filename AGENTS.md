@@ -2,16 +2,16 @@
 
 This file is for agents *developing this repo*. Don't confuse it with
 `src/instructions/AGENTS.md`, which is trailmix's shipped always-on core (generated into
-`dist/{claude,ghcp}/AGENTS.md` and injected by the `SessionStart` hook). Editing one never implies editing
-the other.
+`dist/{claude,ghcp}/AGENTS.md` and injected by the `SessionStart` hook). Editing one never
+implies editing the other.
 
 ## What this repo is
 
 A single neutral source (`src/`) plus a zero-dep generator (`build/generate.mjs`) that emits two
 installable plugins: `dist/claude/` (Claude Code) and `dist/ghcp/` (GitHub Copilot CLI), plus a
 Herdr desktop app mod in `dist/herdr-app/` (source `src/herdr-app/`, embeds `trail.mjs`). The
-product is markdown — skills, agents, instructions — not application code, apart from that mod. `docs/architecture.md`
-is the design source of truth; read it before changing structure.
+product is markdown — skills, agents, instructions — not application code, apart from that mod.
+`docs/architecture.md` is the design source of truth; read it before changing structure.
 
 ## The one hard rule
 

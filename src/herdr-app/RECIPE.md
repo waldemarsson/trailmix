@@ -43,8 +43,12 @@ the pure parts (loader, `node` lookup, parsing, errors, grouping, notifications)
   `layouts/<name>.json`: `{ "mod": "trailmix", "props": { "node": "/abs/path/to/node" } }`, or
   per machine `{ "node": { "local": "/usr/bin/node", "my-vm": "/home/me/.nvm/versions/node/v24.0.0/bin/node" } }`
   (unlisted machines use `node`).
-- The command line carries trail.mjs (~32 KB) per space per refresh.
-- `watchFolder` is local only; remote spaces update on the 15 s poll.
+- The command line carries trail.mjs (~22 KB, only `%#` and line breaks escaped for the `data:`
+  URL) per folder per refresh; a test keeps it under Windows' 32,767-character limit.
+- Embedded HTML in a brief or report shows as text (`raw_html(false)`).
+- `watchFolder` is local only; remote spaces update on the 15 s poll, which pauses while the
+  window is hidden and catches up when it shows.
+- Spaces without a folder are skipped.
 - `trail-source.js` is generated; rebuild it from trailmix rather than editing it.
 
 **Done when:** `herdr-app check ~/.config/herdr-app/mods/trailmix` passes; a space with a trail

@@ -110,9 +110,8 @@ if `node` lives under nvm/volta, see the `node` setting in
 ## Develop
 
 `src/` is the single source; a zero-dep generator emits both plugins and the Herdr app mod into
-`dist/`. Contributor
-rules and commands: [`AGENTS.md`](AGENTS.md). Design, portability, and token strategy:
-[`docs/architecture.md`](docs/architecture.md).
+`dist/`. Contributor rules and commands: [`AGENTS.md`](AGENTS.md). Design, portability, and
+token strategy: [`docs/architecture.md`](docs/architecture.md).
 
 ## License
 

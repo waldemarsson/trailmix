@@ -4,23 +4,24 @@
 
 import { View, div } from "gpui-kit";
 import { v_flex, h_flex, TextView } from "gpui-base";
-import { spaces, agents, exec, readTextFile, watchFolder, notify, openOverlay, closeOverlay, props, theme, checking } from "herdr";
+import { spaces, agents, exec, readTextFile, watchFolder, notify, openOverlay, closeOverlay, props, theme, checking, window } from "herdr";
 import SOURCE from "./trail-source.js";
 import { nodeFor, statusArgs, parseStatus, execError, groupTrails, isCheckpoint, stripFrontmatter, createNotifier, toastFor, machineLabel } from "./logic.js";
 
 const POLL_MS = 15000;
 const TIMEOUT_MS = 10000;
 const keyOf = (s) => `${machineLabel(s.machine)}\0${s.folder}`;
-// Module scope is shared by every copy, so two docked copies still toast once.
-const notifier = createNotifier();
 
 export default class Trails extends View {
   init(_props, cx) {
     const doc = props()?.doc;
     if (doc) return this.initDoc(doc, cx);
     this.folders = new Map(); // machine+folder -> { machine, folder, trails?, error?, busy, again, watch, gone }
+    this.notifier = createNotifier();
+    this.refreshed = 0;
     if (checking()) return;
-    cx.timer.every(POLL_MS, (cx) => this.refresh(cx));
+    // Each poll spawns node per folder, so skip it while the window is hidden; render catches up.
+    cx.timer.every(POLL_MS, (cx) => window()?.visible !== false && this.refresh(cx));
     this.refresh(cx);
   }
 
@@ -33,6 +34,7 @@ export default class Trails extends View {
 
   // Reconcile with the live spaces: drop removed folders (and their watchers), load the rest.
   refresh(cx) {
+    this.refreshed = Date.now();
     const live = new Map();
     for (const s of spaces()) if (s.folder && !live.has(keyOf(s))) live.set(keyOf(s), { machine: s.machine ?? null, folder: s.folder });
     for (const [k, e] of this.folders) {
@@ -79,7 +81,7 @@ export default class Trails extends View {
     if (!here.length) return;
     const ids = new Set(here.map((s) => s.id));
     const working = agents().some((a) => ids.has(a.space) && a.status === "working");
-    for (const t of notifier.observe({ machine: e.machine, folder: e.folder, trails: e.trails, working })) notify(toastFor(t, here[0]));
+    for (const t of this.notifier.observe({ machine: e.machine, folder: e.folder, trails: e.trails, working })) notify(toastFor(t, here[0]));
   }
 
   // Local folders only (watchFolder can't watch another machine); the poll covers the rest.
@@ -149,7 +151,7 @@ export default class Trails extends View {
         .child(body === undefined ? div().text_color(t.dim).child("Loading…")
           : body === null ? div().text_color(t.dim).child(`${this.which} not found`)
           : typeof body === "object" ? div().text_color(t.ansi1).child(`Cannot read ${this.which}: ${body.error}`)
-          : TextView.markdown(`doc-${doc.slug}-${this.which}`, body)));
+          : TextView.markdown(`doc-${doc.slug}-${this.which}`, body).raw_html(false)));
   }
 
   // ---- panel -----------------------------------------------------------------------------------
@@ -182,9 +184,10 @@ export default class Trails extends View {
     return out;
   }
 
-  render(_cx) {
+  render(cx) {
     const t = theme();
     if (this.doc) return this.renderDoc(t);
+    if (!checking() && Date.now() - this.refreshed > POLL_MS) this.refresh(cx);
     const rows = this.rows(t);
     const loading = [...this.folders.values()].some((e) => !e.trails && !e.error);
     return v_flex().id("trailmix").size_full().min_h(0).bg(t.background).text_color(t.foreground).text_size(13)

@@ -314,7 +314,7 @@ export function statusJson(dirs) {
     const t = deriveTrail(d);
     const f = join(d, "brief.md");
     const title = existsSync(f) ? frontmatter(readFileSync(f, "utf8"))?.title : undefined;
-    return title && title !== "<title>" ? { slug: t.slug, title, state: t.state, next: t.next } : t;
+    return title && title !== "<title>" ? { slug: t.slug, title, state: t.state, next: t.next } : { slug: t.slug, state: t.state, next: t.next };
   });
   return JSON.stringify({ trails });
 }

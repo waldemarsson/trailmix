@@ -14,10 +14,12 @@ export function nodeFor(setting, machine) {
 }
 
 // trail.mjs travels in argv and runs on the space's machine, so nothing is installed there.
-// The argv shim keeps trail.mjs's direct-run guard (realpathSync(argv[1])) from firing.
+// The argv shim keeps trail.mjs's direct-run guard (realpathSync(argv[1])) from firing; the catch
+// mirrors that guard's error line. Only the characters a data: URL can't carry are escaped, which
+// keeps the command line well under Windows' 32,767-character cap (encodeURIComponent: +60%).
 export function loaderFor(source) {
-  const url = JSON.stringify(encodeURIComponent(source));
-  return `const a=process.argv.slice(1);process.argv=[process.argv[0],process.execPath];const m=await import("data:text/javascript,"+${url});process.exitCode=m.run(a);`;
+  const url = JSON.stringify(source.replace(/[%#\r\n\t]/g, encodeURIComponent));
+  return `const a=process.argv.slice(1);process.argv=[process.argv[0],process.execPath];try{const m=await import("data:text/javascript,"+${url});process.exitCode=m.run(a);}catch(e){process.stderr.write("error: "+e.message+"\\n");process.exitCode=1;}`;
 }
 
 export const statusArgs = (source) => ["--input-type=module", "-e", loaderFor(source), "status", "--json"];
@@ -34,10 +36,11 @@ export function parseStatus(result) {
   return { error: `unexpected trail.mjs output: ${firstLine(result.stdout) || "(empty)"}` };
 }
 
-// exec rejected (can't start, no such folder, unreachable machine, timeout).
+// exec rejected (can't start, no such folder, unreachable machine, timeout). A missing program
+// reads "cannot start <program>: …"; a missing cwd reads "cannot start folder <path>: …".
 export function execError(err, { machine, node }) {
   const msg = firstLine(err?.message ?? err);
-  if (/cannot start/i.test(msg) && /not found/i.test(msg)) return `${node} not found on ${machineLabel(machine)} — set the \`node\` setting`;
+  if (msg.includes(`cannot start ${node}:`)) return `${node} not found on ${machineLabel(machine)} — set the \`node\` setting`;
   return `${machineLabel(machine)}: ${msg || "exec failed"}`;
 }
 
@@ -55,6 +58,7 @@ export function stripFrontmatter(text) {
 // Fires once per checkpoint entry per trail, keyed by machine+folder+slug so spaces sharing a
 // folder notify once. The first result for a folder only seeds; a trail re-arms once it leaves
 // the checkpoint. `working`: an agent there is working, so the human isn't needed yet.
+// One per panel copy: a new copy seeds again rather than toasting what it never saw arrive.
 export function createNotifier() {
   const seen = new Set();
   const fired = new Set();
