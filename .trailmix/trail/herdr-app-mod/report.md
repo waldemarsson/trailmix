@@ -9,6 +9,7 @@ updated: 2026-11-25
 **Result:** `npm run build` now emits `dist/herdr-app/`, a herdr-app mod. It docks a "Trails" panel listing each space's trails (local or remote, via `exec` on the space's machine with trail.mjs inlined), opens the brief or report in a dialog, and toasts when a trail waits on you. `trail.mjs status --json` backs it. **Verdict:** ready. AC6 (real herdr-app UI) is your manual check.
 
 ## Try it
+0. On the host, clone the shipped layout so Herdr can dock the mod: `herdr-app do layout.clone '{"name":"main","as":"trailmix"}'`.
 1. On the host, copy the mod into its own folder: `mkdir -p ~/.config/herdr-app/mods && limactl shell agentbox sh -c 'tar -C ~/workspace/trailmix/dist/herdr-app/mods -cf - trailmix' | tar -C ~/.config/herdr-app/mods -xf -`. That gives `mods/trailmix/{main.js,logic.js,mod.json,trail-source.js}`. (`limactl copy -r` flattens the files into `mods/` when that folder doesn't exist yet.)
 2. Make node reachable for `exec` on the VM. Check with `hc exec -- node -v`; if it isn't found, either run `ln -s "$(command -v node)" ~/.local/bin/node` on the VM (if that's on exec's PATH), or set the prop in your layout: `{ "mod": "trailmix", "props": { "node": { "<vm machine>": "/home/marwal/.nvm/versions/node/v24.22.2/bin/node" } } }`.
 3. Run `herdr-app check`, then open the app. The panel should list this repo's trails (`herdr-app-mod` at handoff, awaiting review). Click it to open the dialog; Esc closes it.
@@ -54,3 +55,6 @@ updated: 2026-11-25
 - No host config and no sudo: with no `node` setting, the mod finds a version-managed node itself by retrying through `sh` (volta, mise, asdf, fnm, highest nvm). Verified via real `hc exec` on the VM. Known limits are in the RECIPE.
 - Review: 7 findings (M1, L1–L6) fixed in 2 rounds. The palette overlay no longer toasts or watches folders. 32/32 tests pass, verify OK.
 - Update the host by copying in place: `limactl copy 'agentbox:~/workspace/trailmix/dist/herdr-app/mods/trailmix/*' ~/.config/herdr-app/mods/trailmix/`.
+- Card per space with a status pill per trail; finished-only spaces collapse into a footer line.
+- Header toggle `↓ Space order` / `↓ Priority`, kept in `shared("trailmix.sort")`.
+- Docking: Herdr docks a mod only into a personal layout. README, RECIPE, and architecture now say to clone `main` first (`herdr-app do layout.clone '{"name":"main","as":"trailmix"}'`). You confirmed the docked panel on the host.

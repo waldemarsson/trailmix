@@ -30,6 +30,9 @@ don't appear. With none anywhere the panel says "No trails in any space".
   An agent that's `working` holds the toast until it stops (checked at the next refresh).
 - Refreshes every 15 s; local spaces also refresh as soon as `.trailmix/trail` changes. Hover
   highlights a row. Read-only: it never changes a trail.
+- Herdr docks the column only into a personal layout (Herdr's own are replaced on every start),
+  the first time it sees the folder. Clone first: `herdr-app do layout.clone
+  '{"name":"main","as":"trailmix"}'`, then copy the mod in.
 - The command palette's "Trails" opens the same list as a 360 × 520 overlay, for layouts
   without the docked column. It doesn't toast or watch folders; the docked copy does.
 

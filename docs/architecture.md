@@ -105,7 +105,7 @@ Install is marketplace-only, no standalone installer: `/plugin marketplace add o
 / `copilot plugin marketplace add owner/repo` (GHCP) read the root marketplace stubs above, which
 point at `dist/claude/` and `dist/ghcp/` respectively. GHCP also supports installing
 `dist/ghcp/` directly via `copilot plugin install owner/repo:dist/ghcp`, no marketplace step.
-`dist/herdr-app/mods/trailmix/` is copied to `~/.config/herdr-app/mods/trailmix/` by hand (or a Herdr gallery add).
+`dist/herdr-app/mods/trailmix/` is copied to `~/.config/herdr-app/mods/trailmix/` by hand (or a Herdr gallery add); it docks only into a personal layout (clone `main` first).
 
 ---
 
