@@ -1,7 +1,7 @@
 ---
 slug: herdr-app-mod
 waypoint: handoff
-status: draft
+status: approved
 updated: 2026-11-25
 ---
 # Herdr app mod showing trail status — report
