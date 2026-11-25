@@ -62,6 +62,7 @@ check "herdr-app recipe"        "$H/RECIPE.md"
 check "herdr-app main.js"       "$H/mods/trailmix/main.js"
 check "herdr-app mod.json"      "$H/mods/trailmix/mod.json"
 check "herdr-app trail-source"  "$H/mods/trailmix/trail-source.js"
+check "herdr-app rail icon"     "$H/mods/trailmix/trail.svg"
 valid_json "herdr-app mod.json" "$H/mods/trailmix/mod.json"
 # The mod runtime has no Node APIs or timers; trail-source.js is data (trail.mjs as a string).
 node --input-type=module -e '

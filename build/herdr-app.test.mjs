@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { execFileSync, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import {
-  nodeFor, loaderFor, statusArgs, parseStatus, parseShellStatus, viaShell, execError, groupTrails, isCheckpoint, statusPill, trailRank, spaceRank, findDock, stripFrontmatter, createNotifier, toastFor,
+  nodeFor, loaderFor, statusArgs, parseStatus, parseShellStatus, viaShell, execError, groupTrails, isCheckpoint, statusPill, trailRank, spaceRank, tally, findDock, stripFrontmatter, createNotifier, toastFor,
 } from "../src/herdr-app/mods/trailmix/logic.js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -360,4 +360,10 @@ test("findDock: finds the docked block by mod, nested or floating", () => {
 test("findDock: no dock or no layout gives null", () => {
   assert.equal(findDock({ id: "r", children: [{ id: "x", content: { mod: "files" } }] }, "trailmix"), null);
   assert.equal(findDock(null, "trailmix"), null);
+});
+
+test("tally: counts trails waiting on you and building; the rest don't count", () => {
+  const open = ["handoff (awaiting review)", "discuss (awaiting sign-off)", "build (1/3 done, next T2)", "discuss"].map((next) => ({ next }));
+  assert.deepEqual(tally(open), { waiting: 2, building: 1 });
+  assert.deepEqual(tally([]), { waiting: 0, building: 0 });
 });

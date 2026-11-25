@@ -89,6 +89,17 @@ const RANK = { blocked: 0, working: 1 };
 export const trailRank = (next) => RANK[statusPill(next).tone] ?? 2;
 export const spaceRank = (open, error) => (error ? 3 : Math.min(2, ...open.map((t) => trailRank(t.next))));
 
+// How many open trails wait on you / are building, for the collapsed rail.
+export function tally(open) {
+  const out = { waiting: 0, building: 0 };
+  for (const t of open) {
+    const r = trailRank(t.next);
+    if (r === 0) out.waiting++;
+    else if (r === 1) out.building++;
+  }
+  return out;
+}
+
 // Herdr gives an auto-docked block a random id, so find it by its mod.
 export function findDock(node, mod) {
   if (!node || typeof node !== "object") return null;

@@ -59,3 +59,4 @@ updated: 2026-11-25
 - Header toggle `↓ Space order` / `↓ Priority`, kept in `shared("trailmix.sort")`.
 - Docking: Herdr docks a mod only into a personal layout. README, RECIPE, and architecture now say to clone `main` first (`herdr-app do layout.clone '{"name":"main","as":"trailmix"}'`). You confirmed the docked panel on the host.
 - Close: `✕` in the Trails header hides the docked column. While it's hidden, palette → Trails shows "Show panel" to bring it back. A tab-bar button was skipped because the shipped `tabs` mod hardcodes Files/Changes (`tabs/main.js:151-152`), so it would need a cloned `tabs` mod.
+- Rail, replacing `✕`: `»` folds the column to a slim always-visible rail with the trailmix icon and counts of trails waiting on you and building. Click the rail to expand. A floating peek drawer would need a hand-edited layout, so it wasn't used.
