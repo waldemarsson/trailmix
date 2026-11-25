@@ -59,13 +59,14 @@ export default class Trails extends View {
       const node = nodeFor(props()?.node, e.machine);
       const opts = { on: e.machine, cwd: e.folder, timeout: TIMEOUT_MS };
       const label = machineLabel(e.machine);
+      const memo = node === "node" && this.viaSh.has(label); // a node setting added later wins
       const viaSh = async () => parseShellStatus(await exec("sh", viaShell(statusArgs(SOURCE)), opts), e.machine);
       let res;
       try {
-        res = this.viaSh.has(label) ? await viaSh() : parseStatus(await exec(node, statusArgs(SOURCE), opts));
+        res = memo ? await viaSh() : parseStatus(await exec(node, statusArgs(SOURCE), opts));
       } catch (err) {
         try {
-          if (node !== "node" || this.viaSh.has(label) || !cannotStart(err, node)) throw err;
+          if (node !== "node" || memo || !cannotStart(err, node)) throw err;
           res = await viaSh();
           if (res.trails) this.viaSh.add(label);
         } catch (err) {

@@ -237,3 +237,4 @@ AC map: AC1→T1 · AC2→T3 · AC3→T2 · AC4→T3/T4 · AC5→T5 · AC6→han
 - Follow-up review · L4 · judgment · main.js · two execs per refresh on sh machines → fixed (per-machine memo after a successful sh run)
 - Follow-up review · L5 · clear · tests · 127 without marker + order → added
 - Gate · `node --test build/herdr-app.test.mjs` 32/32 · real `hc exec -- sh …` on the VM → exit 0
+- Follow-up re-review · M1, L1, L2, L4, L5 held · L6 · clear · main.js · sh memo ignored a node setting added later → fixed (memo only when node is the default)
