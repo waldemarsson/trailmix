@@ -1,0 +1,203 @@
+---
+slug: herdr-app-mod
+title: Herdr app mod showing trail status
+kind: feature
+created: 2026-11-25
+updated: 2026-11-25
+waypoint: discuss
+status: approved
+branch: feature/NO-JIRA_herdr-app-mod
+tasks: T1:done T2:done T3 T4 T5
+---
+
+# Herdr app mod showing trail status — brief
+
+**Goal:** Ship a Herdr desktop app (`herdr-app`, on herdr-core) mod that shows every space's
+trailmix trails in a side panel, lets the human read a trail's brief/report, and notifies when a
+trail is waiting on the human — so trails are visible without asking an agent. Must work when the
+app runs on a host and the spaces live on a remote machine (e.g. a VM reached by `hc --on`).
+
+**Decisions:**
+- Target is the Herdr **desktop app** mod system (`~/.config/herdr-app/mods/<name>/`), not Herdr
+  TUI `herdr-plugin.toml` plugins.
+- Lives in this repo: source `src/herdr-app/`, generated to `dist/herdr-app/` (package root with
+  `RECIPE.md` + `mods/trailmix/`). Gallery path would be `waldemarsson/trailmix--dist--herdr-app`.
+- `trail.mjs` is the only status logic. The generator emits `mods/trailmix/trail-source.js`
+  (`export default <JSON string of trail.mjs source>`); no `trail.mjs` file ships in the mod.
+- The mod runs trail.mjs **inline on the space's machine**: `exec(node, ["--input-type=module",
+  "-e", LOADER, "status", "--json"], { on: space.machine, cwd: space.folder, timeout: 10000 })`,
+  where LOADER = `const a=process.argv.slice(1);process.argv=[process.argv[0],process.execPath];
+  const m=await import("data:text/javascript,"+<encodeURIComponent(source)>);process.exitCode=m.run(a);`.
+  The argv shim keeps trail.mjs's direct-run guard (`:419`) from firing. Same path for local
+  (`machine: null`) and remote spaces. Verified on this VM via `hc exec` with an absolute node
+  path: exit 0, correct output; command ≈32 KB.
+- `node` setting (mod prop `node`): a string, or a map keyed by machine name with `"local"` for
+  local spaces; default `"node"`. "Not found" error names the setting. RECIPE documents it and the
+  quick fix `ln -s "$(command -v node)" ~/.local/bin/node` (hc's PATH lacks nvm/volta dirs —
+  observed: `hc exec -- node` → `cannot start node`).
+- New additive flag `trail.mjs status --json` (ships to the agent plugins too): prints one JSON
+  object `{"trails":[{slug,title,state,next}, …]}` listing **every** trail (no done/dropped hiding;
+  consumer filters); `title` read from the brief in the JSON path only (not added to `deriveTrail`),
+  omitted when absent or the `<title>` placeholder; combinable with explicit dirs; `--all`
+  accepted and redundant. Any other flag → existing usage error, exit 2; usage strings and header
+  comment list `--json`. Text output and exit codes unchanged.
+- v1 features: (a) side panel, trails grouped by space (local and remote), open trails listed,
+  done/dropped collapsed to a count per space; (b) clicking a trail opens an overlay rendering its
+  markdown with frontmatter stripped — `report.md` if present, else `brief.md`, with a switch when
+  both exist (read via `readTextFile(path, { on: space.machine })`); (c) checkpoint notification.
+- Checkpoint = `next` starts with `discuss (awaiting sign-off)` or `handoff (awaiting review`.
+  Notify when a trail is at a checkpoint **and** no agent in that space (`agents()` `.space ===
+  space.id`) has status `working`; once per checkpoint entry, keyed by machine+folder+slug (dedupes
+  spaces sharing a folder); never on initial load (seed first); re-arms after the trail leaves the
+  checkpoint. Toast `action: { name: "space.select", args: { id } }`.
+- A cross-test feeds real `trail.mjs` `status --json` output (fixture trails at each phase)
+  through the mod's checkpoint matcher, so renaming the `next` strings fails `npm run verify`.
+- No Resume/new-trail buttons in v1 (human skipped them).
+- Refresh: every 15 s `cx.timer` poll for all spaces; local spaces additionally
+  `watchFolder(<folder>/.trailmix/trail)` once it exists. Each tick reconciles against current
+  `spaces()`: start watchers for new/now-existing dirs, cancel for removed spaces/changed folders;
+  no overlapping refresh per space. Watchers cancelled on view drop where the API allows.
+- Read-only: the mod never writes trail files.
+- `mod.json`: `{ "place": "right", "size": 280, "title": "Trails" }`.
+- Logic (exec command builder, JSON → view model, grouping, checkpoint/notify state machine,
+  error mapping, frontmatter strip, node-setting lookup) lives in plain `.js` modules in the mod
+  with no herdr imports; their tests live in `build/herdr-app.test.mjs` (not shipped), run by
+  `npm run verify`.
+- No `preview.png`, no `herdr-mod` repo topic in this trail (human adds after trying it).
+- Version 0.14.0 → **0.15.0** in `package.json` and `src/meta/plugin.meta.json`.
+- Implementation preferences: none — follow existing conventions.
+
+**Design:** A separate Herdr emitter in `build/generate.mjs`, after the Claude/GHCP loop (not added
+to `PLATFORMS` — no agent/skill transforms apply): copy `src/herdr-app/` verbatim to
+`dist/herdr-app/`, then write `mods/trailmix/trail-source.js` from
+`src/skills/trailmix-trailhead/refs/trail.mjs`. Inline execution (vs. vendoring a file) is what
+makes remote spaces work: the source travels in argv, `node` and the files are both on the space's
+machine, and nothing is installed there. Structured status via `--json` instead of parsing the `·`
+text: the text is for humans, and the mod can't import trail.mjs (no Node APIs in mods).
+Trade-off accepted: ~32 KB argv per space per refresh, and dependence on `node` ≥16 on each
+machine.
+
+**In scope:**
+- `trail.mjs status --json` + tests in `build/trail.test.mjs`.
+- `src/herdr-app/` (RECIPE.md, `mods/trailmix/{main.js, mod.json, pure-logic .js}`), tests in
+  `build/herdr-app.test.mjs`.
+- Generator emitter (+ `trail-source.js`); `scripts/verify.sh`: run the new test file, check
+  `dist/herdr-app` files exist, `mod.json` parses, `trail-source.js` default export equals the
+  trail.mjs source, every mod `.js` (excl. `trail-source.js`) imports only `gpui-kit`,
+  `gpui-base`, `herdr`, or relative paths and uses no `setTimeout`/`setInterval`/`node:`/`require(`.
+- Docs: README (intro, Install: Herdr app, Develop), `docs/architecture.md` (§3 tree, §9
+  generator, lines saying "two plugins"/`dist/{claude,ghcp}` incl. ~:87, :245), repo `AGENTS.md`
+  (:9-10, :25 "two installable plugins"), `build/generate.mjs` header (:2-11), `verify.sh` header
+  (:4-6), trailhead `refs/trail-metadata.md` (one line on `--json`).
+- Version bump.
+
+**Out of scope:**
+- Herdr TUI plugin; Resume / new-trail actions; editing or approving trails from the UI;
+  `preview.png`; gallery topic / any remote GitHub change; keybindings; auto-detecting node via
+  shells.
+
+**Constraints:**
+- Mod runtime: no Node APIs, no `setTimeout`/`setInterval` (use `cx.timer`), no top-level
+  `await` (use `cx.spawn` in `init`), never retain `cx`, per-copy state in `init`, `theme()`
+  colors, guard side effects (exec, watch, notify) with `checking()` for `herdr-app check`.
+- `exec` resolves on nonzero exit; rejects when the program can't start / cwd missing / machine
+  unreachable / timeout.
+- `trail.mjs` stays zero-dep, Node ≥16; its behavior when run as a file is unchanged.
+- Edit `src/`, `build/`, `docs/`, `scripts/`, `README.md`, `AGENTS.md` only; regenerate `dist/`.
+- Skill prose stays terse; `trail-metadata.md` addition is one or two lines.
+
+**Acceptance criteria:**
+- [ ] AC1: `trail.mjs status --json` prints valid JSON `{"trails":[…]}` with `slug,state,next`
+  (+`title` when real) for every trail incl. done/dropped; `{"trails":[]}` with none; explicit dirs
+  restrict; `--json --all` same as `--json`; unknown flag → exit 2; text output unchanged —
+  `node --test build/trail.test.mjs`.
+- [ ] AC2: the mod's LOADER, built from `trail-source.js`, run as `node --input-type=module -e
+  LOADER status --json` in a fixture dir, yields the same JSON as running trail.mjs directly —
+  test in `build/herdr-app.test.mjs`.
+- [ ] AC3: pure-logic tests cover grouping + done/dropped counts; notify fires once on checkpoint
+  entry with no `working` agent, not on initial load, not while an agent is working (fires when it
+  stops), not repeatedly, again after leave/re-enter, once for two spaces on one folder; error
+  mapping (exec reject "cannot start" → node-setting hint, other reject, nonzero exit, bad JSON);
+  node-setting lookup (string, map hit, map miss → `"node"`); frontmatter strip; cross-test with
+  real trail.mjs fixtures at each phase.
+- [ ] AC4: `npm run build` emits `dist/herdr-app/RECIPE.md`,
+  `dist/herdr-app/mods/trailmix/{main.js,mod.json,trail-source.js,…}`; `npm run verify` passes and
+  enforces the checks listed in scope.
+- [ ] AC5: docs updated as listed; versions 0.15.0 in both files.
+- [ ] AC6 (human, at handoff): `herdr-app check` passes and the panel works in the app against
+  the VM — this VM has no `herdr-app`.
+
+**Edge cases:**
+- Space with no `.trailmix/trail`: trail.mjs returns `{"trails":[]}` → space shows nothing/"no
+  trails"; no watcher until the dir appears.
+- `node` missing on that machine → "node not found on <machine> — set the `node` setting".
+- Machine unreachable / folder missing / timeout → inline error for that space; others unaffected.
+- Nonzero exit or unparsable stdout → inline error with first stderr line.
+- Malformed frontmatter: `deriveTrail` already degrades; show what it returns.
+- Overlay: file vanished (`null`) → "file not found"; >1 MiB / read error → error text.
+- Space removed or folder changed mid-refresh → result discarded; watcher cancelled.
+- Unicode titles/slugs render as-is (encodeURIComponent round-trips the source).
+
+**Context:**
+- `build/generate.mjs:26-36,334-390` — single `generate()` wipes `dist/`, loops `PLATFORMS`;
+  add Herdr emitter after the loop, before marketplace stubs. Only `src/skills` is validated and
+  only per-platform `skills/` trees are transformed, so `src/herdr-app/` isn't picked up elsewhere.
+  `meta.version` from `src/meta/plugin.meta.json`.
+- `scripts/verify.sh:14-23` freshness covers all `dist/`; `:27-63,93` structure checks to extend.
+  `package.json:8-10` scripts `build`, `verify`.
+- `.github/workflows/build-dist.yml:7-13` triggers on `src/**`, `build/**`, `package.json`;
+  stages all `dist/` — no change needed.
+- `src/skills/trailmix-trailhead/refs/trail.mjs:267-323` `deriveTrail`/`summarize`; `:396-406`
+  status dispatch (any flag currently sets `all`); `:419` direct-run guard via
+  `realpathSync(argv[1])`; `:221` `newTrail` writes a `<title>` placeholder; `frontmatter()` does
+  not strip quotes. `build/trail.test.mjs:412,504,520` deepEqual on `deriveTrail` (don't add
+  fields there); `:556-615` status tests to extend.
+- herdr-app v0.1.18 (`defaults/herdr.d.ts`, `defaults/AGENTS.md`, `src/mods.rs:871-950`):
+  `exec(cmd,args,{cwd,on,timeout}) → {code,stdout,stderr}`; remote exec = `hc exec --json --on
+  <machine> --cwd <cwd> -- cmd args…` (argv as given, no shell); `readTextFile(path,{on})` →
+  string|null (≤1 MiB); `watchFolder(dir)` local only, recursive, rejects on missing dir,
+  `.cancel()`; `notify({title,body,level,action:{name,args}})`; `openOverlay({mod,props,kind,
+  width,height})`, overlay gets `props().overlay`, `closeOverlay(id)`; markdown via
+  `TextView.markdown(id,text)` from `gpui-base`; `spaces()` → `{id,name,folder,machine,…}`
+  (`machine:null` = local); `agents()` → `{space,status,…}`, status
+  `working|blocked|done|idle`; `checking()`; `cx.timer.every`, `cx.spawn`, `cx.notify`; mod
+  relative imports (`./x.js`) supported.
+- Patterns: herdr-app `defaults/mods/files/main.js` (readTextFile preview, loading/missing
+  states); cybertron288/herdr-mods `session-bar` (exec per space with `on`, watchFolder + timer),
+  `ci-dash` (transition-based `notify`, error mapping); runkids/skillshare `herdr/` (subdir
+  package, `node --test` on app-independent modules).
+- Gallery: subdir packages supported (`herdr.dev/mods/<owner>/<repo>--path--segments`);
+  `RECIPE.md` at package root (name+summary, what you see, how it behaves, built from, watch out,
+  done when).
+- Repo: on clean `main`; branch convention `feature/NO-JIRA_<slug>`; `hc` 0.1.21 on this VM, no
+  `herdr-app`.
+
+<!-- Everything above is agreed at the discuss checkpoint. Build appends below; no re-approval. -->
+
+## Build notes
+**Files:**
+- `src/skills/trailmix-trailhead/refs/trail.mjs` — modify — `status --json`
+- `src/skills/trailmix-trailhead/refs/trail-metadata.md` — modify — one line on `--json`
+- `build/trail.test.mjs` — modify — `--json` tests
+- `src/herdr-app/RECIPE.md` — create — gallery recipe + `node` setting docs
+- `src/herdr-app/mods/trailmix/mod.json` — create — dock right, 280
+- `src/herdr-app/mods/trailmix/logic.js` — create — pure logic (loader, node lookup, parse, errors, grouping, notifier, frontmatter strip)
+- `src/herdr-app/mods/trailmix/main.js` — create — panel view + doc overlay view (same mod, `props().doc`)
+- `build/herdr-app.test.mjs` — create — logic tests, loader-vs-direct test, cross-test
+- `build/generate.mjs` — modify — Herdr emitter + `trail-source.js`
+- `scripts/verify.sh` — modify — herdr-app tests + structure/API checks
+- `README.md`, `docs/architecture.md`, `AGENTS.md` — modify — third output
+- `package.json`, `src/meta/plugin.meta.json` — modify — 0.15.0
+
+**Tasks:**
+- T1: `trail.mjs status --json` · `{"trails":[{slug,title?,state,next}]}` · all trails, dirs restrict, `--all` redundant, bad flag exit 2, `<title>` placeholder omitted, text unchanged · `node --test build/trail.test.mjs`
+- T2: `logic.js` · pure exports · node lookup, exec args/loader, result parse, error mapping, grouping/counts, checkpoint matcher, notifier state machine, frontmatter strip, cross-test vs real trail.mjs fixtures · `node --test build/herdr-app.test.mjs`
+- T3: generator emitter + verify wiring · `dist/herdr-app/{RECIPE.md,mods/trailmix/*}` + `trail-source.js` · loader from dist `trail-source.js` matches direct run (AC2); verify checks files, JSON, source equality, import/API bans · `npm run verify`
+- T4: `main.js` + `mod.json` + `RECIPE.md` · panel, overlay, notify, refresh/watch lifecycle, `checking()` guards · `node --check` + `npm run verify`
+- T5: docs + version 0.15.0 · `npm run verify`
+
+AC map: AC1→T1 · AC2→T3 · AC3→T2 · AC4→T3/T4 · AC5→T5 · AC6→handoff (human)
+
+**Evidence:**
+- T1 · `node --test build/trail.test.mjs` 64/64 pass (4 new --json tests, red first) · AC1 → met
+- T2 · `node --test build/herdr-app.test.mjs` 20/20 (19 red-free logic + AC2 loader test red until T3 emitter, then green) · AC3 → met

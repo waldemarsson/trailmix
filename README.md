@@ -3,7 +3,8 @@
 A lightweight, portable, token-efficient agentic coding workflow that runs the same on
 **GitHub Copilot CLI** and **Claude Code**.
 
-One source of truth → generated assets for both CLIs. Author once, ship to both.
+One source of truth → generated assets for both CLIs. Author once, ship to both. Plus an
+optional [Herdr app](#herdr-app) panel that shows every space's trails.
 
 ## The trail
 
@@ -96,9 +97,20 @@ copilot plugin marketplace add ./dist/ghcp
 A `SessionStart` hook injects trailmix's always-on core (bootstrap, style, tool conventions,
 security) into each session; trailmix's own subagents get its Security section.
 
+### Herdr app
+
+`dist/herdr-app/` is a mod for the [Herdr](https://herdr.dev) desktop app: a right-hand
+**Trails** panel listing each space's trails (local and remote) with their next step, a reader
+for a trail's brief/report, and a toast when a trail waits on you. Copy
+`dist/herdr-app/mods/trailmix/` to `~/.config/herdr-app/mods/trailmix/`, then
+`herdr-app check ~/.config/herdr-app/mods/trailmix`. It runs `node` on each space's machine;
+if `node` lives under nvm/volta, see the `node` setting in
+[`dist/herdr-app/RECIPE.md`](dist/herdr-app/RECIPE.md).
+
 ## Develop
 
-`src/` is the single source; a zero-dep generator emits both plugins into `dist/`. Contributor
+`src/` is the single source; a zero-dep generator emits both plugins and the Herdr app mod into
+`dist/`. Contributor
 rules and commands: [`AGENTS.md`](AGENTS.md). Design, portability, and token strategy:
 [`docs/architecture.md`](docs/architecture.md).
 

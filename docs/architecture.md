@@ -78,20 +78,25 @@ trailmix/                              # framework SOURCE repo (produces install
 │   ├── agents/                        # neutral agent specs (one file each)
 │   │   ├── trailmix-explorer.agent.md
 │   │   └── trailmix-reviewer.agent.md
+│   ├── herdr-app/                     # Herdr desktop app mod (not a plugin), copied verbatim
+│   │   ├── RECIPE.md
+│   │   └── mods/trailmix/{main.js,logic.js,mod.json}
 │   ├── instructions/
 │   │   └── AGENTS.md                  # source of the SessionStart hook's injected content;
 │   │                                   # bundled as-is too, but NOT auto-loaded from a plugin
 │   └── meta/
 │       └── plugin.meta.json           # name/version/author/component map (for later plugin pkg)
 ├── build/
-│   ├── generate.mjs                   # neutral src → dist/{claude,ghcp}
+│   ├── generate.mjs                   # neutral src → dist/{claude,ghcp,herdr-app}
 │   ├── trail.test.mjs                 # trail.mjs unit tests (node --test)
+│   ├── herdr-app.test.mjs             # Herdr mod logic + embedded-loader tests
 │   └── maps/                          # JSON (Node-native, zero-dep generator)
 │       ├── models.json                # agent name → platform model name
 │       └── tools.json                 # neutral alias → platform tool name(s)
 ├── dist/                              # GENERATED, committed (published plugin; marketplace source)
 │   ├── claude/{skills/,agents/*.md,hooks/hooks.json,.claude-plugin/plugin.json}
-│   └── ghcp/{skills/,agents/*.agent.md,hooks/hooks.json,plugin.json}
+│   ├── ghcp/{skills/,agents/*.agent.md,hooks/hooks.json,plugin.json}
+│   └── herdr-app/{RECIPE.md,mods/trailmix/{…,trail-source.js}}
 ├── .claude-plugin/marketplace.json    # GENERATED, root catalog: source → ./dist/claude
 └── .github/plugin/marketplace.json    # GENERATED, root catalog: source → ./dist/ghcp
 ```
@@ -100,6 +105,7 @@ Install is marketplace-only, no standalone installer: `/plugin marketplace add o
 / `copilot plugin marketplace add owner/repo` (GHCP) read the root marketplace stubs above, which
 point at `dist/claude/` and `dist/ghcp/` respectively. GHCP also supports installing
 `dist/ghcp/` directly via `copilot plugin install owner/repo:dist/ghcp`, no marketplace step.
+`dist/herdr-app/` is copied into `~/.config/herdr-app/mods/` by hand (or a Herdr gallery add).
 
 ---
 
@@ -267,7 +273,8 @@ Contents: bootstrap, style defaults, tool conventions, security (which overrides
 
 ## 9. The generator — hiding the differences
 
-`build/generate.mjs` reads `src/` and writes `dist/claude/` + `dist/ghcp/`.
+`build/generate.mjs` reads `src/` and writes `dist/claude/` + `dist/ghcp/` (and `dist/herdr-app/`,
+below).
 
 **Skills:** copy `SKILL.md` near-verbatim to both; neutral frontmatter uses only the common
 subset (`name`, `description`, `allowed-tools`); there are no per-platform frontmatter keys.
@@ -306,6 +313,14 @@ and shell-quoted again for GHCP's `bash`/`powershell` fields — always via `pri
 CC's manifest doesn't need a `hooks` field (auto-discovered from the default `hooks/` folder like
 `skills/`/`agents/`), GHCP's `plugin.json` must declare `"hooks": "hooks/hooks.json"` explicitly
 (no default-folder convention there).
+
+**Herdr app mod:** outside the platform loop — no skill/agent transforms apply. `src/herdr-app/`
+is copied verbatim to `dist/herdr-app/`, then `mods/trailmix/trail-source.js` is written as
+`export default <trail.mjs source as a JSON string>`. Herdr mods have no Node APIs and the app may
+run on another machine than the space, so the mod passes that string to `node -e` through
+`exec(…, { on: space.machine })`: `trail.mjs status --json` runs where the trail files are, and
+nothing is installed there. `verify.sh` checks the embedded source matches `trail.mjs` and that
+mod code uses only the mod runtime's imports.
 
 ---
 

@@ -4,6 +4,8 @@ set -euo pipefail
 # trailmix verify — regenerate dist/ and the root marketplace stubs, then assert the
 # generated plugin structure is sound. No installer: the only supported install path is
 # each CLI's marketplace/plugin system, reading dist/claude/ and dist/ghcp/ directly.
+# dist/herdr-app/ (the Herdr app mod) is checked for its files, embedded trail.mjs, and the
+# mod runtime's limits.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
@@ -52,6 +54,33 @@ valid_json "ghcp marketplace.json" "$G/.github/plugin/marketplace.json"
 valid_json "ghcp hooks.json"       "$G/hooks/hooks.json"
 grep -qF '"hooks": "hooks/hooks.json"' "$G/plugin.json" || fail "ghcp plugin.json missing hooks field"
 
+# --- dist/herdr-app: Herdr desktop app mod ---
+H="$SCRIPT_DIR/dist/herdr-app"
+node --test "$SCRIPT_DIR/build/herdr-app.test.mjs" >/dev/null \
+  || fail "herdr-app mod tests failed (run: node --test build/herdr-app.test.mjs)"
+check "herdr-app recipe"        "$H/RECIPE.md"
+check "herdr-app main.js"       "$H/mods/trailmix/main.js"
+check "herdr-app mod.json"      "$H/mods/trailmix/mod.json"
+check "herdr-app trail-source"  "$H/mods/trailmix/trail-source.js"
+valid_json "herdr-app mod.json" "$H/mods/trailmix/mod.json"
+# The mod runtime has no Node APIs or timers; trail-source.js is data (trail.mjs as a string).
+node --input-type=module -e '
+  import { readFileSync, readdirSync } from "node:fs";
+  const [root, dir] = process.argv.slice(1);
+  const { default: src } = await import(dir + "/trail-source.js");
+  if (src !== readFileSync(root + "/src/skills/trailmix-trailhead/refs/trail.mjs", "utf8"))
+    throw new Error("trail-source.js does not embed the current trail.mjs");
+  for (const f of readdirSync(dir).filter((f) => f.endsWith(".js") && f !== "trail-source.js")) {
+    const code = readFileSync(dir + "/" + f, "utf8");
+    // Static imports only: logic.js builds a loader string that contains a dynamic import().
+    const specs = [...code.matchAll(/^\s*import\s+(?:[^;"\x27]*?\bfrom\s*)?["\x27]([^"\x27]+)["\x27]/gm)].map((m) => m[1]);
+    const bad = specs.filter((s) => !["gpui-kit", "gpui-base", "herdr"].includes(s) && !s.startsWith("./") && !s.startsWith("../"));
+    if (bad.length) throw new Error(f + ": disallowed import " + bad.join(", "));
+    const api = code.match(/\bsetTimeout\b|\bsetInterval\b|["\x27]node:|\brequire\(/);
+    if (api) throw new Error(f + ": not available in the mod runtime: " + api[0]);
+  }
+' "$SCRIPT_DIR" "$H/mods/trailmix" || fail "herdr-app mod: embedded source or runtime check failed (above)"
+
 # --- root marketplace stubs: point at the right subdirectory ---
 check "root claude marketplace" "$SCRIPT_DIR/.claude-plugin/marketplace.json"
 check "root ghcp marketplace"   "$SCRIPT_DIR/.github/plugin/marketplace.json"
@@ -90,4 +119,4 @@ for sh in $SHELLS; do
   run_hook "$sh" "$(hook_cmd "$G/hooks/hooks.json" '.subagentStart[0].bash')" "ghcp subagentStart" ".additionalContext"
 done
 
-echo "OK — dist/claude and dist/ghcp are structurally sound plugins; root marketplace stubs resolve; hooks run and emit valid output"
+echo "OK — dist/claude and dist/ghcp are structurally sound plugins; dist/herdr-app is a sound mod; root marketplace stubs resolve; hooks run and emit valid output"

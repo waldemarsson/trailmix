@@ -617,6 +617,54 @@ test("status rejects an unknown flag and a missing named dir", () => {
   });
 });
 
+test("status --json lists every trail, done and dropped included", () => {
+  inTemp(() => {
+    seed(MIXED);
+    const r = capture(() => run(["status", "--json"]));
+    assert.equal(r.code, 0);
+    assert.deepEqual(JSON.parse(r.out), {
+      trails: [
+        { slug: "active", title: "T", state: "in-progress", next: "discuss (awaiting sign-off)" },
+        { slug: "done1", title: "T", state: "done", next: "—" },
+        { slug: "done2", title: "T", state: "done", next: "—" },
+        { slug: "gone", title: "T", state: "dropped", next: "—" },
+      ],
+    });
+    assert.equal(capture(() => run(["status", "--json", "--all"])).out, r.out);
+  });
+});
+
+test("status --json restricts to named dirs and omits a missing or placeholder title", () => {
+  inTemp(() => {
+    seed({
+      bare: { "report.md": report("draft") },
+      scaffold: { "brief.md": brief("draft").replace("title: T", "title: <title>") },
+      done1: MIXED.done1,
+    });
+    const r = capture(() => run(["status", "--json", ".trailmix/trail/bare", ".trailmix/trail/scaffold"]));
+    assert.deepEqual(JSON.parse(r.out), {
+      trails: [
+        { slug: "bare", state: "empty", next: "discuss" },
+        { slug: "scaffold", state: "in-progress", next: "discuss (awaiting sign-off)" },
+      ],
+    });
+  });
+});
+
+test("status --json with zero trails -> empty list", () => {
+  inTemp(() => {
+    assert.deepEqual(JSON.parse(capture(() => run(["status", "--json"])).out), { trails: [] });
+  });
+});
+
+test("status --json still rejects an unknown flag", () => {
+  inTemp(() => {
+    const r = capture(() => run(["status", "--json", "--jsn"]));
+    assert.equal(r.code, 2);
+    assert.match(r.err, /usage: trail\.mjs status \[--all \| --json/);
+  });
+});
+
 // ---- read ------------------------------------------------------------------------------------
 test("read prints frontmatter lines and ignores a body --- rule", () => {
   withFile(BRIEF, (f) => {

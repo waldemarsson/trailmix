@@ -2,14 +2,15 @@
 
 This file is for agents *developing this repo*. Don't confuse it with
 `src/instructions/AGENTS.md`, which is trailmix's shipped always-on core (generated into
-`dist/*/AGENTS.md` and injected by the `SessionStart` hook). Editing one never implies editing
+`dist/{claude,ghcp}/AGENTS.md` and injected by the `SessionStart` hook). Editing one never implies editing
 the other.
 
 ## What this repo is
 
 A single neutral source (`src/`) plus a zero-dep generator (`build/generate.mjs`) that emits two
-installable plugins: `dist/claude/` (Claude Code) and `dist/ghcp/` (GitHub Copilot CLI). The
-product is markdown — skills, agents, instructions — not application code. `docs/architecture.md`
+installable plugins: `dist/claude/` (Claude Code) and `dist/ghcp/` (GitHub Copilot CLI), plus a
+Herdr desktop app mod in `dist/herdr-app/` (source `src/herdr-app/`, embeds `trail.mjs`). The
+product is markdown — skills, agents, instructions — not application code, apart from that mod. `docs/architecture.md`
 is the design source of truth; read it before changing structure.
 
 ## The one hard rule
@@ -22,8 +23,8 @@ commits on every push to `main`.
 ## Commands
 
 ```bash
-npm run build     # src/ → dist/{claude,ghcp} + root marketplace stubs
-npm run verify    # build + freshness check + trail.mjs unit tests + frontmatter lint + structure checks
+npm run build     # src/ → dist/{claude,ghcp,herdr-app} + root marketplace stubs
+npm run verify    # build + freshness + trail.mjs and herdr-app tests + frontmatter lint + structure
 ```
 
 `npm run verify` is the full test suite — run it before handing work back. It **fails when
