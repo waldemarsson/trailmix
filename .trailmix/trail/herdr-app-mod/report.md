@@ -48,3 +48,9 @@ updated: 2026-11-25
 - `AGENTS.md` — repo now emits three outputs; dist/herdr-app is generated.
 - `src/skills/trailmix-trailhead/refs/trail-metadata.md` — `--json` flag.
 - No agent-retro line.
+
+## Follow-up (2026-11-25)
+- Install path fixed in architecture.md and Try it. Herdr docks a mod only the first time it sees its folder, so `mod.json` adds a palette entry "Trails" and a 360×520 overlay size.
+- No host config and no sudo: with no `node` setting, the mod finds a version-managed node itself by retrying through `sh` (volta, mise, asdf, fnm, highest nvm). Verified via real `hc exec` on the VM. Known limits are in the RECIPE.
+- Review: 7 findings (M1, L1–L6) fixed in 2 rounds. The palette overlay no longer toasts or watches folders. 32/32 tests pass, verify OK.
+- Update the host by copying in place: `limactl copy 'agentbox:~/workspace/trailmix/dist/herdr-app/mods/trailmix/*' ~/.config/herdr-app/mods/trailmix/`.
