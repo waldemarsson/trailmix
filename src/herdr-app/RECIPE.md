@@ -17,6 +17,10 @@ don't appear. With none anywhere the panel says "No trails in any space".
 **How it behaves:**
 - A trail waiting on you (`Needs sign-off`, `Needs review`) gets its pill in the theme's
   `blocked` color; building in `working`; discussing in `muted`.
+- The header's `↓ Space order` / `↓ Priority` switches the order. Space order follows the
+  sidebar. Priority puts trails waiting on you first, then building, then the rest, both within a
+  card and across cards (a card by its most urgent trail; an unreadable one last). The choice is
+  kept in `shared("trailmix.sort")`, so it survives restarts and every copy follows it.
 - Clicking a row opens a dialog (70% × 80%) with the trail's `report.md` rendered as Markdown,
   else its `brief.md`, frontmatter stripped. With both, Brief / Report tabs switch between them.
   ✕ or Esc closes it. A missing file says "… not found"; an unreadable one shows the error.

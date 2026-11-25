@@ -83,6 +83,12 @@ export function statusPill(next) {
   return { label: n, tone: "muted" };
 }
 
+// Priority order: waiting on you, then building, then the rest; a space by its most urgent
+// trail, an unreadable one last.
+const RANK = { blocked: 0, working: 1 };
+export const trailRank = (next) => RANK[statusPill(next).tone] ?? 2;
+export const spaceRank = (open, error) => (error ? 3 : Math.min(2, ...open.map((t) => trailRank(t.next))));
+
 export function stripFrontmatter(text) {
   return String(text ?? "").replace(/^\uFEFF?---\r?\n[\s\S]*?\r?\n---[ \t]*(?:\r?\n|$)/, "");
 }

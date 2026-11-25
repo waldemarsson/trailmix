@@ -4,11 +4,12 @@
 
 import { View, div } from "gpui-kit";
 import { v_flex, h_flex, TextView } from "gpui-base";
-import { spaces, agents, exec, readTextFile, watchFolder, notify, openOverlay, closeOverlay, props, theme, checking, window } from "herdr";
+import { spaces, agents, exec, readTextFile, watchFolder, notify, openOverlay, closeOverlay, props, theme, checking, window, shared, setShared } from "herdr";
 import SOURCE from "./trail-source.js";
-import { nodeFor, statusArgs, parseStatus, parseShellStatus, viaShell, cannotStart, execError, groupTrails, statusPill, stripFrontmatter, createNotifier, toastFor, machineLabel } from "./logic.js";
+import { nodeFor, statusArgs, parseStatus, parseShellStatus, viaShell, cannotStart, execError, groupTrails, statusPill, trailRank, spaceRank, stripFrontmatter, createNotifier, toastFor, machineLabel } from "./logic.js";
 
 const POLL_MS = 15000;
+const SORT_KEY = "trailmix.sort"; // "space" (sidebar order) or "priority"; shared so every copy follows
 const TIMEOUT_MS = 10000;
 const keyOf = (s) => `${machineLabel(s.machine)}\0${s.folder}`;
 
@@ -171,8 +172,8 @@ export default class Trails extends View {
 
   // One card per space with open trails or an error; spaces with only finished trails collapse
   // into one line at the bottom.
-  rows(t) {
-    const out = [];
+  rows(t, priority) {
+    const cards = [];
     const fin = { spaces: 0, done: 0, dropped: 0 };
     for (const s of spaces()) {
       const e = s.folder ? this.folders.get(keyOf(s)) : undefined;
@@ -184,8 +185,9 @@ export default class Trails extends View {
         fin.dropped += dropped;
         continue;
       }
+      if (priority) open.sort((a, b) => trailRank(a.next) - trailRank(b.next));
       const counts = [done && `${done} done`, dropped && `${dropped} dropped`].filter(Boolean).join(" · ");
-      out.push(v_flex().id(`space-${s.id}`).flex_none().p(8).gap(2).rounded(8).border_1().border_color(t.border).bg(t.surface)
+      cards.push({ rank: spaceRank(open, e.error), el: v_flex().id(`space-${s.id}`).flex_none().p(8).gap(2).rounded(8).border_1().border_color(t.border).bg(t.surface)
         .child(h_flex().gap(6).items_center().pb(2)
           .child(div().flex_1().min_w(0).truncate().text_size(12).font_semibold().child(s.name))
           .when(Boolean(counts), (el) => el.child(div().flex_none().text_size(11).text_color(t.dim).child(counts)))
@@ -198,8 +200,10 @@ export default class Trails extends View {
             .on_click(() => this.openDoc(s, tr))
             .child(div().truncate().child(tr.title || tr.slug))
             .child(h_flex().child(div().px(6).rounded(4).border_1().border_color(color).text_size(11).text_color(color).child(pill.label)));
-        })));
+        })) });
     }
+    if (priority) cards.sort((a, b) => a.rank - b.rank);
+    const out = cards.map((c) => c.el);
     if (fin.spaces) {
       const line = [`${fin.spaces} ${fin.spaces === 1 ? "space" : "spaces"}`, fin.done && `${fin.done} done`, fin.dropped && `${fin.dropped} dropped`];
       out.push(div().px(6).py(2).text_size(11).text_color(t.dim).child(line.filter(Boolean).join(" · ")));
@@ -211,10 +215,16 @@ export default class Trails extends View {
     const t = theme();
     if (this.doc) return this.renderDoc(t);
     if (!checking() && window()?.visible !== false && Date.now() - this.refreshed > POLL_MS) this.refresh(cx);
-    const rows = this.rows(t);
+    const priority = shared(SORT_KEY) === "priority";
+    const rows = this.rows(t, priority);
     const loading = [...this.folders.values()].some((e) => !e.trails && !e.error);
     return v_flex().id("trailmix").size_full().min_h(0).bg(t.background).text_color(t.foreground).text_size(13)
-      .child(h_flex().h(36).flex_none().px(12).items_center().border_b(1).border_color(t.border).child(div().font_semibold().child("Trails")))
+      .child(h_flex().h(36).flex_none().px(12).items_center().border_b(1).border_color(t.border)
+        .child(div().flex_1().font_semibold().child("Trails"))
+        .child(div().id("trailmix-sort").px(6).py(1).rounded(4).cursor_pointer().text_size(11).text_color(t.muted)
+          .hover((st) => st.bg(t.hover).text_color(t.foreground))
+          .on_click(() => setShared(SORT_KEY, priority ? "space" : "priority"))
+          .child(priority ? "↓ Priority" : "↓ Space order")))
       .child(v_flex().id("trailmix-list").flex_1().min_h(0).overflow_y_scrollbar().p(6).gap(6)
         .children(rows)
         .when(!rows.length, (el) => el.child(div().p(6).text_size(12).text_color(t.dim).child(loading ? "Loading trails…" : "No trails in any space"))));

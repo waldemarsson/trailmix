@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { execFileSync, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import {
-  nodeFor, loaderFor, statusArgs, parseStatus, parseShellStatus, viaShell, execError, groupTrails, isCheckpoint, statusPill, stripFrontmatter, createNotifier, toastFor,
+  nodeFor, loaderFor, statusArgs, parseStatus, parseShellStatus, viaShell, execError, groupTrails, isCheckpoint, statusPill, trailRank, spaceRank, stripFrontmatter, createNotifier, toastFor,
 } from "../src/herdr-app/mods/trailmix/logic.js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -332,3 +332,19 @@ test("statusPill: each next step reads as a short label", () => {
   assert.deepEqual(statusPill("handoff (awaiting review, 5 pending)"), { label: "Needs review · 5 pending", tone: "blocked" });
   assert.deepEqual(statusPill("something new"), { label: "something new", tone: "muted" });
 });
+
+test("trailRank: waiting on you, then building, then the rest", () => {
+  assert.equal(trailRank("handoff (awaiting review, 2 pending)"), 0);
+  assert.equal(trailRank("discuss (awaiting sign-off)"), 0);
+  assert.equal(trailRank("build (1/3 done, next T2)"), 1);
+  assert.equal(trailRank("discuss"), 2);
+});
+
+test("spaceRank: a space ranks by its most urgent trail", () => {
+  assert.equal(spaceRank([{ next: "discuss" }, { next: "build" }], undefined), 1);
+});
+
+test("spaceRank: an unreadable space ranks last", () => {
+  assert.equal(spaceRank([], "node not found on vm"), 3);
+});
+

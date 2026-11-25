@@ -179,6 +179,7 @@ machine.
 - 2026-11-25 · Handoff: herdr didn't auto-dock on the human's host (folder likely seen empty mid-install). Added a palette entry "Trails" (`mod.open`) and an overlay size (360×520) to mod.json so a plain folder copy is enough; README says to move the folder in whole.
 - 2026-11-25 · Handoff: the human wants no host config and no sudo on the VM. With no `node` setting and `node` off exec's PATH, the mod retries via `sh -c` with a finder (command -v, volta, mise, asdf, fnm default, highest nvm). A set path gets no fallback; no `sh` (Windows) → the node hint.
 - 2026-11-25 · Handoff: list redesign at the human's request: a card per space (bold name, machine chip, done/dropped count), a status pill per trail (`statusPill` in logic.js; blocked/working/muted tones), finished-only spaces collapsed into one bottom line, sidebar order kept.
+- 2026-11-25 · Handoff: sort toggle in the header (space order ↔ priority), persisted in `shared("trailmix.sort")`; priority ranks waiting → building → rest, errors last.
 
 ## Build notes
 **Files:**
@@ -240,3 +241,4 @@ AC map: AC1→T1 · AC2→T3 · AC3→T2 · AC4→T3/T4 · AC5→T5 · AC6→han
 - Gate · `node --test build/herdr-app.test.mjs` 32/32 · real `hc exec -- sh …` on the VM → exit 0
 - Follow-up re-review · M1, L1, L2, L4, L5 held · L6 · clear · main.js · sh memo ignored a node setting added later → fixed (memo only when node is the default)
 - Follow-up · list redesign · `node --test build/herdr-app.test.mjs` 34/34 (statusPill cases + cross-test: every open phase of real trail.mjs output gets a label, blocked exactly at checkpoints) · stub smoke render: cards, pills, error card, `1 space · 2 done` · real look unverified until the human tries it
+- Follow-up · sort toggle · `node --test build/herdr-app.test.mjs` 37/37 (trailRank, spaceRank) · stub smoke: the click flips the order; priority gives cards C,A,B and trails c2,c1 · real look unverified
