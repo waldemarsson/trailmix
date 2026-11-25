@@ -69,6 +69,20 @@ export function groupTrails(trails) {
 
 export const isCheckpoint = (next) => CHECKPOINTS.some((c) => String(next ?? "").startsWith(c));
 
+// A trail's next step as a short pill: tone is a theme color name.
+export function statusPill(next) {
+  const n = String(next ?? "");
+  if (n === "discuss") return { label: "Discussing", tone: "muted" };
+  if (n.startsWith("discuss (awaiting sign-off)")) return { label: "Needs sign-off", tone: "blocked" };
+  const review = n.match(/^handoff \(awaiting review(?:, (\d+) pending)?\)/);
+  if (review) return { label: review[1] ? `Needs review · ${review[1]} pending` : "Needs review", tone: "blocked" };
+  if (n === "build") return { label: "Building", tone: "working" };
+  if (n.startsWith("build (tasks done")) return { label: "Self-review", tone: "working" };
+  const build = n.match(/^build \((\d+\/\d+) done, next (\S+)\)/);
+  if (build) return { label: `Building ${build[1]} · ${build[2]}`, tone: "working" };
+  return { label: n, tone: "muted" };
+}
+
 export function stripFrontmatter(text) {
   return String(text ?? "").replace(/^\uFEFF?---\r?\n[\s\S]*?\r?\n---[ \t]*(?:\r?\n|$)/, "");
 }

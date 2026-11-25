@@ -4,17 +4,19 @@ A panel docked on the right that lists the [trailmix](https://github.com/waldema
 trails in every space, local or on another machine, with where each one stands. Click a trail to
 read its brief or report. A toast tells you when a trail is waiting on you.
 
-**What you see:** a 280px column on the right. A 36px header reads "Trails". Below it, one group
-per space that has trails: the space name (and its machine, for a remote space) in small dim
-type, then one row per open trail: a 6px dot, the trail's title (its slug when untitled), and
-under it the next step (`build (1/3 done, next T2)`, `discuss (awaiting sign-off)`, …). Done and
-dropped trails collapse to one dim line (`2 done · 1 dropped`). A space whose status can't be read
-shows a one-line error in red instead. Spaces without trails don't appear; with none anywhere the
-panel says "No trails in any space".
+**What you see:** a 280px column on the right. A 36px header reads "Trails". Below it, one card
+per space with open trails (surface background, 1px border, 8px radius, 6px apart). The card's
+header has the space name in bold 12px, a `2 done · 1 dropped` count in dim type when there are
+any, and, for a remote space, the machine as a small chip. Under it, one row per open trail: the
+title (its slug when untitled), then an outlined pill with its status: `Discussing`, `Needs
+sign-off`, `Building 1/3 · T2`, `Self-review`, `Needs review · 2 pending`. A space whose status
+can't be read shows a one-line error in red inside its card. Spaces whose trails are all done or
+dropped collapse into one dim line at the bottom (`3 spaces · 5 done`); spaces without trails
+don't appear. With none anywhere the panel says "No trails in any space".
 
 **How it behaves:**
-- A trail waiting on you (`discuss (awaiting sign-off)` or `handoff (awaiting review…)`) gets a
-  dot and next-step line in the theme's `blocked` color; others use `border` / `muted`.
+- A trail waiting on you (`Needs sign-off`, `Needs review`) gets its pill in the theme's
+  `blocked` color; building in `working`; discussing in `muted`.
 - Clicking a row opens a dialog (70% × 80%) with the trail's `report.md` rendered as Markdown,
   else its `brief.md`, frontmatter stripped. With both, Brief / Report tabs switch between them.
   ✕ or Esc closes it. A missing file says "… not found"; an unreadable one shows the error.

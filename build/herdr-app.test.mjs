@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { execFileSync, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import {
-  nodeFor, loaderFor, statusArgs, parseStatus, parseShellStatus, viaShell, execError, groupTrails, isCheckpoint, stripFrontmatter, createNotifier, toastFor,
+  nodeFor, loaderFor, statusArgs, parseStatus, parseShellStatus, viaShell, execError, groupTrails, isCheckpoint, statusPill, stripFrontmatter, createNotifier, toastFor,
 } from "../src/herdr-app/mods/trailmix/logic.js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -106,6 +106,17 @@ test("checkpoint matcher agrees with real trail.mjs output at every phase", () =
     const { trails } = JSON.parse(direct(cwd));
     const got = Object.fromEntries(trails.map((t) => [t.slug, isCheckpoint(t.next)]));
     assert.deepEqual(got, Object.fromEntries(Object.entries(PHASES).map(([s, p]) => [s, p.cp])));
+  });
+});
+
+test("statusPill labels every open phase of real trail.mjs output, blocked exactly at checkpoints", () => {
+  inFixture((cwd) => {
+    const open = JSON.parse(direct(cwd)).trails.filter((t) => t.state !== "done" && t.state !== "dropped");
+    assert.ok(open.length);
+    for (const t of open) {
+      assert.notEqual(statusPill(t.next).label, t.next, t.next);
+      assert.equal(statusPill(t.next).tone === "blocked", PHASES[t.slug].cp, t.slug);
+    }
   });
 });
 
@@ -309,4 +320,15 @@ test("toastFor selects the space and falls back to the slug", () => {
     level: "info",
     action: { name: "space.select", args: { id: "p1" } },
   });
+});
+
+test("statusPill: each next step reads as a short label", () => {
+  assert.deepEqual(statusPill("discuss"), { label: "Discussing", tone: "muted" });
+  assert.deepEqual(statusPill("discuss (awaiting sign-off)"), { label: "Needs sign-off", tone: "blocked" });
+  assert.deepEqual(statusPill("build"), { label: "Building", tone: "working" });
+  assert.deepEqual(statusPill("build (1/3 done, next T2)"), { label: "Building 1/3 · T2", tone: "working" });
+  assert.deepEqual(statusPill("build (tasks done, next self-review)"), { label: "Self-review", tone: "working" });
+  assert.deepEqual(statusPill("handoff (awaiting review)"), { label: "Needs review", tone: "blocked" });
+  assert.deepEqual(statusPill("handoff (awaiting review, 5 pending)"), { label: "Needs review · 5 pending", tone: "blocked" });
+  assert.deepEqual(statusPill("something new"), { label: "something new", tone: "muted" });
 });
