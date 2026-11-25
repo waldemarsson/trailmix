@@ -89,6 +89,17 @@ const RANK = { blocked: 0, working: 1 };
 export const trailRank = (next) => RANK[statusPill(next).tone] ?? 2;
 export const spaceRank = (open, error) => (error ? 3 : Math.min(2, ...open.map((t) => trailRank(t.next))));
 
+// Herdr gives an auto-docked block a random id, so find it by its mod.
+export function findDock(node, mod) {
+  if (!node || typeof node !== "object") return null;
+  if (node.content?.mod === mod && node.id) return { id: node.id, hidden: node.hidden === true };
+  for (const kid of [...(node.children ?? []), ...(node.floating ?? [])]) {
+    const hit = findDock(kid, mod);
+    if (hit) return hit;
+  }
+  return null;
+}
+
 export function stripFrontmatter(text) {
   return String(text ?? "").replace(/^\uFEFF?---\r?\n[\s\S]*?\r?\n---[ \t]*(?:\r?\n|$)/, "");
 }

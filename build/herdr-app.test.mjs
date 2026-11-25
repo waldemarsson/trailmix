@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { execFileSync, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import {
-  nodeFor, loaderFor, statusArgs, parseStatus, parseShellStatus, viaShell, execError, groupTrails, isCheckpoint, statusPill, trailRank, spaceRank, stripFrontmatter, createNotifier, toastFor,
+  nodeFor, loaderFor, statusArgs, parseStatus, parseShellStatus, viaShell, execError, groupTrails, isCheckpoint, statusPill, trailRank, spaceRank, findDock, stripFrontmatter, createNotifier, toastFor,
 } from "../src/herdr-app/mods/trailmix/logic.js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -348,3 +348,16 @@ test("spaceRank: an unreadable space ranks last", () => {
   assert.equal(spaceRank([], "node not found on vm"), 3);
 });
 
+test("findDock: finds the docked block by mod, nested or floating", () => {
+  const root = { id: "root", children: [
+    { id: "work", children: [{ id: "tabs", content: { mod: "tabs" } }] },
+    { id: "b4f1", content: { mod: "trailmix" }, hidden: true },
+  ] };
+  assert.deepEqual(findDock(root, "trailmix"), { id: "b4f1", hidden: true });
+  assert.deepEqual(findDock({ id: "r", floating: [{ id: "f", content: { mod: "trailmix" } }] }, "trailmix"), { id: "f", hidden: false });
+});
+
+test("findDock: no dock or no layout gives null", () => {
+  assert.equal(findDock({ id: "r", children: [{ id: "x", content: { mod: "files" } }] }, "trailmix"), null);
+  assert.equal(findDock(null, "trailmix"), null);
+});

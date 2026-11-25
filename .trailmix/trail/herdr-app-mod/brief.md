@@ -181,6 +181,7 @@ machine.
 - 2026-11-25 · Handoff: list redesign at the human's request: a card per space (bold name, machine chip, done/dropped count), a status pill per trail (`statusPill` in logic.js; blocked/working/muted tones), finished-only spaces collapsed into one bottom line, sidebar order kept.
 - 2026-11-25 · Handoff: sort toggle in the header (space order ↔ priority), persisted in `shared("trailmix.sort")`; priority ranks waiting → building → rest, errors last.
 - 2026-11-25 · Handoff: auto-dock needs a personal layout (shipped `main` is replaced on start). Docs: clone `main` as `trailmix` first, then copy the mod; no shipped layout file (human chose to document the clone).
+- 2026-11-25 · Handoff: `✕` in the docked header hides the column (`layout.hide`); the palette overlay shows "Show panel" while it's hidden. The block is found by mod in `layout()` (Herdr gives an auto-docked block a random id). Not a tab-bar button: the shipped `tabs` mod hardcodes Files/Changes.
 
 ## Build notes
 **Files:**
@@ -244,3 +245,4 @@ AC map: AC1→T1 · AC2→T3 · AC3→T2 · AC4→T3/T4 · AC5→T5 · AC6→han
 - Follow-up · list redesign · `node --test build/herdr-app.test.mjs` 34/34 (statusPill cases + cross-test: every open phase of real trail.mjs output gets a label, blocked exactly at checkpoints) · stub smoke render: cards, pills, error card, `1 space · 2 done` · real look unverified until the human tries it
 - Follow-up · sort toggle · `node --test build/herdr-app.test.mjs` 37/37 (trailRank, spaceRank) · stub smoke: the click flips the order; priority gives cards C,A,B and trails c2,c1 · real look unverified
 - Follow-up · dock · human verified on host: after `layout.clone main→trailmix` the mod docked on the right and rendered (cards, pills, priority toggle) · AC6 docked render met
+- Follow-up · hide/show · `node --test build/herdr-app.test.mjs` 39/39 (findDock) · stub smoke: docked+shown → ✕ runs layout.hide; overlay+hidden → Show panel runs layout.show and closes the overlay; other two states show no button · real app unverified

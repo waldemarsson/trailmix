@@ -33,6 +33,9 @@ don't appear. With none anywhere the panel says "No trails in any space".
 - Herdr docks the column only into a personal layout (Herdr's own are replaced on every start),
   the first time it sees the folder. Clone first: `herdr-app do layout.clone
   '{"name":"main","as":"trailmix"}'`, then copy the mod in.
+- The header's `✕` hides the docked column (Herdr remembers it). The palette's "Trails" then
+  offers "Show panel" to bring it back. A button beside Files/Changes would need a clone of
+  Herdr's `tabs` mod, which hardcodes those two.
 - The command palette's "Trails" opens the same list as a 360 × 520 overlay, for layouts
   without the docked column. It doesn't toast or watch folders; the docked copy does.
 

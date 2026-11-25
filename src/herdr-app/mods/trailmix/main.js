@@ -4,9 +4,9 @@
 
 import { View, div } from "gpui-kit";
 import { v_flex, h_flex, TextView } from "gpui-base";
-import { spaces, agents, exec, readTextFile, watchFolder, notify, openOverlay, closeOverlay, props, theme, checking, window, shared, setShared } from "herdr";
+import { spaces, agents, exec, readTextFile, watchFolder, notify, openOverlay, closeOverlay, props, theme, checking, window, shared, setShared, layout, run } from "herdr";
 import SOURCE from "./trail-source.js";
-import { nodeFor, statusArgs, parseStatus, parseShellStatus, viaShell, cannotStart, execError, groupTrails, statusPill, trailRank, spaceRank, stripFrontmatter, createNotifier, toastFor, machineLabel } from "./logic.js";
+import { nodeFor, statusArgs, parseStatus, parseShellStatus, viaShell, cannotStart, execError, groupTrails, statusPill, trailRank, spaceRank, findDock, stripFrontmatter, createNotifier, toastFor, machineLabel } from "./logic.js";
 
 const POLL_MS = 15000;
 const SORT_KEY = "trailmix.sort"; // "space" (sidebar order) or "priority"; shared so every copy follows
@@ -211,12 +211,24 @@ export default class Trails extends View {
     return out;
   }
 
+  // Docked: × hides the column. Palette overlay: "Show panel" brings a hidden column back.
+  dockButton(t) {
+    const dock = findDock(layout(), "trailmix");
+    if (!dock || dock.hidden !== this.overlay) return null;
+    const btn = (id, label, click) => div().id(id).ml(4).px(6).py(1).rounded(4).cursor_pointer().text_size(11).text_color(t.muted)
+      .hover((st) => st.bg(t.hover).text_color(t.foreground)).on_click(click).child(label);
+    return this.overlay
+      ? btn("trailmix-show", "Show panel", () => { run("layout.show", { id: dock.id }); closeOverlay(props().overlay); })
+      : btn("trailmix-hide", "✕", () => run("layout.hide", { id: dock.id }));
+  }
+
   render(cx) {
     const t = theme();
     if (this.doc) return this.renderDoc(t);
     if (!checking() && window()?.visible !== false && Date.now() - this.refreshed > POLL_MS) this.refresh(cx);
     const priority = shared(SORT_KEY) === "priority";
     const rows = this.rows(t, priority);
+    const dockBtn = this.dockButton(t);
     const loading = [...this.folders.values()].some((e) => !e.trails && !e.error);
     return v_flex().id("trailmix").size_full().min_h(0).bg(t.background).text_color(t.foreground).text_size(13)
       .child(h_flex().h(36).flex_none().px(12).items_center().border_b(1).border_color(t.border)
@@ -224,7 +236,8 @@ export default class Trails extends View {
         .child(div().id("trailmix-sort").px(6).py(1).rounded(4).cursor_pointer().text_size(11).text_color(t.muted)
           .hover((st) => st.bg(t.hover).text_color(t.foreground))
           .on_click(() => setShared(SORT_KEY, priority ? "space" : "priority"))
-          .child(priority ? "↓ Priority" : "↓ Space order")))
+          .child(priority ? "↓ Priority" : "↓ Space order"))
+        .when(Boolean(dockBtn), (el) => el.child(dockBtn)))
       .child(v_flex().id("trailmix-list").flex_1().min_h(0).overflow_y_scrollbar().p(6).gap(6)
         .children(rows)
         .when(!rows.length, (el) => el.child(div().p(6).text_size(12).text_color(t.dim).child(loading ? "Loading trails…" : "No trails in any space"))));
