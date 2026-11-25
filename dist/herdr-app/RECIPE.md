@@ -33,6 +33,10 @@ don't appear. With none anywhere the panel says "No trails in any space".
 - Herdr docks the column only into a personal layout (Herdr's own are replaced on every start),
   the first time it sees the folder. Clone first: `herdr-app do layout.clone
   '{"name":"main","as":"trailmix"}'`, then copy the mod in.
+- The header's `⇤` moves the panel into the sidebar, under Spaces and Agents; `⇥` moves it back
+  to a right column. Both rewrite the shown personal layout with `layout.set` and need Herdr's
+  `main` shape (`sidebar-lists`, a root row). In a folded sidebar it shows the rail, and a click
+  opens the list as the overlay.
 - The header's `»` folds the docked column to a 44 px rail: the trailmix icon, then a count of
   trails waiting on you (`blocked` color) and building (`working`). Click the rail to expand it to
   its last width. Dragging the column narrower than 160 px also shows the rail. A column hidden

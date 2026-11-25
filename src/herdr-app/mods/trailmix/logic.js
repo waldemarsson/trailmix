@@ -101,14 +101,49 @@ export function tally(open) {
 }
 
 // Herdr gives an auto-docked block a random id, so find it by its mod.
-export function findDock(node, mod) {
+export function findDock(node, mod, under = []) {
   if (!node || typeof node !== "object") return null;
-  if (node.content?.mod === mod && node.id) return { id: node.id, hidden: node.hidden === true };
+  if (node.content?.mod === mod && node.id) return { id: node.id, hidden: node.hidden === true, inSidebar: under.includes("sidebar") };
   for (const kid of [...(node.children ?? []), ...(node.floating ?? [])]) {
-    const hit = findDock(kid, mod);
+    const hit = findDock(kid, mod, [...under, node.id]);
     if (hit) return hit;
   }
   return null;
+}
+
+const findId = (node, id) => {
+  if (!node || typeof node !== "object") return null;
+  if (node.id === id) return node;
+  for (const kid of node.children ?? []) {
+    const hit = findId(kid, id);
+    if (hit) return hit;
+  }
+  return null;
+};
+
+// The layout with the mod's block moved under Spaces/Agents ("sidebar") or to a right-hand
+// column ("right"); null when the layout has no such place (e.g. not Herdr's main shape).
+export function relocate(root, mod, where) {
+  if (!root || typeof root !== "object") return null;
+  const tree = JSON.parse(JSON.stringify(root));
+  const strip = (n) => {
+    for (const key of ["children", "floating"]) {
+      if (!Array.isArray(n[key])) continue;
+      n[key] = n[key].filter((k) => k?.content?.mod !== mod);
+      n[key].forEach(strip);
+    }
+  };
+  strip(tree);
+  const block = { id: "trailmix", type: "block", content: { mod } };
+  if (where === "sidebar") {
+    const lists = findId(tree, "sidebar-lists");
+    if (!Array.isArray(lists?.children)) return null;
+    lists.children.push({ ...block, size: { weight: 1 } });
+  } else {
+    if (tree.type !== "row" || !Array.isArray(tree.children)) return null;
+    tree.children.push({ ...block, size: { px: 280 } });
+  }
+  return tree;
 }
 
 export function stripFrontmatter(text) {

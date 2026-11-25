@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { execFileSync, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import {
-  nodeFor, loaderFor, statusArgs, parseStatus, parseShellStatus, viaShell, execError, groupTrails, isCheckpoint, statusPill, trailRank, spaceRank, tally, findDock, stripFrontmatter, createNotifier, toastFor,
+  nodeFor, loaderFor, statusArgs, parseStatus, parseShellStatus, viaShell, execError, groupTrails, isCheckpoint, statusPill, trailRank, spaceRank, tally, findDock, relocate, stripFrontmatter, createNotifier, toastFor,
 } from "../src/herdr-app/mods/trailmix/logic.js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -353,8 +353,8 @@ test("findDock: finds the docked block by mod, nested or floating", () => {
     { id: "work", children: [{ id: "tabs", content: { mod: "tabs" } }] },
     { id: "b4f1", content: { mod: "trailmix" }, hidden: true },
   ] };
-  assert.deepEqual(findDock(root, "trailmix"), { id: "b4f1", hidden: true });
-  assert.deepEqual(findDock({ id: "r", floating: [{ id: "f", content: { mod: "trailmix" } }] }, "trailmix"), { id: "f", hidden: false });
+  assert.deepEqual(findDock(root, "trailmix"), { id: "b4f1", hidden: true, inSidebar: false });
+  assert.deepEqual(findDock({ id: "r", floating: [{ id: "f", content: { mod: "trailmix" } }] }, "trailmix"), { id: "f", hidden: false, inSidebar: false });
 });
 
 test("findDock: no dock or no layout gives null", () => {
@@ -366,4 +366,30 @@ test("tally: counts trails waiting on you and building; the rest don't count", (
   const open = ["handoff (awaiting review)", "discuss (awaiting sign-off)", "build (1/3 done, next T2)", "discuss"].map((next) => ({ next }));
   assert.deepEqual(tally(open), { waiting: 2, building: 1 });
   assert.deepEqual(tally([]), { waiting: 0, building: 0 });
+});
+
+const mainShape = () => ({ id: "root", type: "row", children: [
+  { id: "sidebar", type: "column", children: [{ id: "sidebar-lists", type: "column", children: [
+    { id: "spaces", type: "block", content: { mod: "spaces" } }, { id: "agents", type: "block", content: { mod: "agents" } }] }] },
+  { id: "work", type: "column", children: [] },
+  { id: "b4f1", type: "block", content: { mod: "trailmix" }, size: { px: 300 } },
+] });
+
+test("relocate: sidebar moves the block under Agents and drops the right column", () => {
+  const root = mainShape();
+  const moved = relocate(root, "trailmix", "sidebar");
+  assert.deepEqual(moved.children.map((n) => n.id), ["sidebar", "work"]);
+  assert.deepEqual(moved.children[0].children[0].children.map((n) => n.id), ["spaces", "agents", "trailmix"]);
+  assert.deepEqual(findDock(moved, "trailmix"), { id: "trailmix", hidden: false, inSidebar: true });
+  assert.equal(root.children.length, 3, "input layout is not mutated");
+});
+
+test("relocate: right moves it back out of the sidebar", () => {
+  const back = relocate(relocate(mainShape(), "trailmix", "sidebar"), "trailmix", "right");
+  assert.deepEqual(back.children.map((n) => n.id), ["sidebar", "work", "trailmix"]);
+  assert.deepEqual(back.children[0].children[0].children.map((n) => n.id), ["spaces", "agents"]);
+});
+
+test("relocate: a layout without Herdr's sidebar gives null", () => {
+  assert.equal(relocate({ id: "root", type: "row", children: [{ id: "x", content: { mod: "trailmix" } }] }, "trailmix", "sidebar"), null);
 });

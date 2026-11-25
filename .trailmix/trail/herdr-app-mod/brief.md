@@ -183,6 +183,7 @@ machine.
 - 2026-11-25 · Handoff: auto-dock needs a personal layout (shipped `main` is replaced on start). Docs: clone `main` as `trailmix` first, then copy the mod; no shipped layout file (human chose to document the clone).
 - 2026-11-25 · Handoff: `✕` in the docked header hides the column (`layout.hide`); the palette overlay shows "Show panel" while it's hidden. The block is found by mod in `layout()` (Herdr gives an auto-docked block a random id). Not a tab-bar button: the shipped `tabs` mod hardcodes Files/Changes.
 - 2026-11-25 · Handoff: `✕` replaced by `»`, which folds the column to a 44 px rail (icon + waiting/building counts); click expands to the remembered width. Rail when the copy's own measured width < 160 (Herdr sidebar pattern). Not a floating peek drawer: that needs a hand-edited layout.
+- 2026-11-25 · Handoff: `⇤`/`⇥` header buttons move the block between `sidebar-lists` (under Agents) and a right column via `layout.set` on the shown personal layout (`relocate`, pure). Human asked for no hand edits; the click is the consent. In the sidebar there's no `»`; the rail click opens the overlay.
 
 ## Build notes
 **Files:**
@@ -248,3 +249,4 @@ AC map: AC1→T1 · AC2→T3 · AC3→T2 · AC4→T3/T4 · AC5→T5 · AC6→han
 - Follow-up · dock · human verified on host: after `layout.clone main→trailmix` the mod docked on the right and rendered (cards, pills, priority toggle) · AC6 docked render met
 - Follow-up · hide/show · `node --test build/herdr-app.test.mjs` 39/39 (findDock) · stub smoke: docked+shown → ✕ runs layout.hide; overlay+hidden → Show panel runs layout.show and closes the overlay; other two states show no button · real app unverified
 - Follow-up · rail · `node --test build/herdr-app.test.mjs` 40/40 (tally) · stub smoke: width 320 → `»` runs layout.resize 44 and stores 320; width 44 → rail with icon and badges 1/2, click runs layout.resize 320 · real app unverified
+- Follow-up · sidebar · `node --test build/herdr-app.test.mjs` 43/43 (relocate ×3, findDock inSidebar) · stub smoke: right → ⇤ gives lists spaces,agents,trailmix and drops the right column; sidebar → ⇥ restores; `»` only on the right · real app unverified, incl. layout.set accepting layout()'s tree

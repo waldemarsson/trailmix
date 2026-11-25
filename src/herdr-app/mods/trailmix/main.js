@@ -6,7 +6,7 @@ import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex, TextView } from "gpui-base";
 import { spaces, agents, exec, readTextFile, watchFolder, notify, openOverlay, closeOverlay, props, theme, checking, window, shared, setShared, layout, run } from "herdr";
 import SOURCE from "./trail-source.js";
-import { nodeFor, statusArgs, parseStatus, parseShellStatus, viaShell, cannotStart, execError, groupTrails, statusPill, trailRank, spaceRank, tally, findDock, stripFrontmatter, createNotifier, toastFor, machineLabel } from "./logic.js";
+import { nodeFor, statusArgs, parseStatus, parseShellStatus, viaShell, cannotStart, execError, groupTrails, statusPill, trailRank, spaceRank, tally, findDock, relocate, stripFrontmatter, createNotifier, toastFor, machineLabel } from "./logic.js";
 
 const POLL_MS = 15000;
 const RAIL = 44; // collapsed width, like Herdr's sidebar rail
@@ -214,18 +214,28 @@ export default class Trails extends View {
     return out;
   }
 
-  // Docked: » folds the column to a rail. Palette overlay: "Show panel" brings a hidden column back.
-  dockButton(t) {
-    const dock = findDock(layout(), "trailmix");
-    if (!dock || dock.hidden !== this.overlay) return null;
-    const btn = (id, label, click) => div().id(id).ml(4).px(6).py(1).rounded(4).cursor_pointer().text_size(11).text_color(t.muted)
-      .hover((st) => st.bg(t.hover).text_color(t.foreground)).on_click(click).child(label);
-    return this.overlay
-      ? btn("trailmix-show", "Show panel", () => { run("layout.show", { id: dock.id }); closeOverlay(props().overlay); })
-      : btn("trailmix-fold", "»", () => {
+  // Docked: move between the sidebar and a right column; » folds the right column to a rail.
+  // Palette overlay: "Show panel" brings a hidden column back.
+  dockButtons(t) {
+    const root = layout(), dock = findDock(root, "trailmix");
+    if (!dock || dock.hidden !== this.overlay) return [];
+    const btn = (id, label, tip, click) => h_flex().id(id).ml(4).px(6).py(1).rounded(4).cursor_pointer().text_size(11).text_color(t.muted)
+      .hover((st) => st.bg(t.hover).text_color(t.foreground)).when(Boolean(tip), (el) => el.tooltip(tip)).on_click(click).child(label);
+    if (this.overlay) return [btn("trailmix-show", "Show panel", null, () => { run("layout.show", { id: dock.id }); closeOverlay(props().overlay); })];
+    const where = dock.inSidebar ? "right" : "sidebar";
+    const moved = relocate(root, "trailmix", where);
+    const out = [];
+    if (moved) {
+      out.push(btn("trailmix-move", dock.inSidebar ? "⇥" : "⇤", dock.inSidebar ? "Move to a column on the right" : "Move to the sidebar, under Agents",
+        () => run("layout.set", { layout: moved })));
+    }
+    if (!dock.inSidebar) {
+      out.push(btn("trailmix-fold", "»", "Fold to a rail", () => {
         if (this.width >= NARROW) localStorage.setItem("width", String(Math.round(this.width)));
         run("layout.resize", { id: dock.id, px: RAIL });
-      });
+      }));
+    }
+    return out;
   }
 
   renderRail(t) {
@@ -240,8 +250,12 @@ export default class Trails extends View {
     const dock = findDock(layout(), "trailmix");
     return v_flex().id("trailmix").on_size_change((size, cx) => this.sized(size, cx))
       .size_full().items_center().pt(10).gap(8).bg(t.background).cursor_pointer().hover((st) => st.bg(t.hover))
-      .tooltip("Trails — click to expand")
-      .on_click(() => { if (dock) run("layout.resize", { id: dock.id, px: Number(localStorage.getItem("width")) || WIDE }); })
+      .tooltip(dock?.inSidebar ? "Trails — click to open" : "Trails — click to expand")
+      // In a folded sidebar the rail can't widen itself; open the list as the palette overlay.
+      .on_click(() => {
+        if (!dock || dock.inSidebar) run("mod.open", { name: "trailmix" });
+        else run("layout.resize", { id: dock.id, px: Number(localStorage.getItem("width")) || WIDE });
+      })
       .child(svg("mods/trailmix/trail.svg").size(18).text_color(t.muted))
       .when(waiting > 0, (el) => el.child(badge(waiting, t.blocked, "waiting on you")))
       .when(building > 0, (el) => el.child(badge(building, t.working, "building")));
@@ -260,7 +274,7 @@ export default class Trails extends View {
     if (!checking() && window()?.visible !== false && Date.now() - this.refreshed > POLL_MS) this.refresh(cx);
     const priority = shared(SORT_KEY) === "priority";
     const rows = this.rows(t, priority);
-    const dockBtn = this.dockButton(t);
+    const dockBtns = this.dockButtons(t);
     const loading = [...this.folders.values()].some((e) => !e.trails && !e.error);
     return v_flex().id("trailmix").on_size_change((size, cx) => this.sized(size, cx)).size_full().min_h(0).bg(t.background).text_color(t.foreground).text_size(13)
       .child(h_flex().h(36).flex_none().px(12).items_center().border_b(1).border_color(t.border)
@@ -269,7 +283,7 @@ export default class Trails extends View {
           .hover((st) => st.bg(t.hover).text_color(t.foreground))
           .on_click(() => setShared(SORT_KEY, priority ? "space" : "priority"))
           .child(priority ? "↓ Priority" : "↓ Space order"))
-        .when(Boolean(dockBtn), (el) => el.child(dockBtn)))
+        .children(dockBtns))
       .child(v_flex().id("trailmix-list").flex_1().min_h(0).overflow_y_scrollbar().p(6).gap(6)
         .children(rows)
         .when(!rows.length, (el) => el.child(div().p(6).text_size(12).text_color(t.dim).child(loading ? "Loading trails…" : "No trails in any space"))));
