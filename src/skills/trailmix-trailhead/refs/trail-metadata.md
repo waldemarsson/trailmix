@@ -141,6 +141,7 @@ always shows:
 ```sh
 node "$TRAIL" status .trailmix/trail/<slug>       # omit the path for all open trails
 ```
+`--json` prints every trail as `{"trails":[{slug,title,state,next}]}` for tools; agents use text.
 
 **Lint** — `check` validates every artifact against the schema and exits non-zero on a problem;
 run it after a hand-edit fallback. No args = all trails:

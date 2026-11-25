@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// trailmix generator — neutral src/ -> dist/{claude,ghcp}/
+// trailmix generator — neutral src/ -> dist/{claude,ghcp,herdr-app}/
 // Zero-dependency. Node >= 16.7 (uses fs.cpSync).
 // dist/{claude,ghcp}/ are real, self-contained plugins — the only supported install path is
 // each CLI's marketplace/plugin system (see the root .claude-plugin/ and .github/plugin/
@@ -10,6 +10,10 @@
 //   dist/<p>/agents/<name>.<ext>  frontmatter transformed (agent name->model, neutral tools->platform)
 //   dist/<p>/hooks/hooks.json     SessionStart hook — the one thing actually loaded automatically
 //   dist/<p>/AGENTS.md            bundled reference only; not auto-loaded from inside a plugin
+//
+// Plus dist/herdr-app/ — a Herdr desktop app mod package (not a plugin): src/herdr-app/ copied
+// verbatim, plus mods/trailmix/trail-source.js embedding trail.mjs so the mod can run it on any
+// machine without installing anything there.
 
 import {
   readFileSync,
@@ -331,6 +335,16 @@ function assertPlainScalars(text, p) {
   });
 }
 
+function writeHerdrApp() {
+  const base = join(DIST, "herdr-app");
+  cpSync(join(SRC, "herdr-app"), base, { recursive: true });
+  const trail = readFileSync(join(SRC, "skills/trailmix-trailhead/refs/trail.mjs"), "utf8");
+  writeFileSync(
+    join(base, "mods/trailmix/trail-source.js"),
+    `// Generated from src/skills/trailmix-trailhead/refs/trail.mjs — do not edit.\nexport default ${JSON.stringify(trail)};\n`
+  );
+}
+
 function generate() {
   validateSkills();
   rmSync(DIST, { recursive: true, force: true });
@@ -383,8 +397,9 @@ function generate() {
     writePackaging(base, p.dir);
   }
 
+  writeHerdrApp();
   writeRootMarketplaces();
-  console.log("generated dist/claude, dist/ghcp, and root marketplace catalogs");
+  console.log("generated dist/claude, dist/ghcp, dist/herdr-app, and root marketplace catalogs");
 }
 
 generate();

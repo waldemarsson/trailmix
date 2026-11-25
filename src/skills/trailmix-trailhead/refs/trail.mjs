@@ -22,7 +22,8 @@
 //   node trail.mjs findings <report.md> <H1 ...>   register finding ids (new ones append as open)
 //   node trail.mjs finding <report.md> <id> <state>  open | fixed | wont-fix | disputed
 //   node trail.mjs check [file.md ...]             lint frontmatter (default: all trails)
-//   node trail.mjs status [--all | dir ...]        one line per trail (default: hides done/dropped)
+//   node trail.mjs status [--all | --json | dir ...]  one line per trail (default: hides done/dropped);
+//                                                  --json: {"trails":[{slug,title,state,next}]}, all trails
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, realpathSync } from "node:fs";
 import { join, basename } from "node:path";
@@ -306,6 +307,18 @@ export function summarize(dirs, { hide = false } = {}) {
   return lines.join("\n");
 }
 
+// Machine-readable status (the Herdr app mod reads it): every trail, never hidden. `title` comes
+// from the brief and is omitted when absent or still the scaffold placeholder.
+export function statusJson(dirs) {
+  const trails = dirs.map((d) => {
+    const t = deriveTrail(d);
+    const f = join(d, "brief.md");
+    const title = existsSync(f) ? frontmatter(readFileSync(f, "utf8"))?.title : undefined;
+    return title && title !== "<title>" ? { slug: t.slug, title, state: t.state, next: t.next } : { slug: t.slug, state: t.state, next: t.next };
+  });
+  return JSON.stringify({ trails });
+}
+
 // Trail dirs under .trailmix/trail (cwd-relative), sorted. [] if none.
 function trailDirs() {
   if (!existsSync(TRAILS)) return [];
@@ -396,17 +409,20 @@ export function run(argv) {
   if (cmd === "status") {
     const flags = rest.filter((a) => a.startsWith("-"));
     const dirs = rest.filter((a) => !a.startsWith("-"));
-    const bad = flags.find((f) => f !== "--all");
-    if (bad) return usage(`status [--all | dir ...] (unknown flag: ${bad})`);
+    const bad = flags.find((f) => f !== "--all" && f !== "--json");
+    if (bad) return usage(`status [--all | --json | dir ...] (unknown flag: ${bad})`);
     const missing = dirs.find((d) => !existsSync(d));
-    if (missing) return usage(`status [--all | dir ...] (no such trail: ${missing})`);
-    const all = flags.length > 0;
-    const out = dirs.length ? summarize(dirs) : summarize(trailDirs(), { hide: !all });
+    if (missing) return usage(`status [--all | --json | dir ...] (no such trail: ${missing})`);
+    const out = flags.includes("--json")
+      ? statusJson(dirs.length ? dirs : trailDirs())
+      : dirs.length
+        ? summarize(dirs)
+        : summarize(trailDirs(), { hide: !flags.includes("--all") });
     process.stdout.write(out + "\n");
     return 0;
   }
   return usage(
-    `read <file...> | new <slug> <template> [title] | ${Object.keys(OPS).join(" | ")} <file> | reopen <brief> | branch <brief> <name> | tasks <brief> <T1...> | task-done <brief> <id> | findings <report> <H1...> | finding <report> <id> <state> | check [file...] | status [--all | dir...]`
+    `read <file...> | new <slug> <template> [title] | ${Object.keys(OPS).join(" | ")} <file> | reopen <brief> | branch <brief> <name> | tasks <brief> <T1...> | task-done <brief> <id> | findings <report> <H1...> | finding <report> <id> <state> | check [file...] | status [--all | --json | dir...]`
   );
 }
 

@@ -1,0 +1,64 @@
+---
+slug: herdr-app-mod
+waypoint: handoff
+status: approved
+updated: 2026-11-25
+---
+# Herdr app mod showing trail status — report
+
+**Result:** `npm run build` now emits `dist/herdr-app/`, a herdr-app mod. It docks a "Trails" panel listing each space's trails (local or remote, via `exec` on the space's machine with trail.mjs inlined), opens the brief or report in a dialog, and toasts when a trail waits on you. `trail.mjs status --json` backs it. **Verdict:** ready. AC6 (real herdr-app UI) is your manual check.
+
+## Try it
+0. On the host, clone the shipped layout so the mod can pin itself there: `herdr-app do layout.clone '{"name":"main","as":"trailmix"}'`.
+1. On the host, copy the mod into its own folder: `mkdir -p ~/.config/herdr-app/mods && limactl shell agentbox sh -c 'tar -C ~/workspace/trailmix/dist/herdr-app/mods -cf - trailmix' | tar -C ~/.config/herdr-app/mods -xf -`. That gives `mods/trailmix/{main.js,logic.js,mod.json,trail-source.js}`. (`limactl copy -r` flattens the files into `mods/` when that folder doesn't exist yet.)
+2. Make node reachable for `exec` on the VM. Check with `hc exec -- node -v`; if it isn't found, either run `ln -s "$(command -v node)" ~/.local/bin/node` on the VM (if that's on exec's PATH), or set the prop in your layout: `{ "mod": "trailmix", "props": { "node": { "<vm machine>": "/home/marwal/.nvm/versions/node/v24.22.2/bin/node" } } }`.
+3. Run `herdr-app check`, then open the app. The panel should list this repo's trails (`herdr-app-mod` at handoff, awaiting review). Click it to open the dialog; Esc closes it.
+4. Toast check: move a trail into a checkpoint (e.g. `trail.mjs reopen` on a scratch trail's brief) while no agent is working. One "needs you" toast should appear.
+
+## Acceptance criteria → proof
+- AC1 → 4 `--json` tests in `build/trail.test.mjs`, red first.
+- AC2 → loader built from dist `trail-source.js` matches a direct run (`build/herdr-app.test.mjs`). Also checked on real `hc exec` on the VM (unicode titles) and on Node 20, 22 and 24.
+- AC3 → logic tests in `build/herdr-app.test.mjs` (grouping, counts, notifier, phase/checkpoint cross-test).
+- AC4 → `npm run verify` OK: dist files, JSON, source equality, import/API bans. Mutation-checked.
+- AC5 → README, `docs/architecture.md`, `AGENTS.md`, `trail-metadata.md`; 0.15.0 in both version files.
+- AC6 → **you**: real UI is unverified (no herdr-app on the VM). Open points: markdown in the scroll container, docked `size`/`title`, `props()` null for the docked copy, render after a visibility change.
+- Gates: `node --test build/trail.test.mjs build/herdr-app.test.mjs` 89/89; `npm run verify` OK.
+
+## Changes
+- `src/herdr-app/mods/trailmix/{main.js,logic.js,mod.json}` — panel/dialog view; pure logic (loader, node lookup, parsing, errors, grouping, notifier).
+- `src/herdr-app/RECIPE.md` — what the mod does, how it's built, watch-outs (node PATH, argv size).
+- `src/skills/trailmix-trailhead/refs/trail.mjs` — `status --json`.
+- `build/generate.mjs` — `writeHerdrApp()` emits the mod + generated `trail-source.js`.
+- `scripts/verify.sh` — herdr-app section (tests, files, source equality, import/API bans).
+- `build/herdr-app.test.mjs` (new), `build/trail.test.mjs` — tests.
+- `dist/**`, `.github/plugin/marketplace.json` — regenerated.
+
+## Deviations from the brief
+- `working` hold spans every space sharing a folder, because status is fetched once per machine+folder.
+- Spaces with no trails are hidden; an all-empty panel says "No trails in any space".
+- The verify import check covers static imports only (the loader string has a dynamic `import(` meant for node).
+- Amendment: the loader escapes only `[%#?\r\n\t]` instead of full encodeURIComponent: about 22 KB, under Windows' 32,767 command-line cap.
+- Judgment fixes from review: one notifier per panel copy (two docked copies each toast); polling pauses while the window is hidden; embedded HTML renders as text; spaces without a folder are skipped.
+
+## Self-review
+3 rounds, 12 findings, all fixed. Includes 1 `stop`: raw `?` truncated the loader on Node ≤20, now escaped, with a test. Round 3 found nothing new.
+
+## Docs
+- `README.md` — Herdr app install + develop notes (new install target).
+- `docs/architecture.md` — tree, install, §9 mod design (third generated output).
+- `AGENTS.md` — repo now emits three outputs; dist/herdr-app is generated.
+- `src/skills/trailmix-trailhead/refs/trail-metadata.md` — `--json` flag.
+- No agent-retro line.
+
+## Follow-up (2026-11-25)
+- Install path fixed in architecture.md and Try it. Herdr docks a mod only the first time it sees its folder, so `mod.json` adds a palette entry "Trails" and a 360×520 overlay size.
+- No host config and no sudo: with no `node` setting, the mod finds a version-managed node itself by retrying through `sh` (volta, mise, asdf, fnm, highest nvm). Verified via real `hc exec` on the VM. Known limits are in the RECIPE.
+- Review: 7 findings (M1, L1–L6) fixed in 2 rounds. The palette overlay no longer toasts or watches folders. 32/32 tests pass, verify OK.
+- Update the host by copying in place: `limactl copy 'agentbox:~/workspace/trailmix/dist/herdr-app/mods/trailmix/*' ~/.config/herdr-app/mods/trailmix/`.
+- Card per space with a status pill per trail; finished-only spaces collapse into a footer line.
+- Header toggle `↓ Space order` / `↓ Priority`, kept in `shared("trailmix.sort")`.
+- Docking: Herdr docks a mod only into a personal layout. README, RECIPE, and architecture now say to clone `main` first (`herdr-app do layout.clone '{"name":"main","as":"trailmix"}'`). You confirmed the docked panel on the host.
+- Close: `✕` in the Trails header hides the docked column. While it's hidden, palette → Trails shows "Show panel" to bring it back. A tab-bar button was skipped because the shipped `tabs` mod hardcodes Files/Changes (`tabs/main.js:151-152`), so it would need a cloned `tabs` mod.
+- Rail, replacing `✕`: `»` folds the column to a slim always-visible rail with the trailmix icon and counts of trails waiting on you and building. Click the rail to expand. A floating peek drawer would need a hand-edited layout, so it wasn't used.
+- Sidebar placement: `⇤` in the Trails header moves the panel under Spaces/Agents in the left sidebar; `⇥` moves it back. Each rewrites your personal layout through `layout.set`. Herdr's status bar and tab bar hardcode their items, so neither can host it without a clone.
+- Sidebar only: no right column anymore. Palette → Trails → **Pin to sidebar** adds a section under Agents. Click "▾ Trails" to collapse it to its header (counts still showing) and "▸ Trails" to expand it; `✕` removes it. This supersedes `»`/`⇥`.

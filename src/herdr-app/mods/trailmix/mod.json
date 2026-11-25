@@ -1,0 +1,6 @@
+{
+  "place": "none",
+  "title": "Trails",
+  "overlay": { "width": 360, "height": 520 },
+  "palette": [{ "title": "Trails", "command": "mod.open", "args": { "name": "trailmix" }, "words": "trailmix status" }]
+}
