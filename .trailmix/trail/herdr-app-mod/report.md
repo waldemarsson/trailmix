@@ -9,7 +9,7 @@ updated: 2026-11-25
 **Result:** `npm run build` now emits `dist/herdr-app/`, a herdr-app mod. It docks a "Trails" panel listing each space's trails (local or remote, via `exec` on the space's machine with trail.mjs inlined), opens the brief or report in a dialog, and toasts when a trail waits on you. `trail.mjs status --json` backs it. **Verdict:** ready. AC6 (real herdr-app UI) is your manual check.
 
 ## Try it
-1. On the host, copy the mod: `limactl copy -r agentbox:~/workspace/trailmix/dist/herdr-app/mods/trailmix ~/.config/herdr-app/mods/` (or check out this branch on the host and copy from there).
+1. On the host, copy the mod into its own folder: `mkdir -p ~/.config/herdr-app/mods && limactl shell agentbox sh -c 'tar -C ~/workspace/trailmix/dist/herdr-app/mods -cf - trailmix' | tar -C ~/.config/herdr-app/mods -xf -`. That gives `mods/trailmix/{main.js,logic.js,mod.json,trail-source.js}`. (`limactl copy -r` flattens the files into `mods/` when that folder doesn't exist yet.)
 2. Make node reachable for `exec` on the VM. Check with `hc exec -- node -v`; if it isn't found, either run `ln -s "$(command -v node)" ~/.local/bin/node` on the VM (if that's on exec's PATH), or set the prop in your layout: `{ "mod": "trailmix", "props": { "node": { "<vm machine>": "/home/marwal/.nvm/versions/node/v24.22.2/bin/node" } } }`.
 3. Run `herdr-app check`, then open the app. The panel should list this repo's trails (`herdr-app-mod` at handoff, awaiting review). Click it to open the dialog; Esc closes it.
 4. Toast check: move a trail into a checkpoint (e.g. `trail.mjs reopen` on a scratch trail's brief) while no agent is working. One "needs you" toast should appear.
