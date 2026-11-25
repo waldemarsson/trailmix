@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { execFileSync, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import {
-  nodeFor, statusArgs, parseStatus, execError, groupTrails, isCheckpoint, stripFrontmatter, createNotifier, toastFor,
+  nodeFor, loaderFor, statusArgs, parseStatus, execError, groupTrails, isCheckpoint, stripFrontmatter, createNotifier, toastFor,
 } from "../src/herdr-app/mods/trailmix/logic.js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -83,6 +83,14 @@ test("loader reports a thrown error as one line and exit 1, like a direct run", 
   } finally {
     rmSync(cwd, { recursive: true, force: true });
   }
+});
+
+test("loader's data: URL keeps the whole source in its path (Node ≤20 reads only the pathname)", () => {
+  const source = readFileSync(TRAIL, "utf8");
+  const url = new URL("data:text/javascript," + JSON.parse(loaderFor(source).match(/\+("(?:[^"\\]|\\.)*")\)/)[1]));
+  assert.equal(url.search, "");
+  assert.equal(url.hash, "");
+  assert.equal(decodeURIComponent(url.pathname.slice("text/javascript,".length)), source);
 });
 
 test("status command line stays under Windows' 32,767-character cap with room to grow", () => {

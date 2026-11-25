@@ -174,6 +174,9 @@ machine.
 
 <!-- Everything above is agreed at the discuss checkpoint. Build appends below; no re-approval. -->
 
+**Amendments:**
+- 2026-11-25 · Loader escapes only `[%#?\r\n\t]` (not full encodeURIComponent): ~22 KB command line, under Windows' cap; Node ≥16 contract unchanged (verified on 20, 22, 24). Supersedes the encodeURIComponent/≈32 KB notes above.
+
 ## Build notes
 **Files:**
 - `src/skills/trailmix-trailhead/refs/trail.mjs` — modify — `status --json`
@@ -204,7 +207,20 @@ AC map: AC1→T1 · AC2→T3 · AC3→T2 · AC4→T3/T4 · AC5→T5 · AC6→han
 - T3 · emitter `writeHerdrApp()` + verify section · `npm run verify` OK after signed commit a588ba7 · mutation-checked verify guard: disallowed import, `setTimeout`, stale trail-source each fail · AC2 → met (loader from dist trail-source.js == direct run) · AC4 → met
 - T4 · `node --check main.js` ok · smoke-ran dist main.js under Node with stubbed `herdr`/gpui modules (ad hoc, not committed): panel lists this repo's trails, remote "cannot start" → node-setting hint, row click → overlay props, overlay renders brief markdown · UI against real herdr-app unverified (no herdr-app on VM) → AC6
 - T5 · README (intro, Install → Herdr app, Develop), architecture §3/§9, repo AGENTS.md, generate.mjs + verify.sh headers, trail-metadata.md · 0.15.0 both files · AC5 → met
-- Deviation · `working` check spans every space sharing the folder (not just one space), since status is fetched once per machine+folder · notifier at module scope so two docked copies toast once
+- Deviation · `working` check spans every space sharing the folder (not just one space), since status is fetched once per machine+folder · ~~notifier at module scope~~ superseded by review L1: one notifier per copy, so two docked copies each toast
 - Deviation · spaces with no trails are hidden (not "no trails" per space); panel shows "No trails in any space" when all empty — less clutter with many spaces
 - Deviation · verify import check scans static imports only: logic.js's loader string contains a dynamic `import(` (data: URL) for node, not the mod
 - Unverified · `TextView.markdown` inside scroll container, docked `size`/`title` honored, `props()` null for docked copy — needs herdr-app (AC6)
+- Review r1 · H1 · clear · logic.js execError · hint matched "not found", real hc message is "cannot start node: No such file…" → fixed (match `cannot start ${node}:`; folder case excluded; tests use real messages)
+- Review r1 · M1 · clear · logic.js loaderFor · thrown error escaped as 68 KB stderr → fixed (catch → `error: <msg>`, exit 1; test == direct run)
+- Review r1 · M2 · judgment · logic.js loaderFor · 34 KB argv > Windows 32,767 cap → fixed (escape only data:-URL-unsafe chars, ~22 KB; test caps < 28,000)
+- Review r1 · L1 · judgment · main.js · module-scope notifier → per-copy (herdr "state in init" rule); two docked copies each toast
+- Review r1 · L2 · clear · trail.mjs statusJson · explicit `{slug,state,next}` → fixed
+- Review r1 · L3 · judgment · RECIPE · spaces without a folder skipped → documented
+- Review r1 · L4 · judgment · main.js · poll pauses while window hidden → fixed
+- Review r1 · L5 · judgment · main.js · `raw_html(false)` on doc markdown → fixed
+- Review r1 · L6 · clear · AGENTS.md/README.md wraps → fixed
+- Review r2 · H1 · clear · stop · logic.js:22 · raw `?` truncated the source on Node ≤20 (pathname-only) → fixed (escape `?`; test: URL has no search/hash and pathname decodes to source, red before fix) · verified real loader under `npx node@20`: exit 0, correct JSON
+- Review r2 · L1 · judgment · main.js render · catch-up refresh ran while hidden → fixed (also requires `window()?.visible !== false`)
+- Review r2 · L2 · clear · brief · stale loader notes → fixed via Amendments
+- Gate · `node --test build/trail.test.mjs build/herdr-app.test.mjs` 89/89 · real `hc exec` on VM with r1 loader (unicode titles) ok

@@ -187,7 +187,7 @@ export default class Trails extends View {
   render(cx) {
     const t = theme();
     if (this.doc) return this.renderDoc(t);
-    if (!checking() && Date.now() - this.refreshed > POLL_MS) this.refresh(cx);
+    if (!checking() && window()?.visible !== false && Date.now() - this.refreshed > POLL_MS) this.refresh(cx);
     const rows = this.rows(t);
     const loading = [...this.folders.values()].some((e) => !e.trails && !e.error);
     return v_flex().id("trailmix").size_full().min_h(0).bg(t.background).text_color(t.foreground).text_size(13)

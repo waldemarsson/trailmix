@@ -15,10 +15,11 @@ export function nodeFor(setting, machine) {
 
 // trail.mjs travels in argv and runs on the space's machine, so nothing is installed there.
 // The argv shim keeps trail.mjs's direct-run guard (realpathSync(argv[1])) from firing; the catch
-// mirrors that guard's error line. Only the characters a data: URL can't carry are escaped, which
+// mirrors that guard's error line. Only the characters a data: URL can't carry are escaped (`?` too:
+// Node ≤20 reads the source from the pathname), which
 // keeps the command line well under Windows' 32,767-character cap (encodeURIComponent: +60%).
 export function loaderFor(source) {
-  const url = JSON.stringify(source.replace(/[%#\r\n\t]/g, encodeURIComponent));
+  const url = JSON.stringify(source.replace(/[%#?\r\n\t]/g, encodeURIComponent));
   return `const a=process.argv.slice(1);process.argv=[process.argv[0],process.execPath];try{const m=await import("data:text/javascript,"+${url});process.exitCode=m.run(a);}catch(e){process.stderr.write("error: "+e.message+"\\n");process.exitCode=1;}`;
 }
 
