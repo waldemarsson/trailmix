@@ -16,6 +16,7 @@
 //   node trail.mjs approve           <file.md>     status -> approved
 //   node trail.mjs drop              <brief.md>    status -> dropped (abandon; deletes nothing)
 //   node trail.mjs reopen            <brief.md>    status -> draft, clear tasks (discuss again)
+//   node trail.mjs delete <slug>                   remove .trailmix/trail/<slug>/ (human's action; agents drop)
 //   node trail.mjs branch <brief.md> <name>        record the trail's git branch
 //   node trail.mjs tasks <brief.md> <T1> [T2 ...]  register the build's task ids (once)
 //   node trail.mjs task-done <brief.md> <id>       mark one task's gate green
@@ -25,7 +26,7 @@
 //   node trail.mjs status [--all | --json | dir ...]  one line per trail (default: hides done/dropped);
 //                                                  --json: {"trails":[{slug,title,state,next}]}, all trails
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, realpathSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, realpathSync, lstatSync, rmSync } from "node:fs";
 import { join, basename } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -121,6 +122,17 @@ export function setField(file, field, value, drop = []) {
 // so a revised brief re-plans from scratch instead of inheriting stale `:done` marks.
 export function reopen(file) {
   setField(file, "status", "draft", ["tasks"]);
+}
+
+// Remove a trail folder outright. Takes a slug, never a path, so it can't reach outside
+// .trailmix/trail; a symlink or file in its place is refused rather than followed.
+export function deleteTrail(slug) {
+  if (!SLUG.test(slug || "")) throw new Error(`delete: bad slug: ${slug || "(empty)"}`);
+  const dir = join(TRAILS, slug);
+  if (!existsSync(dir)) throw new Error(`delete: no such trail: ${slug}`);
+  if (!lstatSync(dir).isDirectory()) throw new Error(`delete: not a trail folder: ${dir}`);
+  rmSync(dir, { recursive: true, maxRetries: 3 }); // retries: Windows EBUSY on files held open
+  return dir;
 }
 
 // Record the trail's git branch (free-form, like `title`). Re-runnable; survives `reopen`.
@@ -362,6 +374,12 @@ export function run(argv) {
     process.stdout.write(`${file} ← status=draft, tasks cleared (updated ${today()})\n`);
     return 0;
   }
+  if (cmd === "delete") {
+    const [slug] = rest;
+    if (!slug) return usage("delete <slug>");
+    process.stdout.write(`${deleteTrail(slug)} deleted\n`);
+    return 0;
+  }
   if (cmd === "tasks") {
     const [file, ...ids] = rest;
     if (!file || ids.length === 0) return usage("tasks <brief.md> <T1> [T2 ...]");
@@ -422,7 +440,7 @@ export function run(argv) {
     return 0;
   }
   return usage(
-    `read <file...> | new <slug> <template> [title] | ${Object.keys(OPS).join(" | ")} <file> | reopen <brief> | branch <brief> <name> | tasks <brief> <T1...> | task-done <brief> <id> | findings <report> <H1...> | finding <report> <id> <state> | check [file...] | status [--all | --json | dir...]`
+    `read <file...> | new <slug> <template> [title] | ${Object.keys(OPS).join(" | ")} <file> | reopen <brief> | delete <slug> | branch <brief> <name> | tasks <brief> <T1...> | task-done <brief> <id> | findings <report> <H1...> | finding <report> <id> <state> | check [file...] | status [--all | --json | dir...]`
   );
 }
 

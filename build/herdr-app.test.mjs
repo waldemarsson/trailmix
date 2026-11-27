@@ -2,13 +2,13 @@
 // generated trail-source.js loader. Not shipped. Run: node --test build/herdr-app.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, symlinkSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, symlinkSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { tmpdir } from "node:os";
 import { execFileSync, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import {
-  nodeFor, loaderFor, statusArgs, parseStatus, parseShellStatus, viaShell, execError, groupTrails, isCheckpoint, statusPill, trailRank, spaceRank, tally, findDock, relocate, stripFrontmatter, createNotifier, toastFor,
+  nodeFor, loaderFor, statusArgs, actionArgs, parseAction, actionsFor, stillApplies, confirmStep, createChangeWatch, closedPill, pillFor, cardFor, parseStatus, parseShellStatus, viaShell, execError, groupTrails, isCheckpoint, statusPill, trailRank, spaceRank, tally, findDock, relocate, stripFrontmatter, createNotifier, toastFor,
 } from "../src/herdr-app/mods/trailmix/logic.js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -251,7 +251,7 @@ test("groupTrails keeps open trails and counts done and dropped", () => {
     { slug: "d", state: "dropped" },
     { slug: "e", state: "done" },
   ];
-  assert.deepEqual(groupTrails(trails), { open: [trails[0], trails[2]], done: 2, dropped: 1 });
+  assert.deepEqual(groupTrails(trails), { open: [trails[0], trails[2]], closed: [trails[1], trails[3], trails[4]], done: 2, dropped: 1 });
 });
 
 // ---- frontmatter -----------------------------------------------------------------------------
@@ -393,4 +393,140 @@ test("relocate: null removes the block, wherever it is", () => {
 
 test("relocate: a layout without Herdr's sidebar gives null", () => {
   assert.equal(relocate({ id: "root", type: "row", children: [{ id: "x", content: { mod: "trailmix" } }] }, "trailmix", "sidebar"), null);
+});
+
+// ---- actions ---------------------------------------------------------------------------------
+
+const EXPECTED_ACTIONS = {
+  "a-empty": ["delete"],
+  "b-discuss": ["approve-brief", "drop", "delete"],
+  "c-build": ["drop", "delete"],
+  "d-build-tasks": ["drop", "delete"],
+  "e-build-review": ["drop", "delete"],
+  "f-handoff": ["approve-report", "drop", "delete"],
+  "g-handoff-findings": ["approve-report", "drop", "delete"],
+  "h-done": ["delete"],
+  "i-dropped": ["reopen", "delete"],
+};
+
+test("actionsFor offers the agreed buttons at every phase of real trail.mjs output", () => {
+  inFixture((cwd) => {
+    const got = Object.fromEntries(JSON.parse(direct(cwd)).trails.map((t) => [t.slug, actionsFor(t).map((a) => a.op)]));
+    assert.deepEqual(got, EXPECTED_ACTIONS);
+  });
+});
+
+test("actionsFor labels a report approval with its pending findings", () => {
+  assert.equal(actionsFor({ slug: "x", state: "in-progress", next: "handoff (awaiting review, 2 pending)" })[0].label, "Approve report · 2 pending");
+  assert.equal(actionsFor({ slug: "x", state: "in-progress", next: "handoff (awaiting review)" })[0].label, "Approve report");
+});
+
+test("actionsFor offers no delete for a folder name that isn't a slug", () => {
+  assert.deepEqual(actionsFor({ slug: "Foo_bar", state: "dropped", next: "—" }).map((a) => a.op), ["reopen"]);
+});
+
+test("each action, run through the loader, does what its button says", () => {
+  const source = readFileSync(TRAIL, "utf8");
+  const read = (cwd, slug, f) => readFileSync(join(cwd, ".trailmix/trail", slug, f), "utf8");
+  inFixture((cwd) => {
+    const runOp = (op, slug) => {
+      const r = spawnSync(process.execPath, actionArgs(source, op, slug), { cwd, encoding: "utf8" });
+      return parseAction({ code: r.status, stdout: r.stdout, stderr: r.stderr }, null);
+    };
+    assert.deepEqual(runOp("approve-brief", "b-discuss"), { ok: true });
+    assert.match(read(cwd, "b-discuss", "brief.md"), /^status: approved$/m);
+    assert.deepEqual(runOp("approve-report", "f-handoff"), { ok: true });
+    assert.match(read(cwd, "f-handoff", "report.md"), /^status: approved$/m);
+    assert.deepEqual(runOp("drop", "c-build"), { ok: true });
+    assert.match(read(cwd, "c-build", "brief.md"), /^status: dropped$/m);
+    assert.deepEqual(runOp("reopen", "i-dropped"), { ok: true });
+    assert.match(read(cwd, "i-dropped", "brief.md"), /^status: draft$/m);
+    assert.deepEqual(runOp("delete", "h-done"), { ok: true });
+    assert.equal(existsSync(join(cwd, ".trailmix/trail/h-done")), false);
+    assert.match(runOp("delete", "h-done").error, /^trail\.mjs exited 1: error: delete: no such trail: h-done$/);
+  });
+});
+
+test("statusArgs with a trail dir reports just that trail", () => {
+  const source = readFileSync(TRAIL, "utf8");
+  inFixture((cwd) => {
+    const out = JSON.parse(execFileSync(process.execPath, statusArgs(source, "i-dropped"), { cwd, encoding: "utf8" }));
+    assert.deepEqual(out.trails.map((t) => t.slug), ["i-dropped"]);
+  });
+});
+
+test("parseAction: node missing behind sh reads as the node-setting hint", () => {
+  assert.deepEqual(parseAction({ code: 127, stdout: "", stderr: "trailmix: node not found\n" }, "vm"), { error: "node not found on vm — set the `node` setting" });
+});
+
+test("parseAction: a nonzero exit gives its first stderr line", () => {
+  assert.deepEqual(parseAction({ code: 2, stdout: "", stderr: "usage: trail.mjs delete <slug>\nmore" }, null), { error: "trail.mjs exited 2: usage: trail.mjs delete <slug>" });
+});
+
+test("stillApplies refuses an action the trail moved past", () => {
+  const dropped = { slug: "x", state: "dropped", next: "—" };
+  assert.equal(stillApplies("approve-brief", dropped), false);
+  assert.equal(stillApplies("drop", dropped), false);
+  assert.equal(stillApplies("reopen", dropped), true);
+  assert.equal(stillApplies("reopen", { slug: "x", state: "in-progress", next: "build" }), false);
+  assert.equal(stillApplies("delete", undefined), false);
+});
+
+test("confirmStep: delete arms on the first click and runs on the second", () => {
+  assert.deepEqual(confirmStep(null, "delete"), { run: false, armed: "delete" });
+  assert.deepEqual(confirmStep("delete", "delete"), { run: true, armed: null });
+});
+
+test("confirmStep: any other action runs at once and disarms delete", () => {
+  assert.deepEqual(confirmStep("delete", "drop"), { run: true, armed: null });
+  assert.deepEqual(confirmStep(null, "reopen"), { run: true, armed: null });
+});
+
+test("change watch ignores the value found at start and reports each new nonce once", () => {
+  const w = createChangeWatch({ machine: null, folder: "/old", nonce: 1 });
+  assert.equal(w.observe({ machine: null, folder: "/old", nonce: 1 }), null);
+  assert.deepEqual(w.observe({ machine: "vm", folder: "/a", nonce: 2 }), { machine: "vm", folder: "/a" });
+  assert.equal(w.observe({ machine: "vm", folder: "/a", nonce: 2 }), null);
+  assert.equal(w.observe(undefined), null);
+});
+
+test("closedPill: done and dropped read as short muted labels", () => {
+  assert.deepEqual(closedPill("done"), { label: "Done", tone: "muted" });
+  assert.deepEqual(closedPill("dropped"), { label: "Dropped", tone: "dim" });
+});
+
+const MIX = [
+  { slug: "a", state: "in-progress", next: "build" },
+  { slug: "b", state: "done", next: "—" },
+  { slug: "c", state: "in-progress", next: "discuss (awaiting sign-off)" },
+  { slug: "d", state: "dropped", next: "—" },
+];
+
+test("cardFor: Open view lists open trails, counts closed ones, priority puts waiting first", () => {
+  const c = cardFor(MIX, undefined, { closedView: false, priority: true });
+  assert.deepEqual(c.list.map((t) => t.slug), ["c", "a"]);
+  assert.equal(c.show, true);
+  assert.equal(c.counts, "1 done · 1 dropped");
+  assert.equal(c.rank, 0);
+});
+
+test("cardFor: Closed view lists done and dropped in folder order, with no counts", () => {
+  const c = cardFor(MIX, undefined, { closedView: true, priority: true });
+  assert.deepEqual(c.list.map((t) => t.slug), ["b", "d"]);
+  assert.equal(c.counts, "");
+  assert.equal(c.rank, 2);
+});
+
+test("cardFor: a space with nothing for the view has no card; an error always shows, ranked last", () => {
+  const open = [{ slug: "a", state: "in-progress", next: "build" }];
+  assert.equal(cardFor(open, undefined, { closedView: true, priority: false }).show, false);
+  assert.equal(cardFor([MIX[1]], undefined, { closedView: false, priority: false }).show, false);
+  const err = cardFor(undefined, "vm: unreachable", { closedView: true, priority: false });
+  assert.deepEqual([err.show, err.list, err.rank], [true, [], 3]);
+});
+
+test("pillFor: closed trails by state, open ones by next step", () => {
+  assert.equal(pillFor(MIX[1]).label, "Done");
+  assert.equal(pillFor(MIX[3]).label, "Dropped");
+  assert.equal(pillFor(MIX[2]).label, "Needs sign-off");
 });

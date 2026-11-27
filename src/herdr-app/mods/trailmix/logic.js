@@ -23,13 +23,30 @@ export function loaderFor(source) {
   return `const a=process.argv.slice(1);process.argv=[process.argv[0],process.execPath];try{const m=await import("data:text/javascript,"+${url});process.exitCode=m.run(a);}catch(e){process.stderr.write("error: "+e.message+"\\n");process.exitCode=1;}`;
 }
 
-export const statusArgs = (source) => ["--input-type=module", "-e", loaderFor(source), "status", "--json"];
+const TRAILS = ".trailmix/trail";
+const SLUG = /^[a-z0-9][a-z0-9-]*$/; // trail.mjs's; `delete` refuses anything else
+const loaded = (source, ...args) => ["--input-type=module", "-e", loaderFor(source), ...args];
+
+// Every trail in the folder, or just `slug`'s.
+export const statusArgs = (source, slug) => loaded(source, "status", "--json", ...(slug ? [`${TRAILS}/${slug}`] : []));
+
+// Each panel action is one trail.mjs op on the space's machine; the mod never writes files itself.
+const OPS = {
+  "approve-brief": (slug) => ["approve", `${TRAILS}/${slug}/brief.md`],
+  "approve-report": (slug) => ["approve", `${TRAILS}/${slug}/report.md`],
+  drop: (slug) => ["drop", `${TRAILS}/${slug}/brief.md`],
+  reopen: (slug) => ["reopen", `${TRAILS}/${slug}/brief.md`],
+  delete: (slug) => ["delete", slug],
+};
+export const actionArgs = (source, op, slug) => loaded(source, ...OPS[op](slug));
 
 const firstLine = (s) => String(s ?? "").trim().split(/\r?\n/)[0] || "";
 
 // exec resolved: { trails } on success, { error } otherwise.
+const exitError = (result) => `trail.mjs exited ${result.code}${firstLine(result.stderr) ? `: ${firstLine(result.stderr)}` : ""}`;
+
 export function parseStatus(result) {
-  if (result.code !== 0) return { error: `trail.mjs exited ${result.code}${firstLine(result.stderr) ? `: ${firstLine(result.stderr)}` : ""}` };
+  if (result.code !== 0) return { error: exitError(result) };
   try {
     const out = JSON.parse(result.stdout);
     if (Array.isArray(out?.trails)) return { trails: out.trails };
@@ -57,14 +74,63 @@ const FIND_NODE = `d="$HOME/.nvm/versions/node"; n=$(command -v node) || for c i
 
 export const viaShell = (args) => ["-c", FIND_NODE, "sh", ...args];
 
+const noNode = (result) => result.code === 127 && String(result.stderr ?? "").includes(NOT_FOUND);
+
 export function parseShellStatus(result, machine) {
-  if (result.code === 127 && String(result.stderr ?? "").includes(NOT_FOUND)) return { error: missingNode(machine) };
+  if (noNode(result)) return { error: missingNode(machine) };
   return parseStatus(result);
 }
 
+// An action's exec result (direct or through sh): { ok } or { error }.
+export function parseAction(result, machine) {
+  if (noNode(result)) return { error: missingNode(machine) };
+  return result.code === 0 ? { ok: true } : { error: exitError(result) };
+}
+
+const isClosed = (t) => t.state === "done" || t.state === "dropped";
+
 export function groupTrails(trails) {
   const count = (s) => trails.filter((t) => t.state === s).length;
-  return { open: trails.filter((t) => t.state !== "done" && t.state !== "dropped"), done: count("done"), dropped: count("dropped") };
+  return { open: trails.filter((t) => !isClosed(t)), closed: trails.filter(isClosed), done: count("done"), dropped: count("dropped") };
+}
+
+export const closedPill = (state) => (state === "done" ? { label: "Done", tone: "muted" } : { label: "Dropped", tone: "dim" });
+export const pillFor = (trail) => (isClosed(trail) ? closedPill(trail.state) : statusPill(trail.next));
+
+// The dialog's buttons for a trail's status. Reopen only for dropped trails; delete only for a
+// folder trail.mjs will accept.
+export function actionsFor(trail) {
+  const n = String(trail.next ?? "");
+  const out = [];
+  if (trail.state === "dropped") out.push({ op: "reopen", label: "Reopen" });
+  else if (!isClosed(trail)) {
+    if (n.startsWith("discuss (awaiting sign-off)")) out.push({ op: "approve-brief", label: "Approve brief" });
+    const review = n.match(/^handoff \(awaiting review(?:, (\d+) pending)?\)/);
+    if (review) out.push({ op: "approve-report", label: review[1] ? `Approve report · ${review[1]} pending` : "Approve report" });
+    if (trail.state !== "empty") out.push({ op: "drop", label: "Drop" });
+  }
+  if (SLUG.test(trail.slug ?? "")) out.push({ op: "delete", label: "Delete" });
+  return out;
+}
+
+// Rechecked against a fresh status right before an op runs, so a stale button can't, say,
+// approve a trail someone dropped meanwhile.
+export const stillApplies = (op, trail) => Boolean(trail) && actionsFor(trail).some((a) => a.op === op);
+
+// Delete needs a second click; any other click runs at once and disarms it.
+export const confirmStep = (armed, op) => (op === "delete" && armed !== "delete" ? { run: false, armed: "delete" } : { run: true, armed: null });
+
+// The dialog announces a change through shared("trailmix.changed") = { machine, folder, nonce }.
+// shared() persists, so the value found at start is history, not news.
+export function createChangeWatch(initial) {
+  let last = initial?.nonce;
+  return {
+    observe(v) {
+      if (!v || v.nonce === last) return null;
+      last = v.nonce;
+      return { machine: v.machine ?? null, folder: v.folder };
+    },
+  };
 }
 
 export const isCheckpoint = (next) => CHECKPOINTS.some((c) => String(next ?? "").startsWith(c));
@@ -88,6 +154,22 @@ export function statusPill(next) {
 const RANK = { blocked: 0, working: 1 };
 export const trailRank = (next) => RANK[statusPill(next).tone] ?? 2;
 export const spaceRank = (open, error) => (error ? 3 : Math.min(2, ...open.map((t) => trailRank(t.next))));
+
+// One space's card in the Open or Closed view. `show` false: nothing to list there (the Open view
+// sums such spaces' done/dropped into its bottom line). Closed trails all rank alike: space order.
+export function cardFor(trails, error, { closedView, priority }) {
+  const g = groupTrails(trails ?? []);
+  const list = closedView ? g.closed : g.open;
+  if (priority && !closedView) list.sort((a, b) => trailRank(a.next) - trailRank(b.next));
+  return {
+    list,
+    show: Boolean(error) || list.length > 0,
+    counts: closedView ? "" : [g.done && `${g.done} done`, g.dropped && `${g.dropped} dropped`].filter(Boolean).join(" · "),
+    rank: closedView ? (error ? 3 : 2) : spaceRank(list, error),
+    done: g.done,
+    dropped: g.dropped,
+  };
+}
 
 // How many open trails wait on you / are building, for the collapsed rail.
 export function tally(open) {

@@ -101,8 +101,9 @@ security) into each session; trailmix's own subagents get its Security section.
 
 `dist/herdr-app/` is a mod for the [Herdr](https://herdr.dev) desktop app: a collapsible
 **Trails** section in the sidebar, under Spaces and Agents, listing each space's trails (local and
-remote) with their next step, a reader for a trail's brief/report, and a toast when a trail waits
-on you. Copy `dist/herdr-app/mods/trailmix/` to `~/.config/herdr-app/mods/trailmix/`, run
+remote) with their next step, done and dropped ones behind an Open/Closed switch, a reader for a
+trail's brief/report with approve, drop, reopen and delete, and a toast when a trail waits on
+you. Copy `dist/herdr-app/mods/trailmix/` to `~/.config/herdr-app/mods/trailmix/`, run
 `herdr-app check ~/.config/herdr-app/mods/trailmix`, then open the palette's **Trails** and click
 **Pin to sidebar**. Pinning needs a personal layout; on Herdr's own, clone it first:
 `herdr-app do layout.clone '{"name":"main","as":"trailmix"}'` (palette: Duplicate layout).
