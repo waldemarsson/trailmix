@@ -69,7 +69,7 @@ Every frontmatter operation goes through this zero-dependency Node helper, never
 you name an *intent* (`approve`, `new … brief`) and it owns the vocabulary. It enforces no
 workflow rules — even `status` only reports. You decide when to act.
 
-Command surface: `new` · `approve`/`reopen`/`drop` · `branch` · `tasks`/`task-done` ·
+Command surface: `new` · `approve`/`reopen`/`drop` · `delete` · `branch` · `tasks`/`task-done` ·
 `findings`/`finding` · `read` · `check` · `status`.
 
 **Resolve the helper's path once, then reuse it.** The examples below write `"$TRAIL"` for the
@@ -110,6 +110,9 @@ harmless), and prints `no trails yet` when nothing readable was passed.
 | `approve <file>` | `status: approved` | the human signs off on the digest (brief) · accepts the result (report) |
 | `reopen <brief>` | `status: draft`, `tasks` removed | build proved the brief wrong; back to discuss |
 | `drop <brief>` | `status: dropped` | the human abandons the trail |
+
+`delete <slug>` removes `.trailmix/trail/<slug>/` outright. It's the human's action (the Herdr
+panel); agents never run it — `drop` abandons a trail.
 
 ```sh
 node "$TRAIL" approve .trailmix/trail/<slug>/brief.md

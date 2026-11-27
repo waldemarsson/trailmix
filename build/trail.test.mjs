@@ -3,7 +3,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, writeFileSync, readFileSync, mkdirSync, rmSync } from "node:fs";
+import { mkdtempSync, writeFileSync, readFileSync, mkdirSync, rmSync, existsSync, readdirSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -695,4 +695,50 @@ test("CLI runs when its path contains a space", () => {
   } finally {
     rmSync(dirname(dir), { recursive: true, force: true });
   }
+});
+
+// ---- delete ----------------------------------------------------------------------------------
+test("delete removes the trail folder and only it", () => {
+  inTemp(() => {
+    seed(MIXED);
+    const r = capture(() => run(["delete", "gone"]));
+    assert.equal(r.code, 0);
+    assert.match(r.out, /gone/);
+    assert.equal(existsSync(".trailmix/trail/gone"), false);
+    assert.equal(existsSync(".trailmix/trail/active/brief.md"), true);
+  });
+});
+
+test("delete refuses a path, a non-slug, or a missing trail, and removes nothing", () => {
+  inTemp(() => {
+    seed(MIXED);
+    mkdirSync(".trailmix/keep", { recursive: true });
+    for (const bad of ["../keep", "a/b", "Active", ".", "missing"]) assert.throws(() => run(["delete", bad]), /delete/);
+    assert.equal(existsSync(".trailmix/keep"), true);
+    assert.equal(readdirSync(".trailmix/trail").length, Object.keys(MIXED).length);
+  });
+});
+
+test("delete with no slug is a usage error", () => {
+  inTemp(() => assert.equal(capture(() => run(["delete"])).code, 2));
+});
+
+test("delete refuses a symlinked trail and leaves its target", () => {
+  inTemp(() => {
+    seed(MIXED);
+    mkdirSync("outside");
+    writeFileSync("outside/keep.md", "x");
+    symlinkSync(join(process.cwd(), "outside"), ".trailmix/trail/link", "dir");
+    assert.throws(() => run(["delete", "link"]), /not a trail folder/);
+    assert.equal(existsSync("outside/keep.md"), true);
+  });
+});
+
+test("delete refuses a file where a trail folder should be", () => {
+  inTemp(() => {
+    seed(MIXED);
+    writeFileSync(".trailmix/trail/file", "x");
+    assert.throws(() => run(["delete", "file"]), /not a trail folder/);
+    assert.equal(existsSync(".trailmix/trail/file"), true);
+  });
 });

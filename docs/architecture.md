@@ -318,9 +318,10 @@ CC's manifest doesn't need a `hooks` field (auto-discovered from the default `ho
 is copied verbatim to `dist/herdr-app/`, then `mods/trailmix/trail-source.js` is written as
 `export default <trail.mjs source as a JSON string>`. Herdr mods have no Node APIs and the app may
 run on another machine than the space, so the mod passes that string to `node -e` through
-`exec(…, { on: space.machine })`: `trail.mjs status --json` runs where the trail files are, and
-nothing is installed there. `verify.sh` checks the embedded source matches `trail.mjs` and that
-mod code uses only the mod runtime's imports.
+`exec(…, { on: space.machine })`: `trail.mjs status --json` and the reader's actions (`approve`,
+`drop`, `reopen`, `delete`) run where the trail files are, and nothing is installed there.
+`verify.sh` checks the embedded source matches `trail.mjs` and that mod code uses only the mod
+runtime's imports.
 
 ---
 

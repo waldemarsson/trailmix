@@ -2,7 +2,8 @@
 
 A section in the sidebar, under Spaces and Agents, that lists the [trailmix](https://github.com/waldemarsson/trailmix)
 trails in every space, local or on another machine, with where each one stands. Click a trail to
-read its brief or report. A toast tells you when a trail is waiting on you.
+read its brief or report and approve, drop, reopen or delete it. A toast tells you when a trail is
+waiting on you.
 
 **What you see:** a section under Agents, sharing the sidebar's height. A 36px header reads
 "▾ Trails". Below it, one card
@@ -13,7 +14,9 @@ title (its slug when untitled), then an outlined pill with its status: `Discussi
 sign-off`, `Building 1/3 · T2`, `Self-review`, `Needs review · 2 pending`. A space whose status
 can't be read shows a one-line error in red inside its card. Spaces whose trails are all done or
 dropped collapse into one dim line at the bottom (`3 spaces · 5 done`); spaces without trails
-don't appear. With none anywhere the panel says "No trails in any space".
+don't appear. With none anywhere the panel says "No trails in any space". The header's
+`Open` / `Closed` switch shows done and dropped trails instead, with `Done` / `Dropped` pills
+("No closed trails" when there are none); the choice is kept in `shared("trailmix.view")`.
 
 **How it behaves:**
 - A trail waiting on you (`Needs sign-off`, `Needs review`) gets its pill in the theme's
@@ -25,12 +28,21 @@ don't appear. With none anywhere the panel says "No trails in any space".
 - Clicking a row opens a dialog (70% × 80%) with the trail's `report.md` rendered as Markdown,
   else its `brief.md`, frontmatter stripped. With both, Brief / Report tabs switch between them.
   ✕ or Esc closes it. A missing file says "… not found"; an unreadable one shows the error.
+- The dialog's header has the trail's actions, each one `trail.mjs` op on the space's machine:
+  `Approve brief` (awaiting sign-off), `Approve report` (awaiting review; `· N pending` when
+  findings are still open), `Drop` (any open trail with a brief), `Reopen` (dropped trails: back
+  to discuss), and `Delete`. Delete removes `.trailmix/trail/<slug>/` for good — the second click
+  on "Confirm delete?" runs it — and closes the dialog. Before each action the dialog rereads the
+  trail's status and refuses ("Trail changed meanwhile — buttons updated") if it moved on. An
+  error shows in red under the header. The panel reloads that folder at once through
+  `shared("trailmix.changed")`. Approving here creates no branch and starts no build; the agent
+  picks up on resume. Folders whose name isn't a valid slug get no Delete.
 - When a trail reaches a checkpoint and no agent in its space is `working`, an info toast
   "<title> needs you" fires once; clicking it selects the space. It never fires for trails already
   waiting when the panel starts, and fires again only after the trail moves on and comes back.
   An agent that's `working` holds the toast until it stops (checked at the next refresh).
 - Refreshes every 15 s; local spaces also refresh as soon as `.trailmix/trail` changes. Hover
-  highlights a row. Read-only: it never changes a trail.
+  highlights a row. The panel itself changes nothing; only the dialog's actions do.
 - Install: the palette's "Trails" opens the list as an overlay with **Pin to sidebar**, which adds
   the section under Agents by rewriting the shown layout with `layout.set`. That needs a personal
   layout with Herdr's `main` shape (`sidebar-lists`); on Herdr's own layouts, which are replaced
@@ -47,14 +59,17 @@ don't appear. With none anywhere the panel says "No trails in any space".
   without the section. It doesn't toast or watch folders; the pinned copy does.
 
 **Built from:** one mod, `mods/trailmix/`, pinned into the sidebar by `layout.set` and reused as its own dialog
-(`openOverlay({ mod: "trailmix", props: { doc } })`). For each distinct space folder it runs
+(`openOverlay({ mod: "trailmix", props: { doc } })`; `doc` carries the `node` setting and whether
+that machine needed `sh`, so the dialog's `trail.mjs` calls find node the same way). For each distinct space folder it runs
 trailmix's `trail.mjs status --json` *on that space's machine*:
 `exec(node, ["--input-type=module", "-e", <loader>, "status", "--json"], { on: space.machine, cwd: space.folder, timeout: 10000 })`.
 The loader imports `trail.mjs` from a `data:` URL built from `trail-source.js` (trail.mjs
 embedded as a string), so nothing is installed on the machine. Uses `spaces`, `agents`, `exec`,
 `readTextFile`, `watchFolder`, `notify`, `openOverlay`, `closeOverlay`, `props`, `theme`,
 `checking`, `shared`/`setShared`, `layout` and `run` (`layout.set`, `layout.resize`, `mod.open`); `TextView.markdown` for the reader; `space.select` from the toast. `logic.js` holds
-the pure parts (loader, `node` lookup, parsing, errors, grouping, notifications).
+the pure parts (loader, `node` lookup, parsing, errors, grouping, notifications, actions). The
+dialog's actions run `trail.mjs` the same way (`approve|drop|reopen .trailmix/trail/<slug>/<file>.md`,
+`delete <slug>`), and `status --json .trailmix/trail/<slug>` picks its buttons.
 
 **Watch out:**
 - Needs Node ≥ 16 on every machine with trails. `exec` doesn't start a login shell, so a node
@@ -80,4 +95,5 @@ the pure parts (loader, `node` lookup, parsing, errors, grouping, notifications)
 in progress lists it with the right next step; a remote space's trails show too; clicking a
 trail shows its report (or brief) without the frontmatter; approving a brief or report in a
 terminal updates the row within 15 s; a trail reaching sign-off while its agent is idle raises
-one toast that selects the space.
+one toast that selects the space; each dialog action changes the trail and the row within a
+second; `Closed` lists done and dropped trails.
